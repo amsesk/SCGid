@@ -1,33 +1,32 @@
 ## ***scgid***, a python-based tool for scaffold binning and genome prediction from single-cell sequencing libraries
-####version 0.1b
+### version 0.1b
 -----
 
 ### What is ***scgid*** for?
 *scgid* is a python-based tool aimed at extracting a draft genome sequence for a single organism from a mildly metagenomic sequencing library resulting from single-cell genomic amplifications. The only thing that you need to start is your assebmly in FASTA format and *scgid* will do the rest.
 
-*scgid* takes your assebmly and subjects it to three binning methods each based on a different sequence signature. It takes the output of each, draws consensus based on majority-rule, and yields one final consensus-genome draft at the intersection of all three methods. 
+*scgid* takes your SPAdes assebmly and subjects it to three binning methods each based on a different sequence signature. It takes the output of each, draws consensus based on majority-rule, and yields one final consensus-genome draft at the intersection of all three methods. 
 
 As of this version, *scgid* is only compatible with genome assemblies generated with SPAdes (http://bioinf.spbau.ru/en/spades_for_remove) that have their sequence fasta headers **unchanged** (this is very important - just rename them after you're done with *scgid*). 
 
+Please note that this version of *scgid* constitutes an early-release beta version. Some aspects of it and its documentation may be incomplete and/or under development. We actively support *scgid* and are working to expand and test it. If you encounter an error or obstacle when running *scgid*, please open an issue on this github repositiory so that we can address it and get you up and running again.
+
 ### Dependencies
-* python 2.7 (***scgid* is not compatbile with python 3.x.x**)
+* python 2.7 (*scgid* is not compatbile with python 3.x.x)
 	* pandas 1.15.0
 	* numpy 0.23.4
-	* ETE3 toolkit 3.1.1
-	` pip install --user pandas numpy ete3`
-	or
-	`conda install pandas numpy ete3`
-	or you can download and build these packages from source.
+	* ETE3 toolkit 3.1.1  
+**Note** *scgid* will try to install these python dependencies if using automatic setup (recommended) below.
 * R 3.4.1
 	* ape 
 	`install.packages("ape")`
 	* Rscript (included with most R distributions)
 * NCBI Blast+
 * Augustus (http://bioinf.uni-greifswald.de/augustus/)
-* ClaMS-CLI (http://clams.jgi-psf.org/)
-    Scroll to the bottom of the page a and click on "Download"
-    Accept the license agreement
-    Download the "Command lin verion" of ClaMS
+* ClaMS-CLI (http://clams.jgi-psf.org/)  
+    -> (i) Scroll to the bottom of the page a and click on "Download",
+    (ii) Accept the license agreement,
+    (iii) Download the "Command line verion" of ClaMS
 * Java
 * Databionic ESOM (http://www.databionin-esom.sourceforge.net)
 * BASH
@@ -43,7 +42,7 @@ As of this version, *scgid* is only compatible with genome assemblies generated 
 * Type `./scgid init`
 	* Follow the prompts to define some package-wide settings and download the necessary databases.
 	* This script **will try** to install the required python packages, if they are not already available, using `conda` or `pip`. Make sure you know which package manager is being used on your system as installation via `pip` has been known to break some conda installations.
-	* You are responsible for having downloaded and installed all of the third-party dependencies listed above. You will be asked where some of them are.
+	* You are responsible for having downloaded and installed all of the other third-party dependencies listed above. You will be asked where some of them are.
 	* This script requires an internet connection in order to download the swissprot databases.
 	
 * Modify your `.bashrc` or `.bash_profile` file and add `scgid-0.1b/bin` to your enviornmental $PATH variable. For instance, add a line like... `export PATH=$PATH:/path/to/scgid-0.1b/bin`
@@ -51,12 +50,14 @@ As of this version, *scgid* is only compatible with genome assemblies generated 
 
 #### Manual Setup (if auto isn't working)
 * Download and decompress a copy of the most recent swissprot database.
-* Edit `settings.py` to reflect the locations of ESOM, ClaMS, and Rscript, and your swissprot database, as follows:
+* Download and save the file located [here](https://www.uniprot.org/taxonomy/?query=*&format=tab) before running `./scgid buildtaxdb [args...]`
+* Edit `settings.py` to reflect the locations of ESOM, ClaMS, and Rscript, and your swissprot databases, as follows:
 ```
 esom_path ="<path_to_folder_containing_bin>"`
 clams_path="<path_to_folder_containing_clams-cli_jar>"
 path_to_Rscript="<path_to_folder_containing_Rscript>"
 path_to_spdb="<path_to_swissprot_database>"
+path_to_taxdb="<path_to_taxdb>"
 spdb_version="dd-Mon-yy" #eg 21-Jul-18
 ```
 **Note** Don't forget the quotes! This file is interpereted by python.
@@ -66,9 +67,13 @@ spdb_version="dd-Mon-yy" #eg 21-Jul-18
 * Ensure that other stand-alone dependencies (i.e. BLAST and Augustus) have also been added to $PATH.
 
 ### Running ***scgid***
-Each module of *scgid* is designed to be run separately in a bash command line. To take full advantage of *scgid*'s consensus-based approach, run all three binning algorithms (gc-cov, kmers, codons) prior to running `scgid consesnsus` to determine your final genome draft. The basic workflow for a *scgid* run is as follows...
+To run *scgid*, all you need is a SPAdes assembly (or at least an assembly with SPAdes-style fasta headers). In its current version, SPAdes-style fasta headers are a requirement for *scgid*. This means that each fasta header contains identification, length, and coverage information for each contig in the format `NODE_XXX_length_XXX_cov_XXX.XXX`. If this is an issue for you please open a new issue and we'll try to expand compatibility in future versions.
+
+Each module of *scgid* is designed to be run separately in a bash command line. To enumerate the command-line arguments and their descriptions, merely type `scgid <module> -h` or `scgid <module> --help`.  
+
+To take full advantage of *scgid*'s consensus-based approach, run all three binning algorithms (gc-cov, kmers, codons) prior to running `scgid consesnsus` to determine your final genome draft. The basic workflow for a *scgid* run is as follows...
 ```
-scgid gc-cov [args...]  
+scgid gc-cov [args...] 
 scgid codons [args...]
 scgid kmers train [args...]
 scgid kmers annotate [args...]
@@ -79,6 +84,22 @@ scgid kmers extract [args...]
 Finally, run the consensus portion of `scgid` to draw consensus between all three binning algorithms.
 
 `scgid consensus [args...]`
+
+The final consensus genome draft is now located at `<prefix>_scgid_output/consensus/<prefix>_final_genome` 
+
+### I just ran `scgid esom annotate [args...]`, now what?
+Completion of this command means that you have successfully trained and taxonomically-annotated the ESOM topology for your metagenome. Now it is time to look at the annotated "map" and decide which sector you want to carve-out as your target organism. Follow these steps to do so (**pictures coming**):   
+1. Locate and open `esomana` in `path/to/ESOM/bin/`  
+2. From the "File" drop-down menu, select `Load *.wts`  
+3. Navigate to the kmers output folder in the current scgid run, i.e. `path/to/<prefix>_scgid_output/kmers/` and open the `.wts` file that you find there.
+4. You should now see an ESOM topology with colored dots. This is your annotated map.  
+5. In the bottom of the window, click on the Classes tab. This should show you which of your taxonomic groups are represented by each color in the map.  
+6. When you are ready to select a region of the map, use the mouse cursor to click a shape around your region of interest - this can take a while depending on the size of your map.  
+7. Once you are satisfied with your region selection, close off the region by clicking both mouse buttons at the same time. **This will create a NEW class that incorporates all of the colored dots within your region selection.**  
+8. Notice that your new class has a number associated with it. Remember this number.   
+9. From the "File" drop-down menu, select `Save *.cls` and save your new class file.  
+10. Return to command line and run `scgid esom extract [args...]` making sure to specify the .cls file you just created in step 9 for `-c|--cls` and the number of your new class for `-cid|--classnum`.  
+11. Now you should have a final draft genome from the kmers module in your `path/to/<prefix>_scgid_output/kmers` directory.
 
 ### What is a "swissprot-style database" and how do I know I have one?
 **Preface** - It is unlikely that you will ever run into an issue with this as long as you're working with the database downloaded by `./scgid init` and only update/edit it and its associated taxonomy database with the included scripts. So don't worry about this too much.
@@ -162,5 +183,23 @@ For your reference, I'm going to go through the content of the output folders fo
 ```
 
 ### Command Line Arguments, explained
+**\<In progress\>**  
+For now, type `scgid <module> -h` or `scgid <module> --help` into your command line for descriptions of supported command-line arguments.
+
 
 ### Citations
+Altschup, S. F., Gish, W., Pennsylvania, T., & Park, U. (1990). Basic Local Alignment Search Tool 2Department of Computer Science, 403–410.  
+
+Amses, K. R., Davis, W. J., & James, T. Y. scgid, a python-based tool for scaffold binning and genome prediction from single-cell sequencing libraries, (in prep).
+  
+Dick, G. J., Andersson, A. F., Baker, B. J., Simmons, S. L., Thomas, B. C., Yelton, A. P., & Banfield, J. F. (2009). Community-wide analysis of microbial genome sequence signatures, 10(8). https://doi.org/10.1186/gb-2009-10-8-r85  
+  
+Kumar, S., Jones, M., Koutsovoulos, G., Clarke, M., & Blaxter, M. (2013). Blobology : exploring raw genome data for contaminants , symbionts , and parasites using taxon-annotated GC-coverage plots, 4(November), 1–12. https://doi.org/10.3389/fgene.2013.00237
+McInerney, J. O. (1998). GCUA: general codon usage analysis. Bioinformatics, 14(4), 372–373. https://doi.org/10.1093/bioinformatics/14.4.372  
+  
+Mikhailov, K. V, Simdyanov, T. G., Aleoshin, V. V, & Belozersky, A. N. (2016). Genomic survey of a hyperparasitic microsporidian Amphiamblys sp. (Metchnikovellidae) Genome Biology and Evolution Advance Access. Genome Biology and Evolution, 9(3), 454–467. https://doi.org/10.1093/gbe/evw235  
+  
+Pati, A., Heath, L. S., Krypides, N. C., & Ivanova, N. (2011). ClaMS: A Classifier for Metagenomic Sequences. Standards in Genomic Sciences, 5, 248–253. https://doi.org/10.4056/sigs.2075298  
+Stanke, M., & Morgenstern, B. (2005). AUGUSTUS: A web server for gene prediction in eukaryotes that allows user-defined constraints. Nucleic Acids Research, 33(SUPPL. 2), 465–467. https://doi.org/10.1093/nar/gki458
+  
+
