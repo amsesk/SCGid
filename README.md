@@ -1,8 +1,8 @@
-##***scgid***, a python-based tool for scaffold binning and genome prediction from single-cell sequencing libraries
+## ***scgid***, a python-based tool for scaffold binning and genome prediction from single-cell sequencing libraries
 ####version 0.1b
 -----
 
-###What is ***scgid*** for?
+### What is ***scgid*** for?
 *scgid* is a python-based tool aimed at extracting a draft genome sequence for a single organism from a mildly metagenomic sequencing library resulting from single-cell genomic amplifications. The only thing that you need to start is your assebmly in FASTA format and *scgid* will do the rest.
 
 *scgid* takes your assebmly and subjects it to three binning methods each based on a different sequence signature. It takes the output of each, draws consensus based on majority-rule, and yields one final consensus-genome draft at the intersection of all three methods. 
@@ -49,7 +49,7 @@ As of this version, *scgid* is only compatible with genome assemblies generated 
 * Modify your `.bashrc` or `.bash_profile` file and add `scgid-0.1b/bin` to your enviornmental $PATH variable. For instance, add a line like... `export PATH=$PATH:/path/to/scgid-0.1b/bin`
 * Ensure that other stand-alone dependencies (i.e. BLAST and Augustus) have also been added to $PATH.
 
-####Manual Setup (if auto isn't working)
+#### Manual Setup (if auto isn't working)
 * Download and decompress a copy of the most recent swissprot database.
 * Edit `settings.py` to reflect the locations of ESOM, ClaMS, and Rscript, and your swissprot database, as follows:
 ```
@@ -163,4 +163,4 @@ For your reference, I'm going to go through the content of the output folders fo
 
 ### Command Line Arguments, explained
 
-###Citations
+### Citations
