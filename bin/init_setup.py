@@ -200,8 +200,8 @@ while True:
         continue
     else:
         if entry == 'y':
-            settings['taxonomy_all_tab'] = "uniprot-taxonomy-all-{}.tab".format(date)
-            dwnld_to = os.path.join(scgid_databases, settings['taxonomy_all_tab'])
+            settings['taxonomy_all_tab'] = os.path.join(scgid_databases, "uniprot-taxonomy-all-{}.tab".format(date))
+            dwnld_to = settings['taxonomy_all_tab']
             if os.path.isfile(dwnld_to):
                 os.remove(dwnld_to)
             print "\n> Downloading uniprot taxonomy database to: {}...\n".format(dwnld_to)
@@ -224,7 +224,7 @@ if settings['taxonomy_all_tab'] is not None:
         if entry.lower() not in ['y','n']:
             continue
         if entry.lower() == 'y':
-            subprocess.call([sys.executable, os.path.join(scgid_bin,'build_taxdb.py'), '-db', settings['path_to_spdb'], '-t', '/home/aimzez/scgid/database/uniprot-taxonomy-all-090718.tab', '-o', '%s.taxdb' % (settings['path_to_spdb'])])
+            subprocess.call([sys.executable, os.path.join(scgid_bin,'build_taxdb.py'), '-db', settings['path_to_spdb'], '-t', settings['taxonomy_all_tab'], '-o', '%s.taxdb' % (settings['path_to_spdb'])])
             settings['path_to_taxdb'] = settings['path_to_spdb']+'.taxdb'
             break
         else:
