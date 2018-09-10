@@ -42,7 +42,7 @@ Please report any and all errors and issues that you run into while using *scgid
 * BASH
 
 ### Downloading and Installing ***scgid***
-* Clone the repository at [https://github.com/amsesk/scgid](https://github.com/amsesk/scgid)
+* Clone the repository at [https://github.com/amsesk/scgid.git](https://github.com/amsesk/scgid.git)
 * Navigate to `bin` within the newly created directory
 `cd scgid/bin`
 
