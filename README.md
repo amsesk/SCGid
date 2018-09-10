@@ -42,11 +42,9 @@ Please report any and all errors and issues that you run into while using *scgid
 * BASH
 
 ### Downloading and Installing ***scgid***
-* Download the tar.gz file from (LINK) or clone the repository at (GITHUB LINK)
-* If you downloaded the .tar.gz file, decompress and untar the archive with...
-`tar -xvf scgid-0.1b.tar.gz`
+* Clone the repository at [https://github.com/amsesk/scgid](https://github.com/amsesk/scgid)
 * Navigate to `bin` within the newly created directory
-`cd scgid-0.1b/bin`
+`cd scgid/bin`
 
 #### Automatic Setup (recommended)
 * Type `./scgid init`
@@ -55,7 +53,7 @@ Please report any and all errors and issues that you run into while using *scgid
 	* You are responsible for having downloaded and installed all of the other third-party dependencies listed above. You will be asked where some of them are.
 	* This script requires an internet connection in order to download the swissprot databases.
 	
-* Modify your `.bashrc` or `.bash_profile` file and add `scgid-0.1b/bin` to your enviornmental $PATH variable. For instance, add a line like... `export PATH=$PATH:/path/to/scgid-0.1b/bin`
+* Modify your `.bashrc` or `.bash_profile` file and add `scgid/bin` to your enviornmental $PATH variable. For instance, add a line like... `export PATH=$PATH:/path/to/scgid/bin`
 * Ensure that other stand-alone dependencies (i.e. BLAST and Augustus) have also been added to $PATH.
 
 #### Manual Setup (if auto isn't working)
