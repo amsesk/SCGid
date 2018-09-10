@@ -95,7 +95,7 @@ def readFastq(infile):
         #p+=1
     return numpy.mean(lengths)
 
-def readFasta_smarter (fasta, seq_type = "nucl", contig_info = False):
+def readFasta (fasta, seq_type = "nucl", contig_info = False):
     all_seqs = []
     header_pattern = re.compile("^>(.+)")
     label = str()
@@ -121,7 +121,7 @@ def readFasta_smarter (fasta, seq_type = "nucl", contig_info = False):
         all_seqs.append( sequence(label, seq, seq_type, contig_info) )
     return all_seqs
 
-def readFasta(file, seq_type = "nucl", contig_info = False):
+def readFasta_dumber(file, seq_type = "nucl", contig_info = False):
     allSeqs=[]
     for i in open(file).read().split(">"):
         if len(i) == 0:
