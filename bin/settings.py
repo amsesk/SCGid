@@ -1,0 +1,8 @@
+path_to_spdb=""
+path_to_taxdb=""
+esom_path=""
+clams_path=""
+taxonomy_all_tab=""
+AUGUSTS_CONFIG_PATH=""
+spdb_version=""
+path_to_Rscript=""
