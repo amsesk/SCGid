@@ -11,6 +11,16 @@ As of this version, *scgid* is only compatible with genome assemblies generated 
 
 Please note that this version of *scgid* constitutes an early-release beta version. Some aspects of it and its documentation may be incomplete and/or under development. We actively support *scgid* and are working to expand and test it. If you encounter an error or obstacle when running *scgid*, please open an issue on this github repositiory so that we can address it and get you up and running again.
 
+### A couple of notes about the beta version, 0.1b
+This pre-publication release version of *scgid* is still under active development and thus has some inconsistencies that we are still working to correct. One of the most obvious is some naming differences in between the module calls and the file architecture of the output folder. This will be fixed in the next version, but in the mean time, here are the synonyms:  
+```
+scgid kmers [args...]		Outputs to <prefix>_scgid_output/esom
+scgid gc-cov [args...]		Outputs to <prefix>_scgid_output/blob
+scgid codons [args...]		Outputs to <prefix>_scgid_output/rscu
+scgid consensus [args...]		Outputs to <prefix>_scgid_output/consensus
+```
+
+Please report any and all errors and issues that you run into while using *scgid*. Its development is a top priority for me at this time and I want it to work for you! Please open issues here on the GitHub page or [email me directly](amsesk@umich.edu).  
 ### Dependencies
 * python 2.7 (*scgid* is not compatbile with python 3.x.x)
 	* pandas 1.15.0
@@ -69,7 +79,7 @@ spdb_version="dd-Mon-yy" #eg 21-Jul-18
 ### Running ***scgid***
 To run *scgid*, all you need is a SPAdes assembly (or at least an assembly with SPAdes-style fasta headers). In its current version, SPAdes-style fasta headers are a requirement for *scgid*. This means that each fasta header contains identification, length, and coverage information for each contig in the format `NODE_XXX_length_XXX_cov_XXX.XXX`. If this is an issue for you please open a new issue and we'll try to expand compatibility in future versions.
 
-Each module of *scgid* is designed to be run separately in a bash command line. To enumerate the command-line arguments and their descriptions, merely type `scgid <module> -h` or `scgid <module> --help`.  
+Each module of *scgid* is designed to be run separately in a bash command line. To enumerate the command-line arguments and their descriptions, merely type `scgid <module> -h` or `scgid <module> --help`. Try running `scgid -h` to get descriptions of the available module commands to see where to get started.
 
 To take full advantage of *scgid*'s consensus-based approach, run all three binning algorithms (gc-cov, kmers, codons) prior to running `scgid consesnsus` to determine your final genome draft. The basic workflow for a *scgid* run is as follows...
 ```
@@ -79,15 +89,15 @@ scgid kmers train [args...]
 scgid kmers annotate [args...]
 scgid kmers extract [args...]
 ```
-**Note** Because of the need to manually select a region from the self-organizing kmer map, the `scgid kmers...` portion of the workflow is divided into three separate commands. You will select your region of interest using the `esomana` GUI in between calls to `scgid kmers annotate` and `scgid kmers extract`.
+**Note** Because of the need to manually select a region from the self-organizing kmer map, the `scgid kmers...` portion of the workflow is divided into three separate commands. You will select your region of interest using the `esomana` GUI in between calls to `scgid kmers annotate` and `scgid kmers extract`. See below section for more information.
 
 Finally, run the consensus portion of `scgid` to draw consensus between all three binning algorithms.
 
 `scgid consensus [args...]`
 
-The final consensus genome draft is now located at `<prefix>_scgid_output/consensus/<prefix>_final_genome` 
+The final consensus genome draft is now located at `<prefix>_scgid_output/consensus/<prefix>_final_genome.fasta` 
 
-### I just ran `scgid esom annotate [args...]`, now what?
+### I just ran `scgid kmers annotate [args...]`, now what?
 Completion of this command means that you have successfully trained and taxonomically-annotated the ESOM topology for your metagenome. Now it is time to look at the annotated "map" and decide which sector you want to carve-out as your target organism. Follow these steps to do so (**pictures coming**):   
 1. Locate and open `esomana` in `path/to/ESOM/bin/`  
 2. From the "File" drop-down menu, select `Load *.wts`  
@@ -98,13 +108,13 @@ Completion of this command means that you have successfully trained and taxonomi
 7. Once you are satisfied with your region selection, close off the region by clicking both mouse buttons at the same time. **This will create a NEW class that incorporates all of the colored dots within your region selection.**  
 8. Notice that your new class has a number associated with it. Remember this number.   
 9. From the "File" drop-down menu, select `Save *.cls` and save your new class file.  
-10. Return to command line and run `scgid esom extract [args...]` making sure to specify the .cls file you just created in step 9 for `-c|--cls` and the number of your new class for `-cid|--classnum`.  
+10. Return to command line and run `scgid kmers extract [args...]` making sure to specify the .cls file you just created in step 9 for `-c|--cls` and the number of your new class for `-cid|--classnum`.  
 11. Now you should have a final draft genome from the kmers module in your `path/to/<prefix>_scgid_output/kmers` directory.
 
 ### What is a "swissprot-style database" and how do I know I have one?
-**Preface** - It is unlikely that you will ever run into an issue with this as long as you're working with the database downloaded by `./scgid init` and only update/edit it and its associated taxonomy database with the included scripts. So don't worry about this too much.
+**Preface** - It is unlikely that you will ever run into an issue with this as long as you're working with the database downloaded by `./scgid init` and only update or edit it with `scgid updatedb` or `scgid spexpand` respectively. So don't worry about this too much.
 
-**If you like to worry** - *scigd* is currently only compatible with a swissprot-style protein database. What that means is that the fasta headers (ie everything after '>' in the fasta file) have to share some elements with the standard swissprot format. Namely, each fasta header must contain a unique sequence identifier or USID (first) and a description (second). The USID and the description must be separated by a space. The USID cannot have any spaces in it, but the description can have as many as you like. Furthermore, the description must have a species designation in the format `OS=<species>. The species name can have spaces but must occur as the end of the description (and header). *scgid* uses this species designation to link sequences in the protein database with lineage information in the taxonomy database, so this is very important. You will be stopped if you try to use a misformatted database, but the source of these errors can be a pain to locate and correct. 
+**If you like to worry** - *scigd* is currently only compatible with a swissprot-style protein database. What that means is that the fasta headers (ie everything after '>' in the fasta file) have to share some elements with the standard swissprot format. Namely, each fasta header must contain a unique sequence identifier or USID (first) and a description (second). The USID and the description must be separated by a space. The USID cannot have any spaces in it, but the description can have as many as you like. Furthermore, the description must have a species designation in the format `OS=<species>`. The species name can have spaces but should occur at the end of the description (and fasta header). *scgid* uses this species designation to link sequences in the protein database with lineage information in the taxonomy database, so this is very important. You will be stopped if you try to use a misformatted database, but the source of these errors can be a pain to locate and correct. 
 
 So, it is recommended that you let the included scripts do the work when making updates or edits to the swissprot-style database. The only time that you should be aware of these formatting requirements is when you want to manually add protein sequences to the database. So, here are some examples of GOOD and BAD ways to format your fasta headers for inclusion in the *scgid*-linked swissprot-style database.
 
@@ -136,11 +146,13 @@ scgid was developed while working with cryptic and uncultured early-diverging fu
 2) A two-column, tab-separated list of the OS's (column 1) and semicolon-separated lineage information. Here's an example:
 
 ```
-Stylopage hadra	Eukaryota;Fungi;Zoopagomycota;Zoopages;Stylopage
+Stylopage hadra	Eukaryota;Fungi;Zoopagomycota;Zoopagales;Stylopage
 Escherichia coli	Bacteria;Gammaproteobacteria;Enterobacteriales;Enterobacteriaceae;Escherichia
 Sacce	Fungi;Ascomycota;Saccharomycetales;Saccharomycetaceae;Sacharomyces
 etc..
 ```
+
+Now all you have to do is run `scgid spexpand [args...]` remembering to provide File #1 as `-p|--proteins` and File #2 as `-l|--lineages` and you're all set to go.
 
 ### Output Directories and Content
 *scgid* makes a separate folder for each of its modules, all contained within a shared working directory named with the `-f|--prefix` command line option. This means that if you want to keep the outputs of each module in the same working directory (which is what you should do), make sure to specify the same `-f|--prefix` for each and every call to scgid when working on a your workflow. 
