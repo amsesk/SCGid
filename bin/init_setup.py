@@ -77,7 +77,7 @@ for pkg, check in pydep.iteritems():
                     pydep[pkg] = True
                     break
                 except:
-                    print "> " + outputcols['RED'] + "Something went wrong with automatic installation of %s. Please manually install it." % (pkg)+outputcols['RESET']
+                    print "> " + output_cols['RED'] + "Something went wrong with automatic installation of %s. Please manually install it." % (pkg)+output_cols['RESET']
                     break
                 
 print "\npython2 Dependences\n"+"-"*24
