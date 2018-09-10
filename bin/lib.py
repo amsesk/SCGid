@@ -10,6 +10,7 @@ import os
 import inspect
 import cPickle as pickle
 import subprocess
+import settings
 from time import localtime, strftime, sleep
 from ete3 import Tree, TreeStyle, NodeStyle, NCBITaxa, TextFace ## to avoid seg fault on flux, change back once fixed
 import random
@@ -1291,7 +1292,7 @@ def parse_spdb_blastout(sp_fasta, blastout, log_inst):
                 hit = lib.loc[acc].description
                 output.append("{}\t{}\t{}\t{}".format(contig, acc, hit, evalue))
             except:
-                log_inst.critical("Accession ({}) not found in swissprot-style database, {}. It is likely that you specified a different version of that database than that used to BLAST against.".format(acc, path_to_spdb))
+                log_inst.critical("Accession ({}) not found in swissprot-style database, {}. It is likely that you specified a different version of that database than that used to BLAST against.".format(acc, settings.path_to_spdb))
                 raise ValueError
         
         return output
