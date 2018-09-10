@@ -64,7 +64,11 @@ for pkg, check in pydep.iteritems():
                 continue
             else:
                 if entry == 'conda':
-                    try_install = subprocess.Popen(['conda','install',pkg], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    #try_install = subprocess.Popen(['conda','install',pkg], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    if pkg == 'ete3':
+                        subprocess.call(['conda','install','-c','etetoolkit','ete3'])
+                    else:
+                        subprocess.call(['conda', 'install', pkg])
                 elif entry == 'pip':
                     subprocess.call(['pip', 'install', '--user', pkg])
                 else:
