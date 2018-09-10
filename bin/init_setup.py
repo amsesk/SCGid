@@ -245,4 +245,4 @@ if scgid_bin not in os.environ['PATH']:
     print "> WARNING: scgid does not appear to be present in your PATH... \n\tAdd 'export PATH=$PATH:%s' to your .bashrc (or other file for your particular console) to add scgid to PATH" % (scgid_bin)
         
 #%% DONE!     
-print "\n" + output_cols["GREEN"] + "[ scgid init completed... happy squid-ing! ]"
+print "\n" + output_cols["GREEN"] + "[ scgid init completed... happy squid-ing! ]"+ output_cols['RESET']
