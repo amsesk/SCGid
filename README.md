@@ -17,7 +17,7 @@ This pre-publication release version of *scgid* is still under active developmen
 scgid kmers [args...]		Outputs to <prefix>_scgid_output/esom
 scgid gc-cov [args...]		Outputs to <prefix>_scgid_output/blob
 scgid codons [args...]		Outputs to <prefix>_scgid_output/rscu
-scgid consensus [args...]		Outputs to <prefix>_scgid_output/consensus
+scgid consensus [args...]	Outputs to <prefix>_scgid_output/consensus
 ```
 
 Please report any and all errors and issues that you run into while using *scgid*. Its development is a top priority for me at this time and I want it to work for you! Please open issues here on the GitHub page or [email me directly](amsesk@umich.edu).  
