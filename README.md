@@ -62,7 +62,7 @@ Please report any and all errors and issues that you run into while using *scgid
 #### Automatic Setup (recommended)
 * Type `./scgid init`
 	* Follow the prompts to define some package-wide settings and download the necessary databases.
-	* This script **will try** to install the required python packages, if they are not already available, using `conda` or `pip`. Make sure you know which package manager is being used on your system as installation via `pip` has been known to break some conda installations. If the flavor of python package manager on your system is up to you, I strongly recommend using `conda` since it will also install important module dependencies for you. You can download miniconda (here)[https://conda.io/miniconda.html].
+	* This script **will try** to install the required python packages, if they are not already available, using `conda` or `pip`. Make sure you know which package manager is being used on your system as installation via `pip` has been known to break some conda installations. If the flavor of python package manager on your system is up to you, I strongly recommend using `conda` since it will also install important module dependencies for you. You can download miniconda [here](https://conda.io/miniconda.html).
 	* You are responsible for having downloaded and installed all of the other third-party dependencies listed above. You will be asked where some of them are.
 	* This script requires an internet connection in order to download the swissprot protein and taxonomy databases.
 	
@@ -84,8 +84,8 @@ spdb_version="dd-Mon-yy" #eg 21-Jul-18
 ```
 **Note** Don't forget the quotes! This file is interpereted by python.
 
-* Modify your `.bashrc` or `.bash_profile` file and add `scgid-0.1b/bin` to your enviornmental $PATH variable. For instance, add a line like... 
-	`export PATH=$PATH:/path/to/scgid-0.1b/bin`
+* Modify your `.bashrc` or `.bash_profile` file and add `scgid/bin` to your enviornmental $PATH variable. For instance, add a line like... 
+	`export PATH=$PATH:/path/to/scgid/bin`
 * Ensure that other stand-alone dependencies (i.e. BLAST and Augustus) have also been added to $PATH.
 
 ### Running ***scgid***
