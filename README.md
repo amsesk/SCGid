@@ -99,7 +99,7 @@ To take full advantage of *scgid*'s consensus-based approach, run all three binn
 ```
 scgid gc-cov [args...] 
 scgid codons [args...]
-scgid kmers train [args...]
+scgid kmers train [args...] (a good reference for which options to specify for ESOM training: https://github.com/tetramerFreqs/Binning)
 scgid kmers annotate [args...]
 scgid kmers extract [args...]
 ```
