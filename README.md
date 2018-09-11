@@ -9,7 +9,7 @@
 
 As of this version, *scgid* is only compatible with genome assemblies generated with SPAdes (http://bioinf.spbau.ru/en/spades_for_remove) that have their sequence fasta headers **unchanged** (this is very important - just rename them after you're done with *scgid*). 
 
-Please note that this version of *scgid* constitutes an early-release beta version. Some aspects of it and its documentation may be incomplete and/or under development. We actively support *scgid* and are working to expand and test it. If you encounter an error or obstacle when running *scgid*, please open an issue on this github repositiory so that we can address it and get you up and running again.
+Please note that this version of *scgid* constitutes an early-release beta version. Some aspects of it and its documentation may be incomplete and/or under development. We actively support *scgid* and are working to expand and test it. If you encounter an error or obstacle when running *scgid*, please open an issue on this github repositiory so that we can address it and get you up and running again. See the next section below for some more notes about this version of *scgid*.
 
 ### A couple of notes about the beta version, 0.1b
 This pre-publication release version of *scgid* is still under active development and thus updates to the GitHub repository are being made quite consistently. To ensure that you are able to take advantage of new features and bug fixes, make sure that you are updating your local repo consistently. We've tried to make this easy for you.
