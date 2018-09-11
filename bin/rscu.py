@@ -184,8 +184,9 @@ if not gff3_check:
     arguments.insert(0,py)
     subprocessC(arguments)
 
-    ## move blast.out to default location if made successfully in temp
-    shutil.copyfile(prefix+'.nt.blast.out','../'+prefix+".nt.blast.out")
+    ## move augustus outputs to default location if made successfully in temp
+    shutil.copyfile(prefix+'.aug.out.gff3','../'+prefix+".aug.out.gff3")
+    shutil.copyfile(prefix+'.aug.out.fasta','../'+prefix+".aug.out.fasta")
 
 #%% BLASTN, if necessary ###
 if args.mode == 'blastn':
@@ -203,6 +204,10 @@ if args.mode == 'blastn':
         blastn_cmd = ["blastn","-query",nucl_path,"-max_target_seqs","1","-num_threads",args.cpus,"-db","nt","-outfmt", outfmt, "-evalue",args.evalue,"-out",blastout]
         logger.info(' '.join(blastn_cmd))
         subprocessP(blastn_cmd, logger)
+    
+        ## move blast.out to default location if made successfully in temp
+        shutil.copyfile(prefix+'.nt.blast.out','../'+prefix+".nt.blast.out")
+    
     else:
         logger.info("Using previously created blast output file, "+blastout)
 
@@ -350,11 +355,13 @@ logger.info("Wrote RSCU NJ tree as a Newick string to "+os.getcwd()+"/"+prefix+"
 nj_tree = Tree(prefix+"_rscu_nj.tre")
 #nj_tree = Tree("../amphi_adaptOnlyTrim_rscu_nj.tre")
 
-colnames = ["contig","prot_len","coverage","gc","pid","sp_os","lineage","evalue","parse_lineage"]
-info_table = infotable(target_taxa)
-
-info_table.load(info_table_path)
-annotated_tree = annotate_tips_prot (nj_tree, target_taxa, info_table)
+if args.mode == 'blastp':
+    colnames = ["contig","prot_len","coverage","gc","pid","sp_os","lineage","evalue","parse_lineage"]
+    info_table = infotable(target_taxa)
+    info_table.load(info_table_path)
+    annotated_tree = annotate_tips_prot (nj_tree, target_taxa, info_table)
+else:
+    annotated_tree = annotate_tips(nj_tree, target_taxa, '{}.best.taxids'.format(blastout))
 
 circ = TreeStyle()
 circ.scale=500

@@ -924,7 +924,7 @@ def annotate_tips(tree, target_taxa, path_to_tids):
     tar = NodeStyle()
     tar["shape"] = "circle"
     tar["size"] = 35
-    tar["fgcolor"] = "green"
+    tar["fgcolor"] = "blue"
 
     ntar = NodeStyle()
     ntar["shape"] = "circle"
@@ -946,7 +946,7 @@ def annotate_tips(tree, target_taxa, path_to_tids):
     ids = {}
     for i in open(path_to_tids).readlines():
         cols = i.split('\t')
-        name = cols[0].split('_')[0]
+        name = '_'.join(cols[0].split('_')[0:2])
         tids = cols[1].strip()
         if len(tids.split(';')) > 1:
             ids[name] = {}
@@ -967,7 +967,6 @@ def annotate_tips(tree, target_taxa, path_to_tids):
         with open("ncbi_taxonomy",'a') as tax:
             tax.write(node+"\t")
             tax.write(';'.join(formatted)+'\n')
-
         ## Annotate the tip that got a hit ##
         if any(i in target_taxa['target'] for i in formatted) is True and any(i in target_taxa['exception'] for i in formatted) is False:
             for this_one in tree.iter_search_nodes(name=node):
