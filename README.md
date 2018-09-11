@@ -50,7 +50,7 @@ Please report any and all errors and issues that you run into while using *scgid
     (ii) Accept the license agreement,  
     (iii) Download the "Command line verion" of ClaMS  
 * Java
-* Databionic ESOM (http://www.databionin-esom.sourceforge.net)
+* Databionic ESOM (http://www.databionin-esom.sourceforge.net)  
     (i) Download the ESOM Installer .jar file and follow the instructions in the GUI installer.
 * BASH
 
@@ -155,7 +155,7 @@ scgid was developed while working with cryptic and uncultured early-diverging fu
 Use `scgid spexpand [args...]` to expand your swissprot protein and taxonomy databases as you see fit.
 
 **You will need two files:**
-1) FASTA files of the proteomes or sets of proteins you want to add the database. 
+1) FASTA file of the proteomes or sets of proteins you want to add the database. 
 
 *Note* You can either append the applicable "OS=<species>" portion of the sequence description to each header manually (see above section "What is a "swissprot-style database" and how do I know I have one?") or use the provided `bin/reformat_my_headers.py` script to append them for you (see `reformat_my_headers.py -h` for details)
 
