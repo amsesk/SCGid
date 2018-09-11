@@ -153,6 +153,9 @@ if not blastout_check or not augout_check: #this means we have to predict and/or
         to_do[1] = '0'
         logger.info("Found blast output file: "+blastout+". Skipping BLAST...")
     to_do_arg = ','.join(to_do)
+    
+    if args.augustus_sp is None:
+        args.augustus_sp = "NA"
 
     arguments = ['-n',nucl_path,'-sp',args.augustus_sp,'-e',args.evalue,'-db',args.spdb,'--cpus',args.cpus,'-f',args.prefix,'-c',to_do_arg,'-p',prot]
     call = os.path.join(bin_dir,'predict_and_blast.py')

@@ -102,7 +102,7 @@ if mode == 'blastn':
 
         #Make sure that BLAST is available
         try:
-            subprocessC(['blastn','-help'])
+            subprocessT(['blastn','-help'])
         except:
             logger.exception("BLAST is either not installed or unavailable.")
             raise IOError("BLAST is either not installed or unavailable.")
