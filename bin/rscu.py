@@ -177,7 +177,7 @@ if not gff3_check:
         logger.critical("ERROR: -sp|--augustus_sp required for gene prediction.")
         raise ValueError
     to_do = ['1','0']
-    arguments = ['-n',nucl_path,'-sp',args.augustus_sp,'-e',args.evalue,'-f',args.prefix,'-c',to_do]
+    arguments = ['-n',nucl_path,'-sp',args.augustus_sp,'-e',args.evalue,'-f',args.prefix,'-c',','.join(to_do)]
     call = os.path.join(bin_dir,'predict_and_blast.py')
     arguments.insert(0,call)
     py = sys.executable

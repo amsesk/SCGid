@@ -134,7 +134,7 @@ settings.update(files_to_find)
 
 #%% Get environmental variables, not really necessary for augustus config path? ##
 
-settings['AUGUSTS_CONFIG_PATH'] = ""
+settings['AUGUSTUS_CONFIG_PATH'] = ""
 
 #%% Figure out the swissprot protein database ##
 print "\n> scgid is currently only compatible with swissprot-style protein databases. See README for more information on this."

@@ -29,7 +29,7 @@ parser.add_argument('-c','--coding', metavar = "what_to_do", action="store", req
 
 # BLAST args
 
-parser.add_argument('-p','--prot', metavar = "protein_fasta", action="store",required=True,help = "A FASTA file containing the proteins called from the genome.")
+parser.add_argument('-p','--prot', metavar = "protein_fasta", action="store",required=False,help = "A FASTA file containing the proteins called from the genome.")
 parser.add_argument('-e', '--evalue', metavar = 'e-value_cutoff', action = 'store', required = False, default = '1e-10', help = "The evalue cutoff for blast. Default: 1xe-10)")
 parser.add_argument('-db', '--spdb', metavar = 'swissprot_db', action='store', required=False, help = "The path to and prefix of your swissprot blast database - can be compiled into blastdb OR in FASTA format.")
 parser.add_argument('--cpus', metavar = 'cores', action = 'store', required = False, default = 1, help = "The number of cores available for blastp to use.")
@@ -65,7 +65,7 @@ if to_do[0] is '1':
     aug_sp = args.augustus_sp
 
 # make sure that augustus is available in path
-    if settings.AUGUSTUS_CONFIG_PATH is not None:
+    if settings.AUGUSTUS_CONFIG_PATH != "":
         AUGUSTUS_CONFIG_PATH = settings.AUGUSTUS_CONFIG_PATH
     else:
         try:
