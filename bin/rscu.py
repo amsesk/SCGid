@@ -206,7 +206,7 @@ if args.mode == 'blastn':
         subprocessP(blastn_cmd, logger)
     
         ## move blast.out to default location if made successfully in temp
-        shutil.copyfile(prefix+'.nt.blast.out','../'+prefix+".nt.blast.out")
+        #shutil.copyfile(prefix+'.nt.blast.out','../'+prefix+".nt.blast.out")
     
     else:
         logger.info("Using previously created blast output file, "+blastout)

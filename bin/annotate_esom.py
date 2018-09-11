@@ -112,8 +112,7 @@ if mode == 'blastn':
         outfmt = "6 qseqid sseqid pident qlen length mismatch gapope evalue bitscore staxids"
         blastn_cmd = ["blastn","-query",nucl_path,"-max_target_seqs","1","-num_threads",args.cpus,"-db","nt","-outfmt", outfmt, "-evalue",args.evalue,"-out",prefix+".nt.blast.out"]
         logger.info(' '.join(blastn_cmd))
-        p = subprocessP(blastn_cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
-        out,err = p.communicate()
+        p = subprocessP(blastn_cmd)
 
     for key,best in best_blast_hit(blastout).iteritems():
         with open(blastout+".best",'a') as f:
