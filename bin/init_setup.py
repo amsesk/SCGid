@@ -30,7 +30,6 @@ version = "0.1b"
 
 #%% header
 
-#print open("logo.txt").read()
 print """
  ___   ___  ___  ____  ____  
 / __) / __)/ __)(_  _)(  _ \ 
@@ -43,6 +42,11 @@ print "> This script is going to help you get scgid ready to run by defining som
 if os.getcwd() != scgid_bin:
     os.chdir(scgid_bin)
     print "> Navigating to scgid bin directory at %s ...\n" % (scgid_bin)
+
+#%% Check python version
+if sys.version[0] != '2':
+    print "{}ERROR: scgid is only compatible with python 2.x.x. Exitting...{}".format(output_cols['RED'],output_cols['RESET'])
+    sys.exit(1)
 
 #%% check python2.7 dependencies
 print "> Scanning scgid python2.7 dependencies now..."
@@ -224,7 +228,13 @@ if settings['taxonomy_all_tab'] is not None:
         if entry.lower() not in ['y','n']:
             continue
         if entry.lower() == 'y':
+            '''
+            try_build = subprocess.call([sys.executable, os.path.join(scgid_bin,'build_taxdb.py'), '-db', settings['path_to_spdb'], '-t', settings['taxonomy_all_tab'], '-o', '%s.taxdb' % (settings['path_to_spdb'])])
+            if try_build != 0: ## STOP if buildtaxdb errors out
+                sys.exit(1)
+            '''
             subprocess.call([sys.executable, os.path.join(scgid_bin,'build_taxdb.py'), '-db', settings['path_to_spdb'], '-t', settings['taxonomy_all_tab'], '-o', '%s.taxdb' % (settings['path_to_spdb'])])
+            
             settings['path_to_taxdb'] = settings['path_to_spdb']+'.taxdb'
             break
         else:
