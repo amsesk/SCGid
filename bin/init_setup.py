@@ -60,6 +60,21 @@ for pkg, check in pydep.iteritems():
         imp.find_module(pkg)
         pydep[pkg] = True
     except:
+        pass
+
+for pkg, check in pydep.iteritems():
+    if not check:
+        print pkg+":\t"+output_cols["RED"]+"[NOT INSTALLED]"+output_cols["RESET"]
+    else:
+        print pkg+":\t"+output_cols["GREEN"]+"[INSTALLED]"+output_cols["RESET"]
+print "-"*24
+rescan = False
+
+for pkg, check in pydep.iteritems():
+    if check:
+        continue
+    else:
+        rescan = True
         while True:
             print "> Python module \'%s\' not installed..." % (pkg)
             entry = raw_input("Try installing %s with conda or pip? If in doubt, try conda first. [conda/pip/no] " %pkg)
@@ -87,15 +102,16 @@ for pkg, check in pydep.iteritems():
                 except:
                     print "> " + output_cols['RED'] + "Something went wrong with automatic installation of %s. Please manually install it." % (pkg)+output_cols['RESET']
                     break
-                
-print "\npython2 Dependences\n"+"-"*24
-for pkg, check in pydep.iteritems():
-    if not check:
-        print pkg+":\t"+output_cols["RED"]+"[NOT INSTALLED]"+output_cols["RESET"]
-    else:
-        print pkg+":\t"+output_cols["GREEN"]+"[INSTALLED]"+output_cols["RESET"]
-print "-"*24
-if not any (pydep.values()):
+if rescan:                
+    print "\n> Re-scanning python2 dependences...\n"+"-"*24
+    for pkg, check in pydep.iteritems():
+        if not check:
+            print pkg+":\t"+output_cols["RED"]+"[NOT INSTALLED]"+output_cols["RESET"]
+        else:
+            print pkg+":\t"+output_cols["GREEN"]+"[INSTALLED]"+output_cols["RESET"]
+    print "-"*24
+
+if not all (pydep.values()):
     print "\n> Finish installing python dependencies and then rerun to continue. Exitting...\n"
     sys.exit(1)
 else:
