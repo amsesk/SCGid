@@ -1,4 +1,5 @@
 **/*.pyc
-bin/settings.py
+bin/settings.py.sav
 .DS_Store
 database/*
+push_scgid_updates_to_github.sh
