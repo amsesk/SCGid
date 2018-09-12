@@ -1,0 +1,8 @@
+**/*.pyc
+bin/settings.py
+test_files/*
+.DS_Store
+database/*
+bin/dep/*
+bin/two_method_consensus.py
+
