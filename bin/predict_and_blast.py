@@ -119,7 +119,6 @@ if to_do[1] is '1':
     ## Make sure the blast database has been created, or create it
     fasta_ext = ['faa','fas','fasta']
     default = '.'.join([path_to_spdb,'phr'])
-    print default
     if os.path.isfile(default):
         logger.info("Blast database detected at "+path_to_spdb)
 
