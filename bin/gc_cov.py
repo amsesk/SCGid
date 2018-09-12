@@ -1,7 +1,6 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 
-# a change
 """
 Created on Fri Dec  1 15:53:11 2017
 
