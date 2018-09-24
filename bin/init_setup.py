@@ -119,7 +119,7 @@ else:
                 
 #%% settings.py ###
 settings = {} # variable: value
-print "> Let's define the locations of your installed third-party dependencies"
+print "> Let's define the locations of some of your installed third-party dependencies"
 
 #%% Locate third-party dependencies and add their paths to settings dict ##
 files_to_find = {
