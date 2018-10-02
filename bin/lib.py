@@ -1263,6 +1263,7 @@ def proc_sam_output_unaligned (lines, pe1, pe2, orph):
                 continue
 #%%
 def parse_spdb_blastout(sp_fasta, blastout, log_inst):
+    path_to_spdb = sp_fasta
     sp_fasta = pkl_fasta_in_out(sp_fasta,seq_type="prot",contig_info=False)
     ids = {}
 
@@ -1291,7 +1292,7 @@ def parse_spdb_blastout(sp_fasta, blastout, log_inst):
                 hit = lib.loc[acc].description
                 output.append("{}\t{}\t{}\t{}".format(contig, acc, hit, evalue))
             except:
-                log_inst.critical("Accession ({}) not found in swissprot-style database, {}. It is likely that you specified a different version of that database than that used to BLAST against.".format(acc, settings.path_to_spdb))
+                log_inst.critical("Accession ({}) not found in swissprot-style database, {}. It is likely that you specified a different version of that database than that used to BLAST against.".format(acc, path_to_spdb))
                 raise ValueError
         
         return output

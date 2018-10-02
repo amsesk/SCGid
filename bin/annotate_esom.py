@@ -186,12 +186,13 @@ if targetexcept is True:
         annot.write(annotation_file_towrite)
     lines_in_annot = annotation_file_towrite.split('\n')
     lines_in_annot_count = len(lines_in_annot)-1
-    print lines_in_annot_count
-    print len(ids)
+    #print lines_in_annot_count
+    #print len(ids)
     in_annot = [x.split('\t')[0] for x in lines_in_annot]
     for key,val in ids.iteritems():
         if key not in in_annot:
-            print key+":"+str(val)
+            pass
+            #print key+":"+str(val)
     if lines_in_annot_count < len(ids):
         logger.warning("Some blastn-annotated contigs will be makred as 'Unclassified' because your target-exception groups are not completely inclusive. Did you mean to do this?" )
     elif lines_in_annot_count > len(ids):
@@ -217,7 +218,7 @@ subprocessC(arguments)
 
 to_add="%0\tUnclassified (0)\t255\t255\t255\n"
 for pair_num, val in cls_legend.iteritems():
-    print pair_num+1
+    #print pair_num+1
     to_add+="%"+str(pair_num+1)+"\t"+val[0]+"("+str(pair_num+1)+")"+"\t"+"\t".join(map(str,random_color()))+"\n"
 
 #read pertinent things from the file
