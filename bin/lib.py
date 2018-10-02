@@ -166,7 +166,7 @@ def pkl_fasta_in_out (org_fname, seq_type = "nucl", contig_info = True):
         with open(pkl_fname,'w') as output:
             for seq in objlist:
                 pickle.dump(seq, output, pickle.HIGHEST_PROTOCOL)
-    return objlist`:w
+    return objlist
 
 
 #%%
