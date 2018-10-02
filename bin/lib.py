@@ -151,9 +151,10 @@ def pickle_loader (pklFile):
             pass
 #%%
 def pkl_fasta_in_out (org_fname, seq_type = "nucl", contig_info = True):
-    pkl_fname = org_fname.split("/")[-1]+'.pkl'
+    #pkl_fname = org_fname.split("/")[-1]+'.pkl'
+    pkl_fname = "{}.pkl".format(org_fname)
     #if os.path.isfile(os.getcwd()+"/"+pkl_fname):
-    if os.path.isfile(os.getcwd()+"/"+pkl_fname) and os.stat(org_fname).st_ctime < os.stat(os.getcwd()+"/"+pkl_fname).st_ctime:
+    if os.path.isfile(pkl_fname) and os.stat(org_fname).st_ctime < os.stat(pkl_fname).st_ctime:
         #print "LOADING FROM PKL"
         objlist = []
         with open(pkl_fname,'r') as input:
@@ -165,7 +166,8 @@ def pkl_fasta_in_out (org_fname, seq_type = "nucl", contig_info = True):
         with open(pkl_fname,'w') as output:
             for seq in objlist:
                 pickle.dump(seq, output, pickle.HIGHEST_PROTOCOL)
-    return objlist
+    return objlist`:w
+
 
 #%%
 def ow_last_stdout(string):
@@ -1263,7 +1265,7 @@ def proc_sam_output_unaligned (lines, pe1, pe2, orph):
                 continue
 #%%
 def parse_spdb_blastout(sp_fasta, blastout, log_inst):
-    path_to_spdb = sp_fasta
+    path_to_spdb = os.path.abspath(sp_fasta)
     sp_fasta = pkl_fasta_in_out(sp_fasta,seq_type="prot",contig_info=False)
     ids = {}
 
