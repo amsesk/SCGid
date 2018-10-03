@@ -771,15 +771,15 @@ def translate_dna_to_protein (string):
     return out
 
 #%%
-def best_blast_hit (tabular):
+def best_blast_hit (tabular, bitcol=7):
     best = {}
     for line in open(tabular).readlines():
         spl = line.split("\t")
         spl = map(str.strip,spl)
         label = spl[0]
-        bit = float(spl[7])
+        bit = float(spl[bitcol])
         if label in best.keys():
-            if best[label][7] < bit:
+            if best[label][bitcol] < bit:
                 best[label] = spl
         else:
             best[label] = spl
@@ -1264,7 +1264,7 @@ def proc_sam_output_unaligned (lines, pe1, pe2, orph):
             else:
                 continue
 #%%
-def parse_spdb_blastout(sp_fasta, blastout, log_inst):
+def parse_spdb_blastout(sp_fasta, blastout, log_inst=None):
     path_to_spdb = os.path.abspath(sp_fasta)
     sp_fasta = pkl_fasta_in_out(sp_fasta,seq_type="prot",contig_info=False)
     ids = {}
@@ -1294,8 +1294,11 @@ def parse_spdb_blastout(sp_fasta, blastout, log_inst):
                 hit = lib.loc[acc].description
                 output.append("{}\t{}\t{}\t{}".format(contig, acc, hit, evalue))
             except:
-                log_inst.critical("Accession ({}) not found in swissprot-style database, {}. It is likely that you specified a different version of that database than that used to BLAST against.".format(acc, path_to_spdb))
-                raise ValueError
+                if log_inst is not None:
+                    log_inst.critical("Accession ({}) not found in swissprot-style database, {}. It is likely that you specified a different version of that database than that used to BLAST against.".format(acc, path_to_spdb))
+                    raise ValueError
+                else:
+                    print "ERROR"
         
         return output
  

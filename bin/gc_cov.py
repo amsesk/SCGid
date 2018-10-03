@@ -173,7 +173,7 @@ else:
 
 # get best blast hit
 output = []
-for key,best in best_blast_hit(blastout).iteritems():
+for key,best in best_blast_hit(blastout, bitcol=11).iteritems():
     blastout_bestout = prefix+'.spdb.blast.out.best'
     output.append('\t'.join(best))
 
