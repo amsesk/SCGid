@@ -779,7 +779,7 @@ def best_blast_hit (tabular, bitcol=7):
         label = spl[0]
         bit = float(spl[bitcol])
         if label in best.keys():
-            if best[label][bitcol] < bit:
+            if float(best[label][bitcol]) < bit:
                 best[label] = spl
         else:
             best[label] = spl
