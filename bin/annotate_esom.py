@@ -203,7 +203,7 @@ logger.info("ESOM target_exception-based annotation file written to "+os.path.jo
 ## print tetramer freqs again to generate annotated .cls file for viewing #
 if not os.path.isfile(file_prefix):
     arguments = ['cp',nucl_path,file_prefix]
-    subprocessP(arguments)
+    subprocessP(arguments, logger)
 
 if os.path.isfile(os.path.join(os.getcwd(),file_prefix+'.annotation')):
     os.remove(os.path.join(os.getcwd(),file_prefix+'.annotation'))
