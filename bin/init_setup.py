@@ -211,6 +211,7 @@ while True:
 dwnld_link = "https://www.uniprot.org/taxonomy/?query=*&format=tab"
 date = time.strftime("%m%d%y")
 settings['taxonomy_all_tab'] = None
+settings['path_to_taxdb'] = None
 
 print "\n> scgid requires a copy of the swissprot taxonomy database"
 entry = raw_input("Download the current version of the swissprot taxonomy database? [y/n] ")
@@ -254,7 +255,6 @@ if settings['taxonomy_all_tab'] is not None:
             settings['path_to_taxdb'] = settings['path_to_spdb']+'.taxdb'
             break
         else:
-            settings['path_to_taxdb'] = None
             print "> You'll have to build the taxonomy datbase manually before using scgid. Try `scgid buildtaxdb [args...]"
             break
 #%% write settings.py
