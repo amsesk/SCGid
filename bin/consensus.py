@@ -167,9 +167,9 @@ for meth in kicked_by:
 logger.info(len(acc_by['rscu']))
 logger.info(len(acc_by['blob']))
 logger.info(len(acc_by['esom']))
-logger.info(len(kicked_by['rscu']))
-logger.info(len(kicked_by['blob']))
-logger.info(len(kicked_by['esom']))
+#logger.info(len(kicked_by['rscu']))
+#logger.info(len(kicked_by['blob']))
+#logger.info(len(kicked_by['esom']))
 
 #cons_labels = get_attribute_list(to_consensus,'label')
 
