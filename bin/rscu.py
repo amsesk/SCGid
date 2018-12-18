@@ -38,9 +38,6 @@ from sequence import *
 from ete3 import Tree, TreeStyle, NodeStyle, NCBITaxa
 from lib import *
 from infotable import infotable
-#from matplotlib import pyplot
-#os.environ['QT_QPA_PLATFORM']='offscreen'
-
 
 #%%
 
@@ -241,7 +238,7 @@ nucl = pkl_fasta_in_out (nucl_path)
 logger.info("Nucleotide FASTA read-in successfully.")
 
 cds_cat = extract_cds_gff3(gff3, nucl)
-cds_cat_large = remove_small_sequences(cds_cat, 1500)
+cds_cat_large = remove_small_sequences(cds_cat, 3000)
 
 with open('scgid_concat_large.fasta','w') as f:
     for cat in cds_cat_large:
