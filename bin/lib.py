@@ -239,6 +239,7 @@ def calc_gc_window_1tailed (info_table, target_taxa, inc_factor = 0.01, plot = F
     points["tradeoffs"] = tradeoffs
 
     num_maxes = [i for i in points["tradeoffs"] if i == max(points["tradeoffs"])]
+    
     if len(num_maxes) > 1:
         ## get max tradeoff at highest step (ie for asymtotic tradeoff curves)
         idx = 0
