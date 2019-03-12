@@ -75,6 +75,8 @@ except:
     os.mkdir(args.prefix+'_scgid_output')
     os.chdir(args.prefix+'_scgid_output')
 
+logger = start_logging('consensus', sys.argv)
+
 #generate list of scaffolds to ad hoc exclude based on swissprot taxonomy
 exclude_by_tax = []
 if args.exclude_annot_nt:
@@ -86,8 +88,6 @@ try:
 except:
     os.mkdir('consensus')
     os.chdir('consensus')
-
-logger = start_logging('consensus', sys.argv)
 
 all_contigs = pkl_fasta_in_out(nucl_path)
 logger.info("Assembly FASTA read-in successfully.")

@@ -554,6 +554,8 @@ def generate_windows(info_table, target_taxa, target):
 
     windows = []
 
+    noCovnoGc = {}
+
     gc1noCov = {}
     gc2noCov = {}
     cov1noGc = {}
@@ -595,6 +597,9 @@ def generate_windows(info_table, target_taxa, target):
     cov2gc1['cov'] = cov2
     cov2gc2['cov'] = cov2
 
+    noCovnoGc['cov'] = get_numeric_range(info_table.coverage)
+    noCovnoGc['gc'] = get_numeric_range(info_table.gc)
+
     gc1 = get_window_table(info_table,gc1,'gc')
     gc2 = get_window_table(info_table,gc2,'gc')
     cov1 = get_window_table(info_table,cov1,'coverage')
@@ -628,6 +633,7 @@ def generate_windows(info_table, target_taxa, target):
     windows.append(gc2noCov)
     windows.append(cov1noGc)
     windows.append(cov2noGc)
+    windows.append(noCovnoGc)
 
     return windows
 #%%

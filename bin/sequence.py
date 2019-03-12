@@ -95,6 +95,15 @@ def readFastq(infile):
         #p+=1
     return numpy.mean(lengths)
 
+def getFastaHeaders (fasta):
+    out = list()
+    with open(fasta,'r') as f:
+        for line in f:
+            if line.startswith(">"):
+               line = line.replace(">","",1)
+               out.append(line.strip())
+    return out
+
 def readFasta (fasta, seq_type = "nucl", contig_info = False):
     all_seqs = []
     header_pattern = re.compile("^>(.+)")

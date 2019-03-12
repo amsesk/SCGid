@@ -19,8 +19,8 @@ choices = c(rgb(0,0,1,alpha=0.6),rgb(0.54,0,0,alpha=0.6))
 tigInfo$color = "black"
 try(tigInfo[tigInfo$evalue == 0.0,]$evalue<-2.225074e-308, silent = TRUE)
 tigInfo$log_evalue<-log(tigInfo$evalue)
-tigInfo[tigInfo$parse_lineage == "target",]$color<-choices[1]
-tigInfo[tigInfo$parse_lineage == "nontarget",]$color<-choices[2]
+try(tigInfo[tigInfo$parse_lineage == "target",]$color<-choices[1], silent = TRUE)
+try(tigInfo[tigInfo$parse_lineage == "nontarget",]$color<-choices[2], silent = TRUE)
 unclass$color<-rgb(0,0,0,alpha=0.45)
 rect_color = rgb(0,1,0,alpha=0.5)
 xlim = c(0,1050)

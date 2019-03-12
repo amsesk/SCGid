@@ -125,6 +125,14 @@ elif sys.argv[1] == "purify":
     arguments.insert(0,py)
     subprocess.call(arguments)
 
+elif sys.argv[1] == "qualcheck":
+    arguments = sys.argv[2:]
+    call = os.path.join(bin_dir,'qc.py')
+    arguments.insert(0,call)
+    py = sys.executable
+    arguments.insert(0,py)
+    subprocess.call(arguments)
+
 else:
     print "\nERROR: Bad module selection. Printing help screen...\n"
     print help_msg

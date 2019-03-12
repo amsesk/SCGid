@@ -8,8 +8,9 @@ class infotable(object):
             empty_infotable[col] = []
         
         self.df = pd.DataFrame(empty_infotable, columns=self.colnames)
-        self.tar = target_taxa['target']
-        self.ex = target_taxa['exception']
+        if target_taxa is not None:
+            self.tar = target_taxa['target']
+            self.ex = target_taxa['exception']
         self.keep = None
         self.dump = None
     

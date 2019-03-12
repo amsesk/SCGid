@@ -334,7 +334,8 @@ names = ["gc1cov1","gc1cov2",
          "cov1gc1","cov1gc2",
          "cov2gc1","cov2gc2",
          "gc1noCov","gc2noCov",
-         "cov1noGc","cov2noGc"]
+         "cov1noGc","cov2noGc",
+         "noCovnoGc"]
 
 window_stats = {
         'names': [],
@@ -358,7 +359,13 @@ for win in windows:
     t = float(window_table.loc[window_table['parse_lineage'] == 'target'].shape[0])
     all_t = float(info_table.df.loc[info_table.df['parse_lineage'] == 'target'].shape[0])
     nt = float(window_table.shape[0]-t)
-    all_nt = float(info_table.df.shape[0]-all_t)
+    
+    ## Case where there is no nontarget in the plot
+    if nt == 0.0:
+        all_nt = 1.0
+    else:
+         all_nt = float(info_table.df.shape[0]-all_t)
+
     disp_gc = str(round(win['gc'][0],4))+'-'+str(round(win['gc'][1],4))
     disp_cov = str(round(win['cov'][0],4))+'-'+str(round(win['cov'][1],4))
     gc_window_width = win['gc'][1] - win['gc'][0]
@@ -387,7 +394,8 @@ best_window = None
 
 while keep_going is True:
     if len(window_stats['window']) == 0:
-        raise StopIteration("No best window at stringency threshold =",stringency_thresh," - raise it or add more options to target_taxa.")
+        logger.critical("No best window at stringency threshold =",stringency_thresh," - raise it or add more options to target_taxa.")
+        sys.exit(-5)
     best_window_idx = window_stats['tp'].index(max(window_stats['tp']))
     if window_stats['ntp'][best_window_idx] <= stringency_thresh:
         keep_going = False

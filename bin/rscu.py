@@ -383,7 +383,7 @@ best = [] #"best" here means worth looking into, although it is going to include
 for n in annotated_tree.iter_descendants():
     if n.is_leaf():
         pass
-    if len(n.get_leaves()) > 1:
+    if len(n.get_leaves()) > 30:
         count_t = float(len([l for l in n if l.annotation == "target"]))
         count_nt = float(len([l for l in n if l.annotation == "nontarget"]))
         count_unclass = float(len([l for l in n if l.annotation == "unclassified"]))
@@ -397,6 +397,9 @@ for n in annotated_tree.iter_descendants():
             n.add_feature("measure",measure)
             n.add_feature("leaves", len(n.get_leaves()))
             best.append(n)
+    else:
+        logger.critical("Tree too small.")
+        sys.exit(7)
 #order trees in order of best measure
 #best = [n for n in best if n.measure >= 0.90]
 best = sorted(best, key=lambda x: x.measure, reverse=True)
