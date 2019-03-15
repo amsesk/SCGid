@@ -24,22 +24,38 @@ CURSOR_UP_ONE = '\x1b[1A'
 output_cols = {
         'GREEN':'\033[0;32m',
         'RED':'\033[0;31m',
-        'RESET':'\033[0m'       
+        'RESET':'\033[0m'
         }
 
 ### GENERAL FUNCTIONS FOR ALL MODULES ###
 #%%
 def get_run_opts ():
     opts_fname = "scgid.opts"
-    opts = {}
     if not os.path.isfile(opts_fname):
         with open(opts_fname, 'w') as f:
-            f.write("run_wd = "+os.getcwd()+"\n")        
+            f.write("run_wd = "+os.getcwd()+"\n")
+
+    ## Read opts in from file
+    opts = read_run_opts(opts_fname)
+
+    ### Verify options that need verification ##
+
+    ## run_wd
+    if not os.path.isdir(opts['run_wd']):
+        new_wd = os.getcwd()
+        replace_line(opts_fname, "run_wd = {}".format(opts['run_wd']), "run_wd = {}".format(new_wd))
+        print "[[ Warning ]] Run working directory specified in option file does not exist. Permanently resetting option to current directory, {}".format(new_wd)
+        opts['run_wd'] = new_wd
+
+    ## Done ##
+    return opts
+def read_run_opts(opts_fname):
+    opts = {}
     with open(opts_fname, 'r') as f:
         for o in f.readlines():
             spl = map(str.strip, o.split("="))
             opts[spl[0]] = spl[1]
-        return opts
+    return opts
 
 #%%
 class bcolors:
@@ -71,12 +87,12 @@ class color_changing_formatter(logging.Formatter):
         return result
 
 #%%
-def logger1(run_wd, module):
-    logger = logging.getLogger()
+def logger1(logfile, module):
+    logger = logging.getLogger('mainF')
     logger.setLevel(logging.INFO)
     ch = logging.StreamHandler()
     ch.setLevel(logging.INFO)
-    fh = logging.FileHandler(os.path.join(run_wd,'scgid.log'))
+    fh = logging.FileHandler(logfile)
     fh.setLevel(logging.INFO)
     ch_formatter = color_changing_formatter()
     tolog_formatter = logging.Formatter('[%(asctime)s]['+module+'] %(message)s','%y-%m-%d @ %H:%M:%S')
@@ -84,18 +100,53 @@ def logger1(run_wd, module):
     fh.setFormatter(tolog_formatter)
     logger.addHandler(ch)
     logger.addHandler(fh)
-    
-    return logger    
-#%%
-def start_logging(module, args):
-    #from log import logger
-    run_opts = get_run_opts()
-    logger = logger1(run_opts['run_wd'], module)
-    now = strftime("%B %d, %Y at %H:%M:%S", localtime())
-    logger.info("XXXXXXXXXXXXXXXX NEW CALL TO <SCGID "+module.upper()+"> ON "+now.upper()+" XXXXXXXXXXXXXXXX")
-    logger.info(' '.join(["scgid",module,' '.join(args[1:])]))
     return logger
-                
+
+def basic_logger(logfile):
+    logger = logging.getLogger('basic')
+    logger.setLevel(logging.INFO)
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.INFO)
+    fh = logging.FileHandler(logfile)
+    fh.setLevel(logging.INFO)
+    logger.addHandler(ch)
+    logger.addHandler(fh)
+    return logger
+
+#%%
+def write_run_opts(run_opts):
+    stamp = strftime("%m/%d/%y, %H:%M:%S", localtime())
+    optf = 'scgid.{}.opts'.format(run_opts['module'])
+    with open(optf, 'w') as f:
+        f.write('RUN DATE & TIME: {}\n'.format(stamp))
+        for arg,val in run_opts.iteritems():
+            f.write('{}={}\n'.format(arg,val))
+
+def start_logging(module, parsed_args, raw_args):
+    #run_opts = get_run_opts()
+    run_opts = {}
+    run_opts['run_wd'] = os.getcwd()
+    run_opts['module'] = module
+    run_opts['call'] = ' '.join(["scgid",module,' '.join(raw_args[1:])])
+    for arg in vars(parsed_args):
+        val = getattr(parsed_args, arg)
+        run_opts[arg] = val
+    write_run_opts(run_opts)
+    logfile = os.path.join(run_opts['run_wd'],'scgid.log')
+    logger = logger1(logfile, module)
+    blogger = basic_logger(logfile)
+    now = strftime("%B %d, %Y at %H:%M:%S", localtime())
+    blogger.info("XXXXXXXXXXXXXXXX NEW CALL TO <SCGID "+module.upper()+"> ON "+now.upper()+" XXXXXXXXXXXXXXXX")
+    blogger.info("\nORIGINAL SCGID CALL\n{}\n{}".format('-'*30, run_opts['call']))
+    blogger.info("\nRUN OPTIONS\n{}".format('-'*30))
+    for arg, val in run_opts.iteritems():
+        if val is None:
+            val = "<not specified>"
+        blogger.info("() {:<15}{:<15}".format(arg, val))
+    blogger.info("")
+    #return logger
+    return [logger,blogger]
+
 #%%
 class spinner():
     def __init__(self):
@@ -233,13 +284,12 @@ def calc_gc_window_1tailed (info_table, target_taxa, inc_factor = 0.01, plot = F
         points["nontarget"].append(nontarget_in_window/all_nontarget)
         increment += target_std_gc*inc_factor
 
-
     diff = map(operator.sub,points["target"],points["nontarget"])
     tradeoffs = map(operator.mul,points["target"],diff)
     points["tradeoffs"] = tradeoffs
 
     num_maxes = [i for i in points["tradeoffs"] if i == max(points["tradeoffs"])]
-    
+
     if len(num_maxes) > 1:
         ## get max tradeoff at highest step (ie for asymtotic tradeoff curves)
         idx = 0
@@ -452,6 +502,7 @@ def calc_coverage_window_2tailed (info_table, target_taxa, inc_factor = 0.01, pl
         points["neg"]["target"].append(target_in_window/all_target)
         points["neg"]["nontarget"].append(nontarget_in_window/all_nontarget)
         increment += target_std_cov*inc_factor
+        #print target_mean_cov-increment, points["neg"]["target"][-1]
 
     ### Reset increment ###
     increment = float(target_std_cov)*inc_factor
@@ -573,8 +624,8 @@ def generate_windows(info_table, target_taxa, target):
 
     gc1 = calc_gc_window_1tailed (info_table,target_taxa,inc_factor=0.01,plot=False)
     gc2 = calc_gc_window_2tailed (info_table,target_taxa,inc_factor=0.01,plot=False)
-    cov1 = calc_coverage_window_1tailed(info_table,target_taxa,inc_factor=0.001,plot=False)
-    cov2 = calc_coverage_window_2tailed(info_table,target_taxa,inc_factor=0.001,plot=False)
+    cov1 = calc_coverage_window_1tailed(info_table,target_taxa,inc_factor=0.01,plot=False)
+    cov2 = calc_coverage_window_2tailed(info_table,target_taxa,inc_factor=0.01,plot=False)
     #status.task("(4/12)...")
 
     gc1cov1['gc'] = gc1
@@ -856,36 +907,36 @@ def annotate_tips_prot (tree, target_taxa, info_table):
     tar["hz_line_color"] = "blue"
     tar["hz_line_width"] = 25
     tar["shape"] = "circle"
-    
+
     ntar = NodeStyle()
     ntar["vt_line_color"] = "red"
     ntar["hz_line_color"] = "red"
     ntar["hz_line_width"] = 25
     ntar["shape"] = "circle"
-    
+
     no_class = NodeStyle()
     no_class["vt_line_color"] = "black"
     no_class["hz_line_color"] = "black"
     no_class["shape"] = "circle"
     no_class["hz_line_width"] = 25
-    
+
     info_table.decide_taxonomy()
     '''
     #Reformat info table for tip annotation
     grouped = info_table.groupby('contig')
-    
+
     reformed = grouped.agg({'pid': lambda x: ','.join(x),
                             'evalue': lambda x: ','.join(str(e) for e in x),
                             'parse_lineage': lambda x: ','.join(x)})
-    
+
     reformed.parse_lineage = reformed.parse_lineage.apply(str.split,args=',')
     reformed.pid = reformed.pid.apply(str.split,args=',')
     reformed.evalue = reformed.evalue.apply(str.split,args=',')
     reformed = reformed.reset_index()
-    
+
     to_add = []
     to_exclude = []
-    
+
     for i in reformed.itertuples():
         #i[0] = index, i[1] = contig, i[2] = pid, i[3] = evalue, i[4] parsed_lineage_lists
         num_t = i.parse_lineage.count('target')
@@ -919,14 +970,14 @@ def annotate_tips_prot (tree, target_taxa, info_table):
             elif n.name in info_table.dump:
                 n.annotation = "nontarget"
                 n.set_style(ntar)
-                
+
             else:
                 n.set_style(no_class)
     #sys.exit()
     return tree
-            
-    
-    
+
+
+
 def annotate_tips(tree, target_taxa, path_to_tids):
 
     ## tip styling by annotation ##
@@ -1123,7 +1174,7 @@ def subprocessC (args):
 #%%
 def subprocessP (args, log_inst):
     p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    out,err = p.communicate() 
+    out,err = p.communicate()
     if p.returncode != 0:
         log_command_line_errors(err, log_inst)
         sys.exit(1)
@@ -1228,7 +1279,7 @@ def file_yield_lines(large_file):
     with open(large_file, 'r') as lf:
         for line in lf:
             yield line
-            
+
 def spdb_grab_os(spdb_line_gen): ## takes a per_line generator as arg (like file_yield_lines)
     pattern = re.compile("^>.+{}".format(SPDB_OS_REGEXP_PATTERN))
     all_sp_os = []
@@ -1288,7 +1339,7 @@ def parse_spdb_blastout(sp_fasta, blastout, log_inst=None):
 
     lib = pd.DataFrame(ldict)
     lib = lib.set_index('accession')
-    
+
     output = []
     with open(blastout, 'r') as b:
         for line in b:
@@ -1296,7 +1347,7 @@ def parse_spdb_blastout(sp_fasta, blastout, log_inst=None):
             acc = line.split("\t")[1]
             contig = line.split("\t")[0]
             evalue = line.split("\t")[10]
-        
+
             try:
                 hit = lib.loc[acc].description
                 output.append("{}\t{}\t{}\t{}".format(contig, acc, hit, evalue))
@@ -1306,7 +1357,7 @@ def parse_spdb_blastout(sp_fasta, blastout, log_inst=None):
                     raise ValueError
                 else:
                     print "ERROR"
-        
+
         return output
- 
+
 
