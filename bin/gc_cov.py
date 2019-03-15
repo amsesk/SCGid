@@ -399,7 +399,7 @@ for win in windows:
             })
         f.write(out)
     ## print window and data to pdf
-        print_plot_cmd = [settings.path_to_Rscript,'--vanilla',os.path.join(bin_dir,'gc_cov.plot.R'),prefix+'_info_table.tsv',prefix+'_unclassified_info_table.tsv', ','.join(map(str,win['gc'])), ','.join(map(str,win['cov'])), os.path.join("windows","{}.{}.pdf".format(prefix, names[i]))]
+        print_plot_cmd = [os.path.join(settings.path_to_Rscript,"Rscript"),'--vanilla',os.path.join(bin_dir,'gc_cov.plot.R'),prefix+'_info_table.tsv',prefix+'_unclassified_info_table.tsv', ','.join(map(str,win['gc'])), ','.join(map(str,win['cov'])), os.path.join("windows","{}.{}.pdf".format(prefix, names[i]))]
         #logger.info(" ".join(print_plot_cmd))
         out = subprocessP(print_plot_cmd, logger)
 
