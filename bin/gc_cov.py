@@ -54,6 +54,10 @@ pkg_home = os.path.dirname(bin_dir)
 path_to_this_file = inspect.getfile(inspect.currentframe())
 this_module = "gc-cov"
 
+args.nucl = os.path.abspath(args.nucl)
+args.taxdb = os.path.abspath(args.taxdb)
+args.spdb = os.path.abspath(args.spdb)
+
 nucl_path = os.path.abspath(args.nucl)
 path_to_taxdb = os.path.abspath(args.taxdb)
 path_to_spdb = os.path.abspath(args.spdb)
@@ -79,7 +83,11 @@ except:
     os.chdir(args.prefix+'_scgid_output')
 
 # Start logging now that we are in run working directory
-logger = start_logging(this_module, sys.argv)
+#logger = start_logging(this_module, args, sys.argv)
+
+logs = start_logging(this_module, args, sys.argv)
+logger = logs[0]
+blogger = logs[1]
 
 #%% in the absense of -p|--prot, see if a gff3 of predicted proteins was previously produced by rscu.py or there if a fasta is present here
 if prot is None:
@@ -149,12 +157,12 @@ if not blastout_check or not augout_check: #this means we have to predict and/or
     to_do = ['1','1']
     if augout_check:
         to_do[0] = '0'
-        logger.info("Found protein fasta: "+prot+". Skipping augustus...")
+        blogger.info("Updating option `prot` with file found at: "+prot+". Skipping augustus...")
     if blastout_check:
         to_do[1] = '0'
-        logger.info("Found blast output file: "+blastout+". Skipping BLAST...")
+        blogger.info("Updating option `blastout` with file found at: "+blastout+". Skipping BLAST...")
     to_do_arg = ','.join(to_do)
-    
+
     if args.augustus_sp is None:
         args.augustus_sp = "NA"
 
@@ -229,7 +237,7 @@ else:
 
 #### BUILD INFOTABLE ####
 ## (1st) Gather contig and protein information from sequence objects
-ldict = [] 
+ldict = []
 gcs = {}
 covs = {}
 for i in nucl:
@@ -261,11 +269,11 @@ for line in open(blastout).readlines():
     except KeyError:
         logger.warning("'"+sp_os+"' is missing from the taxdb. You probably specified a -t|--taxdb file built from a likely out-of-date swissprot database other than the one you blasted against. Rerun build_taxdb or specify a different taxdb to correct. Lineage set as 'Not_in_taxdb' for this run.")
         lineage = "Not_in_taxdb"
-    
+
     # Can get rid of these once local taxdb is rebuilt
     sp_os = sp_os.replace("'","")
     sp_os = sp_os.replace("#","")
-    
+
 ## (3rd) For each row, make a dictionary and append to ldict list
     newrow = {
             'contig': query,
@@ -322,13 +330,13 @@ logger.info("Protein information table generated and ready to go. Printed to "+o
 logger.info("GC and coverage information on protein-less contigs printed to "+os.path.join(os.getcwd(),prefix+'_unclassified_info_table.tsv'))
 
 ## Get target table (starting means for selection process
-## Generate the selection windows 
+## Generate the selection windows
 target = info_table.df.loc[info_table.df['parse_lineage'] == 'target']
 windows = generate_windows(info_table.df, target_taxa, target)
 
-logger.info("GC-coverage windows successfully generated.")
+logger.info("GC-coverage windows successfully generated. Printing plots to pdf...")
 
-## Pick the best window  
+## Pick the best window
 names = ["gc1cov1","gc1cov2",
          "gc2cov1","gc2cov2",
          "cov1gc1","cov1gc2",
@@ -348,10 +356,16 @@ window_stats = {
 i=0
 #logger.info('\t'.join(['method','p(target)','p(nontarget)','gc_window','cov_window']))
 
+
 with open(prefix+'.windows.all.out','w') as f:
     colnames = '\t'.join(['method','p_target', 'p_nontarget', 'gc_window', 'gc_window_width', 'cov_window', 'cov_window_width'])+'\n'
     f.write(colnames)
 
+    if os.path.isdir('../windows'):
+        shutil.rmtree('../windows')
+    os.mkdir('windows')
+
+ldict = []
 for win in windows:
     gc_window_table = get_window_table(info_table.df, win['gc'],"gc")
     window_table = get_window_table(gc_window_table, win['cov'],"coverage")
@@ -359,7 +373,7 @@ for win in windows:
     t = float(window_table.loc[window_table['parse_lineage'] == 'target'].shape[0])
     all_t = float(info_table.df.loc[info_table.df['parse_lineage'] == 'target'].shape[0])
     nt = float(window_table.shape[0]-t)
-    
+
     ## Case where there is no nontarget in the plot
     if nt == 0.0:
         all_nt = 1.0
@@ -374,7 +388,21 @@ for win in windows:
     with open(prefix+'.windows.all.out','a') as f:
         #out = row+'\t'+'\t'.join(map(str,values))+'\n'
         out = '\t'.join([names[i],str(round(t/all_t,4)), str(round(nt/all_nt,4)), disp_gc, str(gc_window_width), disp_cov, str(cov_window_width)])+'\n'
+        ldict.append({
+            'name': names[i],
+            'ptarget': round(t/all_t,4),
+            'pnontarget': round(nt/all_nt,4),
+            'gc_range': disp_gc,
+            'gc_width': round(gc_window_width,4),
+            'cov_range': disp_cov,
+            'cov_width': round(cov_window_width,4)
+            })
         f.write(out)
+    ## print window and data to pdf
+        print_plot_cmd = [settings.path_to_Rscript,'--vanilla',os.path.join(bin_dir,'gc_cov.plot.R'),prefix+'_info_table.tsv',prefix+'_unclassified_info_table.tsv', ','.join(map(str,win['gc'])), ','.join(map(str,win['cov'])), os.path.join("windows","{}.{}.pdf".format(prefix, names[i]))]
+        #logger.info(" ".join(print_plot_cmd))
+        out = subprocessP(print_plot_cmd, logger)
+
 
     window_stats['names'].append(names[i])
     window_stats['tp'].append(t/all_t)
@@ -384,7 +412,13 @@ for win in windows:
     window_stats['cov_width'].append(cov_window_width)
     i+=1
 
+#print ldict
+window_frame = pd.DataFrame(ldict, columns=ldict[0].keys())
+#print window_frame.head
 logger.info("Information on all windows printed to "+os.getcwd()+"/"+prefix+".windows.all.out")
+
+row = "{:<10}" * 3 + "{:<15}" + "{:<10}" + "{:<20}" + "{:<10}"
+blogger.info("POTENTIAL SELECTION WINDOWS\n{}".format("-"*30))
 
 
 ## Note that this does not account for multiple maxima yet
@@ -394,7 +428,7 @@ best_window = None
 
 while keep_going is True:
     if len(window_stats['window']) == 0:
-        logger.critical("No best window at stringency threshold =",stringency_thresh," - raise it or add more options to target_taxa.")
+        logger.critical("No best window at stringency={}, raise it or add more options to target_taxa.".format(stringency_thresh))
         sys.exit(-5)
     best_window_idx = window_stats['tp'].index(max(window_stats['tp']))
     if window_stats['ntp'][best_window_idx] <= stringency_thresh:
@@ -410,10 +444,9 @@ while keep_going is True:
                                     ntp=window_stats['ntp'][best_window_idx])
 
         #print gc-cov plot and draw window lines
-        print_plot_cmd = ['Rscript','--vanilla',os.path.join(bin_dir,'gc_cov.plot.R'),prefix+'_info_table.tsv',prefix+'_unclassified_info_table.tsv',str(window_stats['window'][best_window_idx]['gc']),str(window_stats['window'][best_window_idx]['cov']),prefix+"_gc_coverage_plots.pdf"]
-        logger.info(" ".join(print_plot_cmd))
-        out = subprocessP(print_plot_cmd, logger)
-
+        #print_plot_cmd = [settings.path_to_Rscript,'--vanilla',os.path.join(bin_dir,'gc_cov.plot.R'),prefix+'_info_table.tsv',prefix+'_unclassified_info_table.tsv',str(window_stats['window'][best_window_idx]['gc']),str(window_stats['window'][best_window_idx]['cov']),prefix+"_gc_coverage_plots.pdf"]
+        #logger.info(" ".join(print_plot_cmd))
+        #out = subprocessP(print_plot_cmd, logger)
     else:
         window_stats['names'].pop(best_window_idx)
         window_stats['tp'].pop(best_window_idx)
@@ -468,9 +501,6 @@ logger.info("Draft genome is comprised of "+str(genome_size)+" nucelotides on "+
 
 ## If you've gotten here, then everything should have worked, move everything from temp to ../ and change dir and delete temp
 for f in os.listdir('.'):
-    os.rename(f,"../"+f)
+    shutil.move(f, "../{}".format(f))
 os.chdir("../")
 os.rmdir("temp")
-
-
-
