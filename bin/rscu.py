@@ -86,9 +86,11 @@ try:
 except:
     os.mkdir(args.prefix+'_scgid_output')
     os.chdir(args.prefix+'_scgid_output')
-    
+
 # Start logging now that we are in run working directory
-logger = start_logging('codons',sys.argv)
+logs = start_logging('codons',args, sys.argv)
+logger = logs[0]
+blogger = logs[1]
 
 #%%
 logger.info("Starting RSCU-based contig selection process.")
@@ -201,10 +203,10 @@ if args.mode == 'blastn':
         blastn_cmd = ["blastn","-query",nucl_path,"-max_target_seqs","1","-num_threads",args.cpus,"-db","nt","-outfmt", outfmt, "-evalue",args.evalue,"-out",blastout]
         logger.info(' '.join(blastn_cmd))
         subprocessP(blastn_cmd, logger)
-    
+
         ## move blast.out to default location if made successfully in temp
         #shutil.copyfile(prefix+'.nt.blast.out','../'+prefix+".nt.blast.out")
-    
+
     else:
         logger.info("Using previously created blast output file, "+blastout)
 
@@ -237,13 +239,18 @@ nucl = pkl_fasta_in_out (nucl_path)
 
 logger.info("Nucleotide FASTA read-in successfully.")
 
+minsize = 3000
 cds_cat = extract_cds_gff3(gff3, nucl)
-cds_cat_large = remove_small_sequences(cds_cat, 3000)
+cds_cat_large = remove_small_sequences(cds_cat, minsize)
+
+if len(cds_cat_large) < 30:
+    logger.critical("Less than 30 CDS concatenates available for analysis. Exitting...")
+    sys.exit(8)
 
 with open('scgid_concat_large.fasta','w') as f:
     for cat in cds_cat_large:
         f.write(cat.outFasta()+"\n")
-logger.info("Wrote large CDS concatenates (>3000bp) to "+os.path.join(os.getcwd(),prefix+"_concat_large.fasta"))
+logger.info("Wrote large CDS concatenates (>{}bp) to {}".format(minsize, os.path.join(os.getcwd(),prefix+"_concat_large.fasta")))
 
 #%% Count the codons in each CDS concatenate and put this information into a nested dictionary (a dictionary of dictionaries of contig codon counts)
 codon_count_table = {}
@@ -344,9 +351,9 @@ with open(prefix+'_rscu_distmat.csv','w') as f:
 
 cmd = [os.path.join(settings.path_to_Rscript,"Rscript"),"--vanilla",bin_dir+"/ape_nj.R",prefix+"_rscu_distmat.csv",prefix+"_rscu_nj.tre"]
 logger.info(' '.join(cmd))
-p=subprocessP(cmd, logger)
+subprocessP(cmd, logger)
 
-logger.info("Wrote RSCU NJ tree as a Newick string to "+os.getcwd()+"/"+prefix+"_rscu_nj.tre")
+logger.info("Wrote RSCU NJ tree as a Newick string to "+os.path.join(os.getcwd(),"/"+prefix+"_rscu_nj.tre"))
 
 #%% Read the newick string into ETE and then annotate the tips based on blastn
 nj_tree = Tree(prefix+"_rscu_nj.tre")
@@ -398,11 +405,15 @@ for n in annotated_tree.iter_descendants():
             n.add_feature("leaves", len(n.get_leaves()))
             best.append(n)
     else:
-        logger.critical("Tree too small.")
-        sys.exit(7)
+        continue
+
 #order trees in order of best measure
 #best = [n for n in best if n.measure >= 0.90]
 best = sorted(best, key=lambda x: x.measure, reverse=True)
+
+if len(best) ==  0:
+    logger.critical("Tree too small.")
+    sys.exit(7)
 
 #Bin trees based on common edges, or in other words look for sets of trees that aren't just nested within eachother from the list of best trees
 #However, based on how it's written now, if a monophyletic clade is nested within another, some (likely) poorer quality clades will include both and lead to a node ending up in multiple bins, BUT hopefully selection of the best clade from each bin sorts this out
@@ -421,8 +432,8 @@ for p in best:
         bins[i] = [p]
         i+=1
 #Now go through each bin and find the best tree from that bin
-best_trees_by_bin = []          
-for b in range(0,len(bins)):   
+best_trees_by_bin = []
+for b in range(0,len(bins)):
     measures = [i.measure for i in bins[b]]
     leaves = [i.leaves for i in bins[b]]
     max_measure_indices = [i for i,v in enumerate(measures) if v == max(measures)]
@@ -453,7 +464,7 @@ if len(best_trees) > 1:
 else:
     final_tree = best_trees[0]
 #final_tree.show(tree_style=circ)
-           
+
 ''' hopefully this isn't necessary now that proteins are being used to annotate trees, but the functionality should still probably be there, it would have to higher up though during the selection of the list of best trees
 if best is None:
     curr_best = 0.00
