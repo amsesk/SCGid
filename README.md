@@ -42,7 +42,11 @@ Please report any and all errors and issues that you run into while using *scgid
 * R 3.4.1
 	* ape 
 	`install.packages("ape")`
-	* Rscript (included with most R distributions)
+	* dplyr
+    `install.packages("dplyr")`
+    * phytools
+    `install.packages("phytools")`
+    * Rscript (included with most R distributions)
 * NCBI Blast+
 * Augustus (http://bioinf.uni-greifswald.de/augustus/)
 * ClaMS-CLI (http://clams.jgi-psf.org/)  
