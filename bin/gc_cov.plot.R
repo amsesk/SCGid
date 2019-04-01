@@ -1,6 +1,7 @@
 library(dplyr)
 library(reshape2)
 library(ggplot2)
+library(RColorBrewer)
 
 getTaxLevel <- function (row) {
   spl<-as.list(strsplit(row, ", ")[[1]])
@@ -43,10 +44,11 @@ cov_window = gsub("[()]","",cov_window)
 gc_window = as.numeric(unlist(strsplit(gc_window,split=',')))
 cov_window = log(as.numeric(unlist(strsplit(cov_window,split=','))))
 window = as.data.frame(cbind(cov_window, gc_window))
+window$col<-"Best Window"
 
 
 imp<-tigInfo %>% group_by(hitlin_level) %>% summarise (n = n()) %>% 
-  filter(n>dim(tigInfo)[1]/1000)
+  filter(n>dim(tigInfo)[1]/100)
 
 try(tigInfo[!tigInfo$hitlin_level %in% imp$hitlin_level,]$hitlin_level <- "Other", silent = TRUE)
 try(tigInfo[tigInfo$evalue == 0,]$evalue<-2.225074e-308, silent = TRUE)
@@ -59,8 +61,14 @@ plt$coverage<-log(plt$coverage)
 cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 tntPalette <- c("darkred","blue")
 
-unclass$color = "black"
 unclass$coverage = log(unclass$coverage)
+unclass$included<-"Unclassified_Dumped"
+unclass[((unclass$coverage>=cov_window[1] & unclass$coverage<=cov_window[2]) & 
+           (unclass$gc>=gc_window[1] & unclass$gc<=gc_window[2])),]$included<-"Unclassified_Kept"
+
+myDark2<-brewer.pal(dim(imp)[1]+1, "Dark2")
+myDark2_blk<-c(myDark2, "black")
+myDark2_blkblu<-c(myDark2_blk,"blue")
 
 pdf(output)
 
@@ -69,18 +77,17 @@ ggplot(plt, aes(coverage, gc, color=hitlin_level, size=log_evalue/-150)) +
   geom_point(alpha=0.20) +
   xlab("log(Coverage)")+
   ylab("GC content") +
-  #scale_colour_manual(values=cbPalette) +
-  scale_color_brewer(type="qual", palette = "Dark2") +
+  scale_colour_manual(values=myDark2) +
   guides(
     color = guide_legend(override.aes = list(alpha=1), title="Hit Taxonomy"), 
     size = guide_legend(override.aes=list(alpha=1), title="Scaled Hit Significance")
-    ) +
+  ) +
   #geom_point(data=unclass, aes(log(coverage),gc, size=0.1), alpha=0.10, inherit.aes = FALSE) +
   guides (
     alpha = FALSE
   ) +
   #geom_rect(data=window, aes(xmin=cov_window[1], ymin=gc_window[1], 
-                             #xmax=cov_window[2], ymax=gc_window[2]), fill = "green", color="black", alpha=0.2, inherit.aes = FALSE) +
+  #xmax=cov_window[2], ymax=gc_window[2]), fill = "green", color="black", alpha=0.2, inherit.aes = FALSE) +
   theme_bw()
 
 ## annotated points and unclassified
@@ -88,17 +95,16 @@ ggplot(plt, aes(coverage, gc, color=hitlin_level, size=log_evalue/-150)) +
   geom_point(alpha=0.20) +
   xlab("log(Coverage)")+
   ylab("GC content") +
-  scale_colour_manual(values=cbPalette) +
+  scale_colour_manual(values=myDark2_blk) +
+  geom_point(data=unclass, aes(coverage, gc, size=0.15, color=parse_lin), 
+             alpha=1.0, inherit.aes = FALSE) +
   guides(
+    alpha = FALSE,
     color = guide_legend(override.aes = list(alpha=1), title="Hit Taxonomy"), 
-    size = guide_legend(override.aes=list(alpha=1), title="Scaled Hit Significance")
-  ) +
-  geom_point(data=unclass, aes(coverage,gc, size=0.1, color=parse_lin), alpha=1.0, inherit.aes = FALSE) +
-  guides (
-    alpha = FALSE
+    size = FALSE
   ) +
   #geom_rect(data=window, aes(xmin=cov_window[1], ymin=gc_window[1], 
-                             #xmax=cov_window[2], ymax=gc_window[2]), fill = "green", color="black", alpha=0.2, inherit.aes = FALSE) +
+  #xmax=cov_window[2], ymax=gc_window[2]), fill = "green", color="black", alpha=0.2, inherit.aes = FALSE) +
   theme_bw()
 
 ## annotated points with window
@@ -106,39 +112,33 @@ ggplot(plt, aes(coverage, gc, color=hitlin_level, size=log_evalue/-150)) +
   geom_point(alpha=0.20) +
   xlab("log(Coverage)")+
   ylab("GC content") +
-  scale_colour_manual(values=cbPalette) +
+  scale_colour_manual(values=myDark2) +
+  scale_fill_manual(values=c("green")) +
   guides(
     color = guide_legend(override.aes = list(alpha=1), title="Hit Taxonomy"), 
-    size = guide_legend(override.aes=list(alpha=1), title="Scaled Hit Significance")
+    size = guide_legend(override.aes=list(alpha=1), title="Scaled Hit Significance"),
+    fill = guide_legend(title="Windows")
   ) +
-  geom_point(data=unclass, aes(coverage,gc, size=0.1), alpha=1.0, inherit.aes = FALSE) +
-  guides (
-    alpha = FALSE
-  ) +
-  geom_rect(data=window, aes(xmin=cov_window[1], ymin=gc_window[1], 
-                             xmax=cov_window[2], ymax=gc_window[2]), fill = "green", color="black", alpha=0.2, inherit.aes = FALSE) +
+  geom_rect(data=window, aes(xmin=cov_window[1], ymin=gc_window[1], xmax=cov_window[2], 
+                             ymax=gc_window[2], fill=col), color="black", alpha=0.2, inherit.aes = FALSE) +
   theme_bw()
 
+
 ## annotated points and unlclass with window and color_changing_points
-unclass[((unclass$coverage>=cov_window[1] & unclass$coverage<=cov_window[2]) & 
-          (unclass$gc>=gc_window[1] & unclass$gc<=gc_window[2])),]$color<-"blue"
 ggplot(plt, aes(coverage, gc, color=hitlin_level, size=log_evalue/-150)) + 
   geom_point(alpha=0.20) +
   xlab("log(Coverage)")+
   ylab("GC content") +
-  scale_colour_manual(values=cbPalette) +
+  scale_colour_manual(values=myDark2_blkblu) +
+  scale_fill_manual(values=c("green")) +
   guides(
     color = guide_legend(override.aes = list(alpha=1), title="Hit Taxonomy"), 
-    size = guide_legend(override.aes=list(alpha=1), title="Scaled Hit Significance")
+    size = FALSE,
+    fill = guide_legend(title="Windows")
   ) +
-  geom_point(data=unclass, aes(coverage, gc, size=0.1), color=unclass$color, alpha=1.0, inherit.aes = FALSE) +
-  guides (
-    alpha = FALSE
-  ) +
+  geom_point(data=unclass, aes(coverage, gc, size=0.15, color=included), alpha=1.0, inherit.aes = FALSE) +
   geom_rect(data=window, aes(xmin=cov_window[1], ymin=gc_window[1], 
-                             xmax=cov_window[2], ymax=gc_window[2]), fill = "green", alpha=0.2, inherit.aes = FALSE) +
-  #xlim(min(unclass$coverage)*1.10, max(unclass$coverage)*1.10) +
-  #ylim(min(unclass$gc)*0.9, max(unclass$gc)*1.10) +
+                             xmax=cov_window[2], ymax=gc_window[2], fill=col), color="black", alpha=0.2, inherit.aes = FALSE) +
   theme_bw()
 
 ## Specified Target/Nontarget instead of taxonomy
@@ -147,7 +147,7 @@ ggplot(plt_tnt, aes(coverage, gc, color=parse_lin, size=log_evalue/-150)) +
   geom_point(alpha=0.20) +
   xlab("log(Coverage)")+
   ylab("GC content") +
-  scale_colour_manual(values=tntPalette) +
+  scale_colour_manual(values=myDark2)+
   guides(
     color = guide_legend(override.aes = list(alpha=1), title="Hit Taxonomy"), 
     size = guide_legend(override.aes=list(alpha=1), title="Scaled Hit Significance")
@@ -165,17 +165,15 @@ ggplot(plt_tnt, aes(coverage, gc, color=parse_lin, size=log_evalue/-150)) +
   geom_point(alpha=0.20) +
   xlab("log(Coverage)")+
   ylab("GC content") +
-  scale_colour_manual(values=tntPalette) +
+  scale_colour_manual(values=myDark2) +
+  scale_fill_manual(values=c("green")) +
   guides(
     color = guide_legend(override.aes = list(alpha=1), title="Hit Taxonomy"), 
-    size = guide_legend(override.aes=list(alpha=1), title="Scaled Hit Significance")
+    size = guide_legend(override.aes=list(alpha=1), title="Scaled Hit Significance"),
+    fill = guide_legend(title="Windows")
   ) +
-  #geom_point(data=unclass, aes(log(coverage),gc, size=0.1), alpha=0.10, inherit.aes = FALSE) +
-  guides (
-    alpha = FALSE
-  ) +
-  geom_rect(data=window, aes(xmin=cov_window[1], ymin=gc_window[1], 
-    xmax=cov_window[2], ymax=gc_window[2]), fill = "green", color="black", alpha=0.2, inherit.aes = FALSE) +
+  geom_rect(data=window, aes(xmin=cov_window[1], ymin=gc_window[1], xmax=cov_window[2], ymax=gc_window[2], 
+                             fill=col), color="black", alpha=0.2, inherit.aes = FALSE) +
   theme_bw()
 dev.off()
  
