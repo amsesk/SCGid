@@ -1,25 +1,35 @@
 import pandas as pd
+import ast
 
 class infotable(object):
-    def __init__(self, target_taxa): 
+    def __init__(self, target_taxa):
         self.colnames = ["contig","prot_len","coverage","gc","pid","sp_os","lineage","evalue","parse_lineage"]
+        self.unparse_colnames = self.colnames[-1]
         empty_infotable = {}
         for col in self.colnames:
             empty_infotable[col] = []
-        
+
         self.df = pd.DataFrame(empty_infotable, columns=self.colnames)
         if target_taxa is not None:
             self.tar = target_taxa['target']
             self.ex = target_taxa['exception']
         self.keep = None
         self.dump = None
-    
+
+    def rfilter(self, col, window):
+        return self.df.loc[(self.df[col] >= window[0]) & (self.df[col] <= window[1])]
+
     def populate(self, ldict, colnames = None):
         self.df = pd.DataFrame(ldict, columns=colnames)
 
     def load(self, tsv):
         self.df = pd.read_csv(tsv, sep="\t", header=None)
-        self.df.columns = self.colnames
+        try:
+            self.df.columns = self.colnames
+        except:
+            self.df.columns = self.unparse_colnames
+        
+        self.df.lineage = self.df.lineage.apply(ast.literal_eval)
 
     def clear_decisions(self):
         self.keep = None
@@ -28,7 +38,10 @@ class infotable(object):
     def retarget(self, new_target_taxa):
         self.tar = new_target_taxa['target']
         self.ex = new_target_taxa['exception']
-    
+
+    def taxon_level(self, level):
+        return self.df.apply(it_get_taxonomy_level, axis=1, args=(level,)).set_index('contig')
+
     def parse_lineage(self):
         self.df = self.df.apply(it_parse_lin, axis=1, args=(self.tar, self.ex))
 
@@ -39,12 +52,12 @@ class infotable(object):
         reformed = grouped.agg({'pid': lambda x: ','.join(x),
                             'evalue': lambda x: ','.join(str(e) for e in x),
                             'parse_lineage': lambda x: ','.join(x)})
-    
+
         reformed.parse_lineage = reformed.parse_lineage.apply(str.split,args=',')
         reformed.pid = reformed.pid.apply(str.split,args=',')
         reformed.evalue = reformed.evalue.apply(str.split,args=',')
         reformed = reformed.reset_index()
-    
+
         for i in reformed.itertuples():
             num_t = i.parse_lineage.count('target')
             num_nt = i.parse_lineage.count('nontarget')
@@ -64,12 +77,22 @@ class infotable(object):
             else:
                 self.dump.append(i.contig)
 
-def it_parse_lin(row, tar, ex):
-            if row['lineage'] == "Not_in_taxdb":
-                row['parse_lineage'] = 'unclassified'
-            elif any(i in tar for i in row['lineage']) is True and any(i in ex for i in row['lineage']) is False:
-                row['parse_lineage'] = 'target'
-            else:
-                row['parse_lineage'] = 'nontarget'
-            return row
+def it_get_taxonomy_level(row, level):
+    if row['lineage'] == "Not_in_taxdb":
+        return "unclassified"
+    else:
+        ret = row.loc[ ['contig','lineage'] ]
+        ret['lineage'] = ret['lineage'].replace("[","",)
+        ret['lineage'] = ret['lineage'].replace("]","",)
+        ret['lineage'] = ret['lineage'].split(',')[level].strip()
+        ret['lineage'] = ret['lineage'].replace("'","")
+        return ret
 
+def it_parse_lin(row, tar, ex):
+    if row['lineage'] == "Not_in_taxdb":
+        row['parse_lineage'] = 'unclassified'
+    elif any(i in tar for i in row['lineage']) is True and any(i in ex for i in row['lineage']) is False:
+        row['parse_lineage'] = 'target'
+    else:
+        row['parse_lineage'] = 'nontarget'
+    return row
