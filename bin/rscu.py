@@ -349,23 +349,36 @@ logger.info("Building tree...")
 with open(prefix+'_rscu_distmat.csv','w') as f:
     dist_mat_to_nexus.to_csv(prefix+'_rscu_distmat.csv',sep=',',index = True, header = False, mode = 'w')
 
-cmd = [os.path.join(settings.path_to_Rscript,"Rscript"),"--vanilla",bin_dir+"/ape_nj.R",prefix+"_rscu_distmat.csv",prefix+"_rscu_nj.tre"]
+treefile = "{}_rscu_nj.tre".format(prefix)
+cmd = [os.path.join(settings.path_to_Rscript,"Rscript"),"--vanilla",bin_dir+"/ape_nj.R",prefix+"_rscu_distmat.csv",treefile]
 logger.info(' '.join(cmd))
 subprocessP(cmd, logger)
 
-logger.info("Wrote RSCU NJ tree as a Newick string to "+os.path.join(os.getcwd(),"/"+prefix+"_rscu_nj.tre"))
+logger.info("Wrote RSCU NJ tree as a Newick string to "+os.path.join(os.getcwd(),treefile))
 
 #%% Read the newick string into ETE and then annotate the tips based on blastn
-nj_tree = Tree(prefix+"_rscu_nj.tre")
+nj_tree = Tree(treefile)
 #nj_tree = Tree("../amphi_adaptOnlyTrim_rscu_nj.tre")
+
+### using phytools in R to draw tree
+# call =
 
 if args.mode == 'blastp':
     colnames = ["contig","prot_len","coverage","gc","pid","sp_os","lineage","evalue","parse_lineage"]
     info_table = infotable(target_taxa)
     info_table.load(info_table_path)
+    taxlvl = info_table.taxon_level(level=1).lineage.to_dict()
     annotated_tree = annotate_tips_prot (nj_tree, target_taxa, info_table)
 else:
     annotated_tree = annotate_tips(nj_tree, target_taxa, '{}.best.taxids'.format(blastout))
+
+with open("{}_rscuTree_annot.csv".format(prefix),'w') as f:
+    for l in [ [x.name, x.annotation] for x in annotated_tree.iter_leaves()]:
+        try:
+            l.insert(1,taxlvl[l[0]])
+        except:
+            l.insert(1,'unclassified')
+        f.write("{}\n".format(','.join(l)))
 
 circ = TreeStyle()
 circ.scale=500
@@ -484,6 +497,16 @@ if best is None:
 #best['node'].show()
 
 list_for_trainset = [s for s in nucl if s.shortname in final_tree.get_leaf_names()]
+annotfile = "{}_rscuTree_annot.csv".format(prefix)
+trainset_shortnames = [s.shortname for s in list_for_trainset]
+for line in open(annotfile).readlines():
+    row = map(str.strip, line.split(','))
+    row_reformed = ','.join(row)
+    if row[0] in trainset_shortnames:
+        replace_line(annotfile, row_reformed, "{},trainset".format(row_reformed))
+    else:
+        replace_line(annotfile, row_reformed, "{},not_selected".format(row_reformed))
+
 
 with open(prefix+"_trainset.fasta",'w') as f:
     for seq in list_for_trainset:
@@ -492,6 +515,11 @@ trainset_fname = prefix+"_trainset.fasta"
 with open('trainsets.tsv','w') as f:
     f.write("rscu_derived_ts1"+"\t")
     f.write(trainset_fname)
+
+### Generate file visualizing annotated tree showing in R
+cmd = [os.path.join(settings.path_to_Rscript,"Rscript"),"--vanilla",os.path.join(bin_dir,"codons_phytools.R"), treefile, annotfile, "{}_annotated_tree.pdf".format(prefix)]
+logger.info(' '.join(cmd))
+subprocessP(cmd, logger)
 
 logger.info("ClaMS trainset written to "+os.getcwd()+"/"+prefix+"_trainset.fasta")
 
