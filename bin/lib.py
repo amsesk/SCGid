@@ -14,6 +14,7 @@ import settings
 from time import localtime, strftime, sleep
 from ete3 import Tree, TreeStyle, NodeStyle, NCBITaxa, TextFace ## to avoid seg fault on flux, change back once fixed
 import random
+from flexwindow import FlexibleSelectionWindow
 #path_to_this_file = inspect.getfile(inspect.currentframe())
 #this_file = os.path.split(path_to_this_file)[1]
 
@@ -249,346 +250,6 @@ def ftp_retr_and_report (ftp_inst, sname, rfile, lfile):
 ### gc_cov functions ###
 
 #%%
-def get_numeric_range(pd_series):
-    range = (pd_series.min(),pd_series.max())
-    return range
-
-#%%
-def calc_gc_window_1tailed (info_table, target_taxa, inc_factor = 0.01, plot = False):
-    assert type(info_table) is pd.core.frame.DataFrame, "Input info_table to parse_infotable() must be a pandas dataframe."
-
-    ### Get summary stats needed for determining gc window from info_table ###
-    target = info_table.loc[info_table['parse_lineage'] == 'target']
-    target_mean_gc = np.mean(target.gc)
-    target_std_gc = np.std(target.gc)
-    target_gc_range = (target.gc.min(),target.gc.max())
-    all_target = float(target.shape[0])
-    all_nontarget = float(info_table.shape[0] - all_target)
-
-    ## Account for case where there is no nontarget (should be really rare), avoid division by zero error
-    if all_nontarget == 0:
-        all_nontarget = 1
-
-    increment = float(target_std_gc)*inc_factor
-    points = {
-            "target": [],
-            "nontarget": []
-            }
-
-    while (target_mean_gc - increment >= target_gc_range[0]) and (target_mean_gc + increment <= target_gc_range[1]):
-        sel = (target_mean_gc - increment, target_mean_gc + increment)
-        window = info_table[(info_table['gc'] >= sel[0]) & (info_table['gc'] <= sel[1])]
-        target_in_window = float(window.loc[window['parse_lineage'] == 'target'].shape[0])
-        nontarget_in_window = float(window.shape[0] - target_in_window)
-        points["target"].append(target_in_window/all_target)
-        points["nontarget"].append(nontarget_in_window/all_nontarget)
-        increment += target_std_gc*inc_factor
-
-    diff = map(operator.sub,points["target"],points["nontarget"])
-    tradeoffs = map(operator.mul,points["target"],diff)
-    points["tradeoffs"] = tradeoffs
-
-    num_maxes = [i for i in points["tradeoffs"] if i == max(points["tradeoffs"])]
-
-    if len(num_maxes) > 1:
-        ## get max tradeoff at highest step (ie for asymtotic tradeoff curves)
-        idx = 0
-        indices_of_max = []
-        for val in points["tradeoffs"]:
-            if val == max(points["tradeoffs"]):
-                indices_of_max.append(idx)
-            idx+=1
-        best_step_idx = max(indices_of_max)
-    else:
-        best_step_idx = points["tradeoffs"].index(max(points["tradeoffs"]))
-
-    opt_tail = target_std_gc * inc_factor * (best_step_idx+1)
-    final_window = (target_mean_gc - opt_tail, target_mean_gc + opt_tail)
-
-    if plot is True:
-        print "Final window:",final_window[0],"-->",final_window[1]
-        return points
-
-    else:
-        return final_window
-#%%
-def calc_gc_window_2tailed (info_table, target_taxa, inc_factor = 0.01, plot = False):
-    target = info_table.loc[info_table['parse_lineage'] == 'target']
-    target_mean_gc = np.mean(target.gc)
-    target_std_gc = np.std(target.gc)
-    target_gc_range = (target.gc.min(),target.gc.max())
-    all_target = float(target.shape[0])
-    all_nontarget = float(info_table.shape[0] - all_target)
-
-    ## Account for case where there is no nontarget (should be really rare), avoid division by zero error
-    if all_nontarget == 0:
-        all_nontarget = 1
-
-    increment = float(target_std_gc)*inc_factor
-    points = {
-            "neg":{
-                    "target": [],
-                    "nontarget": []
-                    },
-            "pos":{
-                    "target": [],
-                    "nontarget": []
-                    }
-            }
-    while target_mean_gc - increment >= target_gc_range[0]:
-        sel = (target_mean_gc - increment, target_mean_gc)
-        window = info_table[(info_table['gc'] >= sel[0]) & (info_table['gc'] <= sel[1])]
-        target_in_window = float(window.loc[window['parse_lineage'] == 'target'].shape[0])
-        nontarget_in_window = float(window.shape[0] - target_in_window)
-        points["neg"]["target"].append(target_in_window/all_target)
-        points["neg"]["nontarget"].append(nontarget_in_window/all_nontarget)
-        increment += target_std_gc*inc_factor
-
-    ### Reset increment ###
-    increment = float(target_std_gc)*inc_factor
-
-    while target_mean_gc + increment <= target_gc_range[1]:
-        sel = (target_mean_gc, target_mean_gc + increment)
-        window = info_table[(info_table['gc'] >= sel[0]) & (info_table['gc'] <= sel[1])]
-        target_in_window = float(window.loc[window['parse_lineage'] == 'target'].shape[0])
-        nontarget_in_window = float(window.shape[0] - target_in_window)
-        points["pos"]["target"].append(target_in_window/all_target)
-        points["pos"]["nontarget"].append(nontarget_in_window/all_nontarget)
-        increment += target_std_gc*inc_factor
-
-
-    diff_neg = map(operator.sub,points["neg"]["target"],points["neg"]["nontarget"])
-    diff_pos = map(operator.sub,points["pos"]["target"],points["pos"]["nontarget"])
-
-    tradeoffs_neg = map(operator.mul,points["neg"]["target"],diff_neg)
-    tradeoffs_pos = map(operator.mul,points["pos"]["target"],diff_pos)
-
-    points["neg"]["tradeoffs"] = tradeoffs_neg
-    points["pos"]["tradeoffs"] = tradeoffs_pos
-
-    num_maxes_neg = [i for i in points["neg"]["tradeoffs"] if i == max(points["neg"]["tradeoffs"])]
-    num_maxes_pos = [i for i in points["pos"]["tradeoffs"] if i == max(points["pos"]["tradeoffs"])]
-
-    ## make sure that the following FOR loop is necessary in the negative direction (ie asymptotic tradeoff curves)
-
-    if len(num_maxes_neg) > 1:
-        ## get max tradeoff at highest step in NEGATIVE direction (ie for asymtotic tradeoff curves)
-        idx = 0
-        indices_of_max_neg = []
-        for val in points["neg"]["tradeoffs"]:
-            if val == max(points["neg"]["tradeoffs"]):
-                indices_of_max_neg.append(idx)
-            idx+=1
-        best_step_idx_neg = max(indices_of_max_neg)
-    else:
-        best_step_idx_neg = points["neg"]["tradeoffs"].index(max(points["neg"]["tradeoffs"]))
-
-    if len(num_maxes_pos) > 1:
-        ## get max tradeoff at highest step in POSITIVE direction (ie for asymtotic tradeoff curves)
-        idx = 0
-        indices_of_max_pos = []
-        for val in points["pos"]["tradeoffs"]:
-            if val == max(points["pos"]["tradeoffs"]):
-                indices_of_max_pos.append(idx)
-            idx+=1
-        best_step_idx_pos = max(indices_of_max_pos)
-    else:
-        best_step_idx_pos = points["pos"]["tradeoffs"].index(max(points["pos"]["tradeoffs"]))
-
-
-    opt_tail_neg = target_std_gc * inc_factor * (best_step_idx_neg+1)
-    opt_tail_pos = target_std_gc * inc_factor * (best_step_idx_pos+1)
-
-    opt_window_neg = target_mean_gc - opt_tail_neg
-    opt_window_pos = target_mean_gc + opt_tail_pos
-
-    final_window = (opt_window_neg, opt_window_pos)
-
-    if plot is True:
-        print "Final window:",opt_window_neg,"-->",opt_window_pos
-        return points
-
-    else:
-        return final_window
-#%%
-
-### When should there NOT be a coverage cut-off and how do I code that? ###
-
-def calc_coverage_window_1tailed (info_table, target_taxa, inc_factor = 0.01, plot = False):
-    target = target = info_table.loc[info_table['parse_lineage'] == 'target']
-    target_mean_cov = np.mean(target.coverage)
-    target_std_cov = np.std(target.coverage)
-    target_cov_range = (target.coverage.min(),target.coverage.max())
-    all_target = float(target.shape[0])
-    all_nontarget = float(info_table.shape[0] - all_target)
-    increment = float(target_std_cov) * inc_factor
-
-    ## Account for case where there is no nontarget (should be really rare), avoid division by zero error
-    if all_nontarget == 0:
-        all_nontarget = 1
-
-    points = {
-            "target": [],
-            "nontarget": []
-            }
-    while (target_mean_cov - increment >= target_cov_range[0]) and (target_mean_cov + increment <= target_cov_range[1]):
-        sel = (target_mean_cov - increment, target_mean_cov + increment)
-        window = info_table[(info_table['coverage'] >= sel[0]) & (info_table['coverage'] <= sel[1])]
-        target_in_window = float(window.loc[window['parse_lineage'] == 'target'].shape[0])
-        nontarget_in_window = float(window.shape[0] - target_in_window)
-        points["target"].append(target_in_window/all_target)
-        points["nontarget"].append(nontarget_in_window/all_nontarget)
-        increment += target_std_cov*inc_factor
-
-    diff = map(operator.sub,points["target"],points["nontarget"])
-    tradeoffs = map(operator.mul,points["target"],diff)
-    points["tradeoffs"] = tradeoffs
-
-    num_maxes = [i for i in points["tradeoffs"] if i == max(points["tradeoffs"])]
-
-    if len(num_maxes) > 1:
-        ## get max tradeoff at highest step (ie for asymtotic tradeoff curves)
-        idx = 0
-        indices_of_max = []
-        for val in points["tradeoffs"]:
-            if val == max(points["tradeoffs"]):
-                indices_of_max.append(idx)
-            idx+=1
-        best_step_idx = max(indices_of_max)
-    else:
-        best_step_idx = points["tradeoffs"].index(max(points["tradeoffs"]))
-
-    opt_tail = target_std_cov * inc_factor * (best_step_idx+1)
-    final_window = (target_mean_cov - opt_tail, target_mean_cov + opt_tail)
-
-    if plot is True:
-        print "Final window:",final_window[0],"-->",final_window[1]
-        return points
-
-    else:
-        return final_window
-
-#%%
-def calc_coverage_window_2tailed (info_table, target_taxa, inc_factor = 0.01, plot = False):
-
-    target = info_table.loc[info_table['parse_lineage'] == 'target']
-    target_mean_cov = np.mean(target.coverage)
-    target_std_cov = np.std(target.coverage)
-    target_cov_range = (target.coverage.min(),target.coverage.max())
-    increment = float(target_std_cov)*inc_factor
-    all_target = float(target.shape[0])
-    all_nontarget = float(info_table.shape[0] - all_target)
-
-    ## Account for case where there is no nontarget (should be really rare), avoid division by zero error
-    if all_nontarget == 0:
-        all_nontarget = 1
-
-    points = {
-            "neg":{
-                    "target": [],
-                    "nontarget": []
-                    },
-            "pos":{
-                    "target": [],
-                    "nontarget": []
-                    }
-            }
-
-    while target_mean_cov - increment >= target_cov_range[0]:
-        sel = (target_mean_cov - increment, target_mean_cov)
-        window = info_table[(info_table['coverage'] >= sel[0]) & (info_table['coverage'] <= sel[1])]
-        target_in_window = float(window.loc[window['parse_lineage'] == 'target'].shape[0])
-        nontarget_in_window = float(window.shape[0] - target_in_window)
-        points["neg"]["target"].append(target_in_window/all_target)
-        points["neg"]["nontarget"].append(nontarget_in_window/all_nontarget)
-        increment += target_std_cov*inc_factor
-        #print target_mean_cov-increment, points["neg"]["target"][-1]
-
-    ### Reset increment ###
-    increment = float(target_std_cov)*inc_factor
-
-    while target_mean_cov + increment <= target_cov_range[1]:
-        sel = (target_mean_cov, target_mean_cov + increment)
-        window = info_table[(info_table['coverage'] >= sel[0]) & (info_table['coverage'] <= sel[1])]
-        target_in_window = float(window.loc[window['parse_lineage'] == 'target'].shape[0])
-        nontarget_in_window = float(window.shape[0] - target_in_window)
-        ## Account for case where there is no nontarget (should be really rare), avoid division by zero error
-        if all_nontarget == 0:
-            all_nontarget = 1
-
-        points["pos"]["target"].append(target_in_window/all_target)
-        points["pos"]["nontarget"].append(nontarget_in_window/all_nontarget)
-
-
-        increment += target_std_cov*inc_factor
-
-
-    diff_neg = map(operator.sub,points["neg"]["target"],points["neg"]["nontarget"])
-    diff_pos = map(operator.sub,points["pos"]["target"],points["pos"]["nontarget"])
-    #print len(points["pos"]["target"])
-    #print len(diff_pos)
-
-    tradeoffs_neg = map(operator.mul,points["neg"]["target"],diff_neg)
-    tradeoffs_pos = map(operator.mul,points["pos"]["target"],diff_pos)
-
-    points["neg"]["tradeoffs"] = tradeoffs_neg
-    points["pos"]["tradeoffs"] = tradeoffs_pos
-
-    ## how many points represent the maximum trade-off?
-    num_maxes_neg = [i for i in points["neg"]["tradeoffs"] if i == max(points["neg"]["tradeoffs"])]
-    num_maxes_pos = [i for i in points["pos"]["tradeoffs"] if i == max(points["pos"]["tradeoffs"])]
-
-    ## make sure that the following FOR loop is necessary in the negative direction (ie asymptotic tradeoff curves)
-
-    if len(num_maxes_neg) > 1:
-        ## get max tradeoff at highest step in NEGATIVE direction (ie for asymptotic tradeoff curves)
-        idx = 0
-        indices_of_max_neg = []
-        for val in points["neg"]["tradeoffs"]:
-            if val == max(points["neg"]["tradeoffs"]):
-                indices_of_max_neg.append(idx)
-            idx+=1
-        best_step_idx_neg = max(indices_of_max_neg)
-
-    else:
-        best_step_idx_neg = points["neg"]["tradeoffs"].index(max(points["neg"]["tradeoffs"]))
-
-    ## get max tradeoff at highest step in POSITIVE direction (ie for asymtotic tradeoff curves)
-    if len(num_maxes_pos) > 1:
-        ## get max tradeoff at highest step in POSITIVE direction (ie for asymptotic tradeoff curves)
-        idx = 0
-        indices_of_max_pos = []
-        for val in points["pos"]["tradeoffs"]:
-            if val == max(points["pos"]["tradeoffs"]):
-                indices_of_max_pos.append(idx)
-            idx+=1
-        best_step_idx_pos = max(indices_of_max_pos)
-
-    else:
-        best_step_idx_pos = points["pos"]["tradeoffs"].index(max(points["pos"]["tradeoffs"]))
-    #print best_step_idx_pos
-
-    #best_step_idx_neg = points["neg"]["tradeoffs"].index(max(points["neg"]["tradeoffs"]))
-    #best_step_idx_pos = points["pos"]["tradeoffs"].index(max(points["pos"]["tradeoffs"]))
-
-    opt_tail_neg = target_std_cov * inc_factor * (best_step_idx_neg+1)
-    opt_tail_pos = target_std_cov * inc_factor * (best_step_idx_pos+1)
-
-    #print opt_tail_pos
-
-    opt_window_neg = target_mean_cov - opt_tail_neg
-    opt_window_pos = target_mean_cov + opt_tail_pos
-
-    #print opt_window_pos
-
-    final_window = (opt_window_neg, opt_window_pos)
-
-    if plot is True:
-        print "Final window:",opt_window_neg,"-->",opt_window_pos
-        return points
-
-    else:
-        return final_window
 #%%
 def get_window_table (info_table, window, param):
     assert type(info_table) is pd.core.frame.DataFrame, "Input info_table to parse_infotable() must be a pandas dataframe."
@@ -602,7 +263,31 @@ def get_window_table (info_table, window, param):
 #%%
 
 def generate_windows(info_table, target_taxa, target):
+    # factorial window expansion combinations MINUS redundancy ie gc0co0 = co0gc0
+    patterns = [
+            'gc0co0',
+            'gc0co1',
+            'gc0co2',
+            'gc1co1',
+            'gc1co2',
+            'gc2co1',
+            'gc2co2',
+            'co0gc1',
+            'co0gc2',
+            'co1gc1',
+            'co1gc2',
+            'co2gc1',
+            'co2gc2'
+            ]
+    windows = []
+    for p in patterns:
+        windows.append(FlexibleSelectionWindow(p))
+    for w in windows:
+        w.calculate(info_table, target_taxa)
 
+    return windows
+
+''' old code
     windows = []
 
     noCovnoGc = {}
@@ -687,6 +372,7 @@ def generate_windows(info_table, target_taxa, target):
     windows.append(noCovnoGc)
 
     return windows
+'''
 #%%
 
 class gc_cov_window ():
