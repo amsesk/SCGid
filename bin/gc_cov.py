@@ -62,7 +62,7 @@ nucl_path = os.path.abspath(args.nucl)
 path_to_taxdb = os.path.abspath(args.taxdb)
 path_to_spdb = os.path.abspath(args.spdb)
 prefix = args.prefix
-stringency_thresh = args.stringency
+stringency_thresh = float(args.stringency)
 
 prot = args.prot
 blastout = args.blastout
@@ -327,100 +327,81 @@ for no_class_tig in [x for x in nucl if '_'.join(x.label.split('_')[0:2]) not in
 no_class.to_csv(prefix+'_unclassified_info_table.tsv', sep = '\t', index = False, header = False)
 
 logger.info("Protein information table generated and ready to go. Printed to "+os.path.join(os.getcwd(),prefix+".info_table.tsv"))
-logger.info("GC and coverage information on protein-less contigs printed to "+os.path.join(os.getcwd(),prefix+'_unclassified_info_table.tsv'))
+logger.info("GC and coverage information on unclassified contigs written to "+os.path.join(os.getcwd(),prefix+'_unclassified_info_table.tsv'))
 
 ## Get target table (starting means for selection process
 ## Generate the selection windows
 target = info_table.df.loc[info_table.df['parse_lineage'] == 'target']
-windows = generate_windows(info_table.df, target_taxa, target)
+windows = generate_windows(info_table, target_taxa, target)
 
 logger.info("GC-coverage windows successfully generated. Printing plots to pdf...")
 
-## Pick the best window
-names = ["gc1cov1","gc1cov2",
-         "gc2cov1","gc2cov2",
-         "cov1gc1","cov1gc2",
-         "cov2gc1","cov2gc2",
-         "gc1noCov","gc2noCov",
-         "cov1noGc","cov2noGc",
-         "noCovnoGc"]
 
-window_stats = {
-        'names': [],
-        'tp': [],
-        'ntp': [],
-        'window': [],
-        'gc_width': [],
-        'cov_width': []
-        }
-i=0
-#logger.info('\t'.join(['method','p(target)','p(nontarget)','gc_window','cov_window']))
-
-
-with open(prefix+'.windows.all.out','w') as f:
-    colnames = '\t'.join(['method','p_target', 'p_nontarget', 'gc_window', 'gc_window_width', 'cov_window', 'cov_window_width'])+'\n'
-    f.write(colnames)
-
-    if os.path.isdir('../windows'):
-        shutil.rmtree('../windows')
-    os.mkdir('windows')
+if os.path.isdir('../windows'):
+    shutil.rmtree('../windows')
+os.mkdir('windows')
 
 ldict = []
 for win in windows:
-    gc_window_table = get_window_table(info_table.df, win['gc'],"gc")
-    window_table = get_window_table(gc_window_table, win['cov'],"coverage")
 
-    t = float(window_table.loc[window_table['parse_lineage'] == 'target'].shape[0])
-    all_t = float(info_table.df.loc[info_table.df['parse_lineage'] == 'target'].shape[0])
-    nt = float(window_table.shape[0]-t)
+    ldict.append({
+        'expPat': win.expPat,
+        'gc': win.gc,
+        'coverage': win.coverage,
+        'tp': win.tp,
+        'ntp': win.ntp,
+        'gc_width': win.gc[1] - win.gc[0],
+        'co_width': win.coverage[1] - win.coverage[0],
+        })
 
-    ## Case where there is no nontarget in the plot
-    if nt == 0.0:
-        all_nt = 1.0
-    else:
-         all_nt = float(info_table.df.shape[0]-all_t)
+    print_plot_cmd = [
+            os.path.join(settings.path_to_Rscript,"Rscript"),
+            "--vanilla",
+            os.path.join(bin_dir,'gc_cov.plot.R'),
+            "{}_info_table.tsv".format(prefix),
+            "{}_unclassified_info_table.tsv".format(prefix),
+            ','.join(map(str,win.gc)),
+            ','.join(map(str,win.coverage)),
+            os.path.join("windows","{}.{}.pdf".format(prefix, win.expPat))
+            ]
 
-    disp_gc = str(round(win['gc'][0],4))+'-'+str(round(win['gc'][1],4))
-    disp_cov = str(round(win['cov'][0],4))+'-'+str(round(win['cov'][1],4))
-    gc_window_width = win['gc'][1] - win['gc'][0]
-    cov_window_width = win['cov'][1] - win['cov'][0]
-    #logger.info('\t'.join([names[i],str(round(t/all_t,4)), str(round(nt/all_nt,4)), disp_gc, disp_cov]))
-    with open(prefix+'.windows.all.out','a') as f:
-        #out = row+'\t'+'\t'.join(map(str,values))+'\n'
-        out = '\t'.join([names[i],str(round(t/all_t,4)), str(round(nt/all_nt,4)), disp_gc, str(gc_window_width), disp_cov, str(cov_window_width)])+'\n'
-        ldict.append({
-            'name': names[i],
-            'ptarget': round(t/all_t,4),
-            'pnontarget': round(nt/all_nt,4),
-            'gc_range': disp_gc,
-            'gc_width': round(gc_window_width,4),
-            'cov_range': disp_cov,
-            'cov_width': round(cov_window_width,4)
-            })
-        f.write(out)
-    ## print window and data to pdf
-        print_plot_cmd = [os.path.join(settings.path_to_Rscript,"Rscript"),'--vanilla',os.path.join(bin_dir,'gc_cov.plot.R'),prefix+'_info_table.tsv',prefix+'_unclassified_info_table.tsv', ','.join(map(str,win['gc'])), ','.join(map(str,win['cov'])), os.path.join("windows","{}.{}.pdf".format(prefix, names[i]))]
-        #logger.info(" ".join(print_plot_cmd))
-        out = subprocessP(print_plot_cmd, logger)
-
-
-    window_stats['names'].append(names[i])
-    window_stats['tp'].append(t/all_t)
-    window_stats['ntp'].append(nt/all_nt)
-    window_stats['window'].append(win)
-    window_stats['gc_width'].append(gc_window_width)
-    window_stats['cov_width'].append(cov_window_width)
-    i+=1
+    #logger.info(" ".join(print_plot_cmd))
+    out = subprocessP(print_plot_cmd, logger)
 
 #print ldict
-window_frame = pd.DataFrame(ldict, columns=ldict[0].keys())
-#print window_frame.head
+wdf = pd.DataFrame(ldict, columns=ldict[0].keys())
+wdf = wdf.assign(sqfootage=(wdf.gc_width * wdf.co_width))
 logger.info("Information on all windows printed to "+os.getcwd()+"/"+prefix+".windows.all.out")
 
-row = "{:<10}" * 3 + "{:<15}" + "{:<10}" + "{:<20}" + "{:<10}"
-blogger.info("POTENTIAL SELECTION WINDOWS\n{}".format("-"*30))
+blogger.info("\nALL GC-COVERAGE WINDOWS:")
+blogger.info("-"*40)
 
+with open(prefix+'.windows.all.out','w') as f:
+    row = "{:<10}" + "{:<10}" + "{:<15}" + "{:<20}" + "{:<20}"
+    header = row.format("Type","p(target)","p(nontarget)","GC Range","Cov Range")
+    blogger.info(header)
+    f.write('\t'.join(["Type","p(target)","p(nontarget)","GC Range","Cov Range"])+'\n')
+    for win in windows:
+        winrow = row.format(win.expPat, win.tp, win.ntp, win.gc, win.coverage)
+        blogger.info(winrow)
+        f.write('\t'.join([win.expPat, str(win.tp), str(win.ntp), str(win.gc), str(win.coverage)])+'\n' )
 
+while True:
+    below_thresh = wdf[wdf.ntp <= stringency_thresh]
+    if below_thresh.shape[0] == 0:
+        logger.critical("No usable window at set stringency threshold, s = {}. Set a higher threshold with -s|--stringency and rerun.".format(stringency_thresh))
+        sys.exit(-5)
+    max_target = below_thresh[below_thresh.tp == below_thresh.tp.max()]
+    largest = max_target[max_target.sqfootage == max_target.sqfootage.max()]
+    if largest.shape[0] > 1:
+        logger.critical("Too many best windows.") ## seems very unlikely
+        sys.exit(-6)
+    else:
+        best = largest.iloc[0,:].expPat
+        best = [x for x in windows if x.expPat == best][0]
+        break
+
+''' old code
 ## Note that this does not account for multiple maxima yet
 keep_going = True
 best_window_idx = None
@@ -452,9 +433,11 @@ while keep_going is True:
         window_stats['tp'].pop(best_window_idx)
         window_stats['ntp'].pop(best_window_idx)
         window_stats['window'].pop(best_window_idx)
+'''
 
-
-logger.info("BEST WINDOW: "+str(best_window.__dict__))
+blogger.info("\nBest window at -s|--stringency = {}.".format(stringency_thresh))
+blogger.info("-"*40)
+blogger.info(best.show())
 
 ## Decide on each contigs taxonomy based on all of its proteins
 info_table.decide_taxonomy()
@@ -476,27 +459,23 @@ for tig in nucl:
     #elif tig.name in to_exclude:
     elif tig.name in info_table.dump:
         non_target_bin.append(tig)
-    elif (tig.gc >= best_window.lower_gc and tig.gc <= best_window.upper_gc) and (tig.coverage >= best_window.lower_cov and tig.coverage <= best_window.upper_cov):
+    elif (tig.gc >= best.gc[0] and tig.gc <= best.gc[1]) and (tig.coverage >= best.coverage[0] and tig.coverage <= best.coverage[1]):
         final_genome.append(tig)
     else:
         non_target_bin.append(tig)
 
 ## Output final draft genome to fasta
-logger.info("Printing final genome draft.")
 genome_size = 0
 with open(prefix+'_blob_final_genome.fasta','w') as f:
     for tig in final_genome:
         genome_size+=len(tig.sequence)
-        #out= ">" + tig.label + "\n"+ tig.sequence + "\n" ## sequence.outFasta(), fix this
         out = tig.outFasta()
         f.write("{}\n".format(out))
 with open(prefix+'_blob_final_nontarget_bin.fasta','w') as f:
     for tig in non_target_bin:
-        #genome_size+=len(tig.sequence)
-        #out= ">" + tig.label + "\n"+ tig.sequence + "\n" ## sequence.outFasta(), fix this
         out = tig.outFasta()
         f.write("{}\n".format(out))
-logger.info("Done. Final draft genome FASTA has been written to "+prefix+'_blob_final_genome.fasta')
+logger.info("Final draft genome FASTA has been written to "+prefix+'_blob_final_genome.fasta')
 logger.info("Draft genome is comprised of "+str(genome_size)+" nucelotides on "+str(len(final_genome))+" contigs.")
 
 ## If you've gotten here, then everything should have worked, move everything from temp to ../ and change dir and delete temp
