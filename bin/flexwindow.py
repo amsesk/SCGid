@@ -2,6 +2,12 @@ import pandas as pd
 import numpy as np
 import operator
 import sys
+from collections import namedtuple
+
+### Definitions
+PltOut = namedtuple("PltOut", ["axis","mean","window","points"])
+Points = namedtuple("Points",["step","value","tp","ntp","tradeoff"])
+
 
 def get_numeric_range(pd_series):
     return (pd_series.min(), pd_series.max())
@@ -58,8 +64,7 @@ def calc_gc_window_1tailed (info_table, target_taxa, inc_factor = 0.01, plot = F
     final_window = (target_mean_gc - opt_tail, target_mean_gc + opt_tail)
 
     if plot is True:
-        print "Final window:",final_window[0],"-->",final_window[1]
-        return points
+        return PltOut("gc", final_window, points)
 
     else:
         return final_window
@@ -89,7 +94,7 @@ def calc_gc_window_2tailed (info_table, target_taxa, inc_factor = 0.01, plot = F
             }
     while target_mean_gc - increment >= target_gc_range[0]:
         sel = (target_mean_gc - increment, target_mean_gc)
-        window = info_table[(info_table['gc'] >= sel[0]) & (info_table['gc'] <= sel[1])]
+        window = info_table.loc[(info_table['gc'] >= sel[0]) & (info_table['gc'] <= sel[1])]
         target_in_window = float(window.loc[window['parse_lineage'] == 'target'].shape[0])
         nontarget_in_window = float(window.shape[0] - target_in_window)
         points["neg"]["target"].append(target_in_window/all_target)
@@ -122,7 +127,6 @@ def calc_gc_window_2tailed (info_table, target_taxa, inc_factor = 0.01, plot = F
     num_maxes_pos = [i for i in points["pos"]["tradeoffs"] if i == max(points["pos"]["tradeoffs"])]
 
     ## make sure that the following FOR loop is necessary in the negative direction (ie asymptotic tradeoff curves)
-
     if len(num_maxes_neg) > 1:
         ## get max tradeoff at highest step in NEGATIVE direction (ie for asymtotic tradeoff curves)
         idx = 0
@@ -134,6 +138,7 @@ def calc_gc_window_2tailed (info_table, target_taxa, inc_factor = 0.01, plot = F
         best_step_idx_neg = max(indices_of_max_neg)
     else:
         best_step_idx_neg = points["neg"]["tradeoffs"].index(max(points["neg"]["tradeoffs"]))
+    
 
     if len(num_maxes_pos) > 1:
         ## get max tradeoff at highest step in POSITIVE direction (ie for asymtotic tradeoff curves)
@@ -146,8 +151,7 @@ def calc_gc_window_2tailed (info_table, target_taxa, inc_factor = 0.01, plot = F
         best_step_idx_pos = max(indices_of_max_pos)
     else:
         best_step_idx_pos = points["pos"]["tradeoffs"].index(max(points["pos"]["tradeoffs"]))
-
-
+    
     opt_tail_neg = target_std_gc * inc_factor * (best_step_idx_neg+1)
     opt_tail_pos = target_std_gc * inc_factor * (best_step_idx_pos+1)
 
@@ -157,8 +161,7 @@ def calc_gc_window_2tailed (info_table, target_taxa, inc_factor = 0.01, plot = F
     final_window = (opt_window_neg, opt_window_pos)
 
     if plot is True:
-        print "Final window:",opt_window_neg,"-->",opt_window_pos
-        return points
+        return PltOut("gc", final_window, points)
 
     else:
         return final_window
@@ -214,15 +217,13 @@ def calc_coverage_window_1tailed (info_table, target_taxa, inc_factor = 0.01, pl
     final_window = (target_mean_cov - opt_tail, target_mean_cov + opt_tail)
 
     if plot is True:
-        print "Final window:",final_window[0],"-->",final_window[1]
-        return points
+        return PltOut("coverage", final_window, points)
 
     else:
         return final_window
-
-#%%
-def calc_coverage_window_2tailed (info_table, target_taxa, inc_factor = 0.01, plot = False):
-
+    
+#%%         
+def calc_coverage_window_2tailed (info_table, target_taxa, inc_factor = 0.01, plot = False):    
     target = info_table.loc[info_table['parse_lineage'] == 'target']
     target_mean_cov = np.mean(target.coverage)
     target_std_cov = np.std(target.coverage)
@@ -291,7 +292,6 @@ def calc_coverage_window_2tailed (info_table, target_taxa, inc_factor = 0.01, pl
     num_maxes_pos = [i for i in points["pos"]["tradeoffs"] if i == max(points["pos"]["tradeoffs"])]
 
     ## make sure that the following FOR loop is necessary in the negative direction (ie asymptotic tradeoff curves)
-
     if len(num_maxes_neg) > 1:
         ## get max tradeoff at highest step in NEGATIVE direction (ie for asymptotic tradeoff curves)
         idx = 0
@@ -336,12 +336,11 @@ def calc_coverage_window_2tailed (info_table, target_taxa, inc_factor = 0.01, pl
     final_window = (opt_window_neg, opt_window_pos)
 
     if plot is True:
-        print "Final window:",opt_window_neg,"-->",opt_window_pos
-        return points
+        return PltOut("coverage", final_window, points)
 
     else:
         return final_window
-
+#%%
 def get_window_table (info_table, window, param):
     assert type(info_table) is pd.core.frame.DataFrame, "Input info_table to parse_infotable() must be a pandas dataframe."
     assert type(window) is tuple, "Arg window must be a tuple."
@@ -351,13 +350,120 @@ def get_window_table (info_table, window, param):
     window_table = info_table[(info_table[param] >= window[0]) & (info_table[param] <= window[1])]
     return window_table
 
+
+#%%
+def calc_1d_window_symm (it, axis, inc_factor = 0.01, plot = False):
+    
+    flextbl = it.spawn_child("flextable", it.df)
+    target = it.target_filter()
+    axis_ss = target.summary_stats(axis)
+    pdist = axis_ss.max - axis_ss.mean
+    ndist = axis_ss.mean - axis_ss.min
+    dist = max( [pdist,ndist] )
+    step_size = inc_factor * axis_ss.std
+    population_whole = it.tnt_population()
+    steps_to_take = int(np.floor(dist/step_size))
+    
+    points = np.ndarray(shape=(steps_to_take+1, 6), dtype='float', order='C')
+    
+    final_window = ()
+    
+    for s in range(0,steps_to_take+1):
+        step_window = (axis_ss.mean - s*step_size, axis_ss.mean + s*step_size)
+        flextbl.rfilter_inplace_from_parent(axis, step_window)
+        population_now = flextbl.tnt_population()
+        tp = population_now.target/population_whole.target
+        ntp = population_now.nontarget/population_whole.nontarget
+        pointrow = np.array([
+                s,
+                step_window[0],
+                step_window[1],
+                tp,
+                ntp,
+                tp*(tp-ntp)
+                ])
+        points[s] = pointrow
+    points = pd.DataFrame(points, columns=["step",
+                                           "lower_{}".format(axis), 
+                                           "upper_{}".format(axis),
+                                           "tp",
+                                           "ntp",
+                                           "tradeoff"]) 
+        
+    maxes = points.loc[points.tradeoff == points.tradeoff.max()]
+    if maxes.shape[0] > 1:
+            final_window = (
+                    maxes.loc[maxes["step"] == maxes["step"].max()]["lower_{}".format(axis)].item(),
+                    maxes.loc[maxes["step"] == maxes["step"].max()]["upper_{}".format(axis)].item()
+                    )
+    else:
+        final_window = (
+                maxes["lower_{}".format(axis)].item(),
+                maxes["upper_{}".format(axis)].item()
+                )
+    
+    return PltOut(axis, axis_ss.mean, final_window, points)
+
+#%%
+def calc_1d_window_asymm (it, axis, inc_factor = 0.01, plot = False):
+    
+    flextbl = it.spawn_child("flextable", it.df)
+    target = it.target_filter()
+    axis_ss = target.summary_stats(axis)
+    pdist = axis_ss.max - axis_ss.mean
+    ndist = axis_ss.mean - axis_ss.min
+    step_size = inc_factor * axis_ss.std
+    population_whole = it.tnt_population()
+    steps_to_take = {
+            -1: int(np.floor(ndist/step_size)),
+            1: int(np.floor(pdist/step_size))
+            }
+    points = {
+            -1: np.ndarray(shape=(steps_to_take[-1]+1, 6), dtype='float', order='C'), #negative direction
+            1: np.ndarray(shape=(steps_to_take[1]+1, 6), dtype='float', order='C'), #positive direction
+            }
+    point_column = {
+            -1: "lower",
+            1: "upper"
+            }
+    final_window = {}
+    
+    for d in points.keys():
+        flextbl.reset_from_parent()
+        for s in range(0,steps_to_take[d]+1):
+            step_window = (axis_ss.mean, axis_ss.mean + d * s*step_size)
+            flextbl.rfilter_inplace_from_parent(axis, step_window)
+            population_now = flextbl.tnt_population()
+            tp = population_now.target/population_whole.target
+            ntp = population_now.nontarget/population_whole.nontarget
+            pointrow = np.array([
+                    s,
+                    min(step_window),
+                    max(step_window),
+                    tp,
+                    ntp,
+                    tp*(tp-ntp)
+                    ])
+            points[d][s] = pointrow
+        points[d] = pd.DataFrame(points[d], columns=["step", 
+                                                      "lower_{}".format(axis),
+                                                      "upper_{}".format(axis),
+                                                      "tp", 
+                                                      "ntp", 
+                                                      "tradeoff"]) 
+        
+        maxes = points[d].loc[points[d].tradeoff == points[d].tradeoff.max()]
+        if maxes.shape[0] > 1:
+            final_window[d] = maxes.loc[maxes["step"] == maxes["step"].max()]["{}_{}".format(point_column[d], axis)].item()
+        else:
+            final_window[d] = maxes["{}_{}".format(point_column[d], axis)].item()
+    
+    return PltOut(axis, axis_ss.mean, (final_window[-1], final_window[1]), points)
+#%%
+
 WindowFunc = {
-        'gc0': None,
-        'gc1': calc_gc_window_1tailed,
-        'gc2': calc_gc_window_2tailed,
-        'co0': None,
-        'co1': calc_coverage_window_1tailed,
-        'co2': calc_coverage_window_2tailed
+        1: calc_1d_window_symm,
+        2: calc_1d_window_asymm,
         }
 code_to_col = {
         'gc': 'gc',
@@ -367,56 +473,96 @@ code_to_col = {
 class FlexibleSelectionWindow(object):
     def __init__ (self, expPat):
         self.expPat = expPat
-        self.firstaxis = code_to_col[self.expPat[0:2]]
-        self.secondaxis = code_to_col[self.expPat[3:5]]
+        
+        self.step1 = None
+        self.firstaxis = None
+        self.firstsymm = None
+        
+        self.step = None
+        self.secondaxis = None
+        self.secondsymm = None
+        
+        self.means = {
+                "gc": None,
+                "coverage": None
+                }
 
-        self.gc = ()
-        self.coverage = ()
+        self.gc_range = ()
+        self.gc_points = None
+        self.coverage_range = ()
+        self.coverage_points = None
 
         self.tp = None
         self.ntp = None
         self.Wtable = None
     def show(self):
-        outstr = "Type: {}\np(target): {}\np(nontarget): {}\nGC Range: {}\nCoverage Range: {}\n".format(self.expPat, self.tp, self.ntp, self.gc, self.coverage)
+        outstr = "Type: {}\np(target): {}\np(nontarget): {}\nGC Range: {}\nCoverage Range: {}\n".format(
+                self.expPat, 
+                round(self.tp, 4), 
+                round(self.ntp,4), 
+                [round(x,4) for x in self.gc_range],
+                [round(x,4) for x in self.coverage_range]
+                )
         return outstr
 
-    def calculate(self, info_table, target_taxa, inc_factor=0.01, plot=False):
+    def calculate(self, it, inc_factor=0.01, plot=False):
         self.step1 = self.expPat[0:3]
+        self.firstaxis = code_to_col[self.step1[0:2]]
+        self.firstsymm = int(self.step1[2])
+        
         self.step2 = self.expPat[3:6]
+        self.secondaxis = code_to_col[self.step2[0:2]]
+        self.secondsymm = int(self.step2[2])
 
         ## Step 1
-        if WindowFunc[self.step1] is None:
-            axis1 = get_numeric_range(info_table.df[self.firstaxis])
+        axis1_range = it.summary_stats(self.firstaxis).range
+        if self.firstsymm == 0:
+            axis1_window = axis1_range
+            axis1_table = it.rfilter(self.firstaxis, axis1_range, self.step1)
         else:
-            axis1 = WindowFunc[self.step1](info_table.df, target_taxa, inc_factor, plot)
-        axis1_table = get_window_table(info_table.df, axis1, self.firstaxis)
+            self.firstaxis, self.means[self.firstaxis], axis1_window, axis1_points = WindowFunc[self.firstsymm](it, self.firstaxis, inc_factor, plot = True)
+                
+            axis1_table = it.rfilter(self.firstaxis, axis1_window, self.step1)
 
         ## Step 2
-        if WindowFunc[self.step2] is None:
-            axis2 = get_numeric_range(info_table.df[self.secondaxis])
+        axis2_range = axis1_table.summary_stats(self.secondaxis).range
+        if self.secondsymm == 0:
+            axis2_window = axis2_range
+            self.Wtable = it.rfilter(self.secondaxis, axis2_range, self.step2) #window = axis2_range
         else:
-            axis2 = WindowFunc[self.step2](axis1_table, target_taxa, inc_factor, plot)
-        self.Wtable = get_window_table(axis1_table, axis2, self.secondaxis)
-
+            self.secondaxis, self.means[self.secondaxis], axis2_window, axis2_points = WindowFunc[self.secondsymm](axis1_table, self.secondaxis, inc_factor, plot = True)
+                
+            self.Wtable = axis1_table.rfilter(self.secondaxis, axis2_window, self.step2)
+        
         limits2D = {
-                self.firstaxis: axis1,
-                self.secondaxis: axis2
+                self.firstaxis: axis1_window,
+                self.secondaxis: axis2_window,
                 }
+        if plot:
+            points = {
+                    self.firstaxis: axis1_points,
+                    self.secondaxis: axis2_points
+                    }
+            self.gc_points = points["gc"]
+            self.coverage_points = points["coverage"]
 
-        self.gc = (round(limits2D['gc'][0],4), round(limits2D['gc'][1],4))
-        self.coverage = (round(limits2D['coverage'][0],4), round(limits2D['coverage'][1],4))
+        self.gc_range = (limits2D['gc'][0], limits2D['gc'][1])
+        self.coverage_range = (limits2D['coverage'][0], limits2D['coverage'][1])
 
         ### Assess target/nontarget proportions
-        all_target = float(info_table.df[info_table.df.parse_lineage == 'target'].shape[0])
-        target_in_window = float(self.Wtable[self.Wtable.parse_lineage == 'target'].shape[0])
-        nontarget_in_window = float(self.Wtable.shape[0] - target_in_window)
-        if nontarget_in_window == 0.0:
+        whole_pop = it.tnt_population()
+        Wtable_pop = self.Wtable.tnt_population()
+        
+        all_target = whole_pop.target
+        all_nontarget = whole_pop.nontarget
+        
+        target_in_window = Wtable_pop.target
+        nontarget_in_window = Wtable_pop.nontarget
+        
+        if all_nontarget == 0.0:
             all_nontarget = 1.0
-        else:
-            all_nontarget = float(info_table.df.shape[0] - all_target)
 
-        self.tp = round( (target_in_window / all_target),4 )
-        self.ntp = round( (nontarget_in_window / all_nontarget),4 )
-
+        self.tp = target_in_window / all_target
+        self.ntp = nontarget_in_window / all_nontarget
 
 

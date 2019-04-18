@@ -1,8 +1,10 @@
 import pandas as pd
+import numpy as np
 import ast
+from collections import namedtuple
 
 class infotable(object):
-    def __init__(self, target_taxa):
+    def __init__(self, target_taxa = None, ident="HEAD"):
         self.colnames = ["contig","prot_len","coverage","gc","pid","sp_os","lineage","evalue","parse_lineage"]
         self.unparse_colnames = self.colnames[-1]
         empty_infotable = {}
@@ -10,14 +12,81 @@ class infotable(object):
             empty_infotable[col] = []
 
         self.df = pd.DataFrame(empty_infotable, columns=self.colnames)
+        self.ttd = target_taxa
         if target_taxa is not None:
             self.tar = target_taxa['target']
             self.ex = target_taxa['exception']
         self.keep = None
         self.dump = None
-
-    def rfilter(self, col, window):
-        return self.df.loc[(self.df[col] >= window[0]) & (self.df[col] <= window[1])]
+        self.ident = ident
+        
+        self.children = []
+        self.parent = None
+        self.depth = 0
+        
+    def spawn_child(self, ident, nested_frame):
+        children = [c for c in self.children]
+        if ident in [c.ident for c in children]:
+            duplicate_children = [c for c in children if c.ident == ident]
+            assert len(duplicate_children) == 1, "Internatl error, runaway children creation"
+            return duplicate_children[0]
+        else:
+            child = infotable(self.ttd, ident=ident)
+            child.df = nested_frame
+            self.children.append(child)
+            child.parent = self
+            child.depth = child.parent.depth+1
+            return child
+        
+    def iter_descendants(self, at_head=True):
+        if at_head:
+            print self.ident
+        for c in self.children:
+            backbone = 0
+            if c.depth > 1:
+                backbone = 1
+            print "{}{}|----> {}".format(
+                    "|"*(backbone),
+                    " "*2*(c.depth-1),
+                    c.ident)
+            if len(c.children) != 0:
+                c.iter_descendants(at_head=False)
+        
+    def target_filter(self):
+        child_frame = self.df.loc[self.df.parse_lineage == "target"]
+        child = self.spawn_child("target", child_frame)
+        return child     
+        
+    def rfilter(self, feature, window, child_label=""):
+        child_frame = self.df.loc[(self.df[feature] >= window[0]) & (self.df[feature] <= window[1])]
+        child_ident = "{}:{}{}".format(child_label, feature, window)
+        child = self.spawn_child(child_ident, child_frame)
+        return child
+    
+    def rfilter_inplace_from_parent (self, feature, window):
+        assert self.parent is not None, "No parent to filter."
+        if window[0] > window[1]:
+            window = window[::-1]
+        self.df = self.parent.df.loc[(self.parent.df[feature] >= window[0]) & (self.parent.df[feature] <= window[1])]
+        
+    def reset_from_parent (self):
+        assert self.parent is not None, "No parent to reset from."
+        self.df = self.parent.df
+    
+    def tnt_population (self):
+        TntPop = namedtuple("TntPop",["target","nontarget"])
+        num_t = float(sum(self.df.parse_lineage == "target"))
+        num_nt = float(sum(self.df.parse_lineage == "nontarget"))
+        return TntPop(num_t, num_nt)
+        
+    def summary_stats (self, feature):
+        Sstats = namedtuple("{}".format(feature),["mean","std","min","max","range"])
+        f_mean = np.mean(self.df[feature])
+        f_std = np.std(self.df[feature])
+        f_min = self.df[feature].min()
+        f_max = self.df[feature].max()
+        f_range = (f_min,f_max)
+        return Sstats(f_mean, f_std, f_min, f_max, f_range)
 
     def populate(self, ldict, colnames = None):
         self.df = pd.DataFrame(ldict, columns=colnames)
@@ -35,7 +104,7 @@ class infotable(object):
         self.keep = None
         self.dump = None
 
-    def retarget(self, new_target_taxa):
+    def set_target(self, new_target_taxa):
         self.tar = new_target_taxa['target']
         self.ex = new_target_taxa['exception']
 
@@ -43,7 +112,7 @@ class infotable(object):
         return self.df.apply(it_get_taxonomy_level, axis=1, args=(level,)).set_index('contig')
 
     def parse_lineage(self):
-        self.df = self.df.apply(it_parse_lin, axis=1, args=(self.tar, self.ex))
+        self.df = self.df.apply(it_parse_lin, axis=1, args=(self.tar, self.ex,))
 
     def decide_taxonomy (self):
         self.keep = []
@@ -76,6 +145,7 @@ class infotable(object):
                     self.dump.append(i.contig)
             else:
                 self.dump.append(i.contig)
+
 
 def it_get_taxonomy_level(row, level):
     if row['lineage'] == "Not_in_taxdb":

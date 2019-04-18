@@ -262,7 +262,7 @@ def get_window_table (info_table, window, param):
 
 #%%
 
-def generate_windows(info_table, target_taxa, target):
+def generate_windows(it, inc_factor=0.01):
     # factorial window expansion combinations MINUS redundancy ie gc0co0 = co0gc0
     patterns = [
             'gc0co0',
@@ -283,7 +283,7 @@ def generate_windows(info_table, target_taxa, target):
     for p in patterns:
         windows.append(FlexibleSelectionWindow(p))
     for w in windows:
-        w.calculate(info_table, target_taxa)
+        w.calculate(it, inc_factor)
 
     return windows
 
@@ -405,7 +405,7 @@ def gff3_to_fasta(gff3, outname):
             s = re.search("[#][ ]end[ ]gene[ ]([A-Za-z0-9_.]+)",line)
             if s is not None:
                 recording = False
-                prots.append(sequence(s.group(1), protein_sequence, seq_type = "prot", contig_info = False))
+                prots.append(Sequence(s.group(1), protein_sequence, seq_type = "prot", contig_info = False))
                 protein_sequence = ""
             else:
                 s = re.search("[#][ ]([a-zA-Z]+)",line)
@@ -575,7 +575,7 @@ def extract_cds_gff3 (gff3, nucl):
                 gene_cds += nucl_dict[node][int(start)-1:int(stop)]
             if len(gene_cds) % 3 == 0:
                 node_cds_cat += gene_cds
-        cds_cat.append(sequence(node, node_cds_cat, seq_type='nucl', contig_info=False))
+        cds_cat.append(Sequence(node, node_cds_cat, seq_type='nucl', contig_info=False))
     return cds_cat
 #%%
 def remove_small_sequences (list_of_sequence_objects, min_len):

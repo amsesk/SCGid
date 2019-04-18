@@ -75,7 +75,9 @@ except:
     os.mkdir(args.prefix+'_scgid_output')
     os.chdir(args.prefix+'_scgid_output')
 
-logger = start_logging('consensus', args, sys.argv)
+logs = start_logging('consensus', args, sys.argv)
+logger = logs[0]
+blogger = logs[1]
 
 #generate list of scaffolds to ad hoc exclude based on swissprot taxonomy
 exclude_by_tax = []

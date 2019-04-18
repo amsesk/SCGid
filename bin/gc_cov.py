@@ -20,6 +20,7 @@ import logging
 import pandas as pd
 import numpy as np
 import cPickle as pickle
+from collections import namedtuple
 from sequence import *
 from lib import *
 from infotable import infotable
@@ -241,19 +242,21 @@ ldict = []
 gcs = {}
 covs = {}
 for i in nucl:
-    node_num = "_".join(i.label.split("_")[0:2])+"_"
+    node_num = i.shortname
     gcs[node_num] = i.gc
     covs[node_num] = i.coverage
 attrs = {}
-for i in proteins:
-    pid = reverse(reverse(i.label).split(".")[0])
-    node_num = "_".join(i.label.split("_")[0:2])+"_"
-    attrs[i.label] = [i.length,covs[node_num],gcs[node_num],pid]
+
+ProteinStats = namedtuple("ProteinStats",["length","parent_coverage","parent_gc","pid"])
+for p in proteins:
+    pid = reverse(reverse(p.label).split(".")[0])
+    node_num = p.shortname
+    attrs[p.label] = ProteinStats( p.length, covs[node_num], gcs[node_num], pid )
 
 ## (2nd) Grab hit info from the parsed blast output file and use OS=<blah> to grab lineage information from the taxdb
 pattern = re.compile(SPDB_OS_REGEXP_PATTERN)
 for line in open(blastout).readlines():
-    spl = line.strip().split("\t")
+    spl = [x.strip() for x in line.split('\t')]
     query = spl[0]
     desc = spl[2]
     evalue = spl[3]
@@ -277,10 +280,10 @@ for line in open(blastout).readlines():
 ## (3rd) For each row, make a dictionary and append to ldict list
     newrow = {
             'contig': query,
-            'prot_len': attrs[query][0],
-            'coverage': attrs[query][1],
-            'gc': attrs[query][2],
-            'pid': attrs[query][3],
+            'prot_len': attrs[query].length,
+            'coverage': attrs[query].parent_coverage,
+            'gc': attrs[query].parent_gc,
+            'pid': attrs[query].pid,
             'sp_os': sp_os,
             'lineage': lineage,
             'evalue': evalue,
@@ -331,8 +334,8 @@ logger.info("GC and coverage information on unclassified contigs written to "+os
 
 ## Get target table (starting means for selection process
 ## Generate the selection windows
-target = info_table.df.loc[info_table.df['parse_lineage'] == 'target']
-windows = generate_windows(info_table, target_taxa, target)
+target = info_table.target_filter()
+windows = generate_windows(info_table)
 
 logger.info("GC-coverage windows successfully generated. Printing plots to pdf...")
 
@@ -346,12 +349,12 @@ for win in windows:
 
     ldict.append({
         'expPat': win.expPat,
-        'gc': win.gc,
-        'coverage': win.coverage,
+        'gc': win.gc_range,
+        'coverage': win.coverage_range,
         'tp': win.tp,
         'ntp': win.ntp,
-        'gc_width': win.gc[1] - win.gc[0],
-        'co_width': win.coverage[1] - win.coverage[0],
+        'gc_width': win.gc_range[1] - win.gc_range[0],
+        'co_width': win.coverage_range[1] - win.coverage_range[0],
         })
 
     print_plot_cmd = [
@@ -360,8 +363,8 @@ for win in windows:
             os.path.join(bin_dir,'gc_cov.plot.R'),
             "{}_info_table.tsv".format(prefix),
             "{}_unclassified_info_table.tsv".format(prefix),
-            ','.join(map(str,win.gc)),
-            ','.join(map(str,win.coverage)),
+            ','.join(map(str,win.gc_range)),
+            ','.join(map(str,win.coverage_range)),
             os.path.join("windows","{}.{}.pdf".format(prefix, win.expPat))
             ]
 
@@ -382,9 +385,9 @@ with open(prefix+'.windows.all.out','w') as f:
     blogger.info(header)
     f.write('\t'.join(["Type","p(target)","p(nontarget)","GC Range","Cov Range"])+'\n')
     for win in windows:
-        winrow = row.format(win.expPat, win.tp, win.ntp, win.gc, win.coverage)
+        winrow = row.format(win.expPat, win.tp, win.ntp, win.gc_range, win.coverage_range)
         blogger.info(winrow)
-        f.write('\t'.join([win.expPat, str(win.tp), str(win.ntp), str(win.gc), str(win.coverage)])+'\n' )
+        f.write('\t'.join([win.expPat, str(win.tp), str(win.ntp), str(win.gc_range), str(win.coverage_range)])+'\n' )
 
 while True:
     below_thresh = wdf[wdf.ntp <= stringency_thresh]
@@ -459,7 +462,7 @@ for tig in nucl:
     #elif tig.name in to_exclude:
     elif tig.name in info_table.dump:
         non_target_bin.append(tig)
-    elif (tig.gc >= best.gc[0] and tig.gc <= best.gc[1]) and (tig.coverage >= best.coverage[0] and tig.coverage <= best.coverage[1]):
+    elif (tig.gc >= best.gc_range[0] and tig.gc <= best.gc_range[1]) and (tig.coverage >= best.coverage_range[0] and tig.coverage <= best.coverage_range[1]):
         final_genome.append(tig)
     else:
         non_target_bin.append(tig)

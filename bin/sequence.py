@@ -9,8 +9,11 @@ def reverse (string):
         chars[pos] = l
         pos -= 1
     return ''.join(chars)
-class sequence(object):
+class Sequence(object):
     def __init__(self, label, seq, seq_type = "nucl", contig_info = False):
+        self.label = label
+        self.id = label
+        
         if seq_type == "prot" and contig_info == True:
             try:
                 self.coverage = float(".".join(label.split("_")[5].split(".")[0:len(label.split("_")[5].split("."))-1]))
@@ -19,15 +22,13 @@ class sequence(object):
         elif seq_type == "nucl" and contig_info == True:
             self.coverage = float(label.split("_")[5])
         elif seq_type == "nucl" or seq_type == "prot" and contig_info == False:
-            self.coverage = "n/a"
+            self.coverage = None
         if contig_info == True:
-            self.name = label.split("_")[0]+"_"+label.split("_")[1]
+            self.name = "_".join(self.label.split("_")[0:2])
             self.shortname = self.name
         self.sequence = seq
         self.length = len(self.sequence.strip())
 
-        self.label = label
-        self.id = label
         ## Check format to shorten Node names if possible
         m = re.match("NODE[_][0-9]+[_]length[_][0-9]+[_]cov[_][0-9]+",self.label)
         if m is not None:
@@ -119,7 +120,7 @@ def readFasta (fasta, seq_type = "nucl", contig_info = False):
             m = re.match(header_pattern, line)
             if m is not None:
                 if len(label) > 0:
-                    all_seqs.append( sequence(label, seq, seq_type, contig_info) )
+                    all_seqs.append( Sequence(label, seq, seq_type, contig_info) )
                     label = m.group(1)
                     seq = str()
                 else:
@@ -127,7 +128,7 @@ def readFasta (fasta, seq_type = "nucl", contig_info = False):
             else:
                 seq += line
         ## add the last sequence to the list
-        all_seqs.append( sequence(label, seq, seq_type, contig_info) )
+        all_seqs.append( Sequence(label, seq, seq_type, contig_info) )
     return all_seqs
 
 def readFasta_dumber(file, seq_type = "nucl", contig_info = False):
@@ -145,13 +146,13 @@ def readFasta_dumber(file, seq_type = "nucl", contig_info = False):
                 seq+=x
             l+=1
         if seq_type == "prot" and contig_info == True:
-            allSeqs.append(sequence(lab,seq,"prot",True))
+            allSeqs.append(Sequence(lab,seq,"prot",True))
         elif seq_type == "nucl" and contig_info == True:
-            allSeqs.append(sequence(lab,seq,"nucl",True))
+            allSeqs.append(Sequence(lab,seq,"nucl",True))
         elif seq_type == "prot" and contig_info == False:
-            allSeqs.append(sequence(lab,seq,"prot",False))
+            allSeqs.append(Sequence(lab,seq,"prot",False))
         elif seq_type == "nucl" and contig_info == False:
-            allSeqs.append(sequence(lab,seq,"nucl",False))
+            allSeqs.append(Sequence(lab,seq,"nucl",False))
             #allSeqs.append(contig(lab,seq))
     return allSeqs
 
