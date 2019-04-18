@@ -42,7 +42,9 @@ prot = args.prot
 blastp_evalue = args.evalue
 cores = args.cpus
 
-logger = start_logging("predict_and_blast", sys.argv)
+logs = start_logging("predict_and_blast", args, sys.argv)
+logger = logs[0]
+blogger = logs[1]
 
 if args.coding not in ['1,1','1,0','0,1','0,0']:
     logger.critical("Invalid argument value for -c|--coding")
