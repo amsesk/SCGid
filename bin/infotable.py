@@ -6,7 +6,10 @@ from collections import namedtuple
 class infotable(object):
     def __init__(self, target_taxa = None, ident="HEAD"):
         self.colnames = ["contig","prot_len","coverage","gc","pid","sp_os","lineage","evalue","parse_lineage"]
-        self.colnames_new = list(self.colnames).append("pertinent_taxlvl")
+
+        self.colnames_new = list(self.colnames)
+        self.colnames_new.append("pertinent_taxlvl")
+
         self.unparse_colnames = self.colnames[-1]
         empty_infotable = {}
         for col in self.colnames:

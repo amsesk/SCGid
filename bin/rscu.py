@@ -39,6 +39,26 @@ from ete3 import Tree, TreeStyle, NodeStyle, NCBITaxa
 from lib import *
 from infotable import infotable
 
+#%% some specific functions that need to be generalized at some point and given a new home
+def get_by_idx (row):
+    ret = []
+    for i in row.maxes:
+        ret.append(row.lineage[i])
+    return ret
+def count_unique (l):
+    if len(l) == 1:
+        return l[0]
+    else:
+        counts = {}
+        for ele in set(l):
+            counts[l.count(ele)] = ele
+        best = {c:ele for c,ele in counts.iteritems() if c == max(counts.keys())}
+        if len(best.keys()) > 1:
+            logger.critical("Too many best hits...write more code to deal with this.")
+            sys.exit(-5)
+        else:
+            return best[best.keys()[0]]
+
 #%%
 
 bin_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
@@ -361,30 +381,10 @@ nj_tree = Tree(treefile)
 #nj_tree = Tree("../amphi_adaptOnlyTrim_rscu_nj.tre")
 
 if args.mode == 'blastp':
-    colnames = ["contig","prot_len","coverage","gc","pid","sp_os","lineage","evalue","parse_lineage"]
     info_table = infotable(target_taxa)
     info_table.load(info_table_path)
     info_table.parse_lineage()
     taxlvl = info_table.taxon_level(level=1)
-
-    def get_by_idx (row):
-        ret = []
-        for i in row.maxes:
-            ret.append(row.lineage[i])
-        return ret
-    def count_unique (l):
-        if len(l) == 1:
-            return l[0]
-        else:
-            counts = {}
-            for ele in set(l):
-                counts[l.count(ele)] = ele
-            best = {c:ele for c,ele in counts.iteritems() if c == max(counts.keys())}
-            if len(best.keys()) > 1:
-                logger.critical("Too many best hits...write more code to deal with this.")
-                sys.exit(-5)
-            else:
-                return best[best.keys()[0]]
 
     taxlvl = taxlvl.groupby("contig").agg({ "lineage": lambda x: ','.join(x).split(','),
         "evalue": lambda x: [e for e in x]
