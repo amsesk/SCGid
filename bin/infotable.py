@@ -6,6 +6,7 @@ from collections import namedtuple
 class infotable(object):
     def __init__(self, target_taxa = None, ident="HEAD"):
         self.colnames = ["contig","prot_len","coverage","gc","pid","sp_os","lineage","evalue","parse_lineage"]
+        self.colnames_new = list(self.colnames).append("pertinent_taxlvl")
         self.unparse_colnames = self.colnames[-1]
         empty_infotable = {}
         for col in self.colnames:
@@ -19,11 +20,11 @@ class infotable(object):
         self.keep = None
         self.dump = None
         self.ident = ident
-        
+
         self.children = []
         self.parent = None
         self.depth = 0
-        
+
     def spawn_child(self, ident, nested_frame):
         children = [c for c in self.children]
         if ident in [c.ident for c in children]:
@@ -37,7 +38,7 @@ class infotable(object):
             child.parent = self
             child.depth = child.parent.depth+1
             return child
-        
+
     def iter_descendants(self, at_head=True):
         if at_head:
             print self.ident
@@ -51,34 +52,34 @@ class infotable(object):
                     c.ident)
             if len(c.children) != 0:
                 c.iter_descendants(at_head=False)
-        
+
     def target_filter(self):
         child_frame = self.df.loc[self.df.parse_lineage == "target"]
         child = self.spawn_child("target", child_frame)
-        return child     
-        
+        return child
+
     def rfilter(self, feature, window, child_label=""):
         child_frame = self.df.loc[(self.df[feature] >= window[0]) & (self.df[feature] <= window[1])]
         child_ident = "{}:{}{}".format(child_label, feature, window)
         child = self.spawn_child(child_ident, child_frame)
         return child
-    
+
     def rfilter_inplace_from_parent (self, feature, window):
         assert self.parent is not None, "No parent to filter."
         if window[0] > window[1]:
             window = window[::-1]
         self.df = self.parent.df.loc[(self.parent.df[feature] >= window[0]) & (self.parent.df[feature] <= window[1])]
-        
+
     def reset_from_parent (self):
         assert self.parent is not None, "No parent to reset from."
         self.df = self.parent.df
-    
+
     def tnt_population (self):
         TntPop = namedtuple("TntPop",["target","nontarget"])
         num_t = float(sum(self.df.parse_lineage == "target"))
         num_nt = float(sum(self.df.parse_lineage == "nontarget"))
         return TntPop(num_t, num_nt)
-        
+
     def summary_stats (self, feature):
         Sstats = namedtuple("{}".format(feature),["mean","std","min","max","range"])
         f_mean = np.mean(self.df[feature])
@@ -93,11 +94,13 @@ class infotable(object):
 
     def load(self, tsv):
         self.df = pd.read_csv(tsv, sep="\t", header=None)
-        try:
+        if self.df.shape[1] == len(self.colnames):
             self.df.columns = self.colnames
-        except:
+        elif self.df.shape[1] == len(self.colnames_new):
+            self.df.columns = self.colnames_new
+        else:
             self.df.columns = self.unparse_colnames
-        
+
         self.df.lineage = self.df.lineage.apply(ast.literal_eval)
 
     def clear_decisions(self):
@@ -148,15 +151,16 @@ class infotable(object):
 
 
 def it_get_taxonomy_level(row, level):
+    ret = row.loc[ ['contig','lineage','evalue'] ]
+
     if row['lineage'] == "Not_in_taxdb":
-        return "unclassified"
+        ret['lineage'] = "unclassified"
+    elif len(row['lineage']) <= level:
+        ret['lineage'] = "unclassified"
     else:
-        ret = row.loc[ ['contig','lineage'] ]
-        ret['lineage'] = ret['lineage'].replace("[","",)
-        ret['lineage'] = ret['lineage'].replace("]","",)
-        ret['lineage'] = ret['lineage'].split(',')[level].strip()
-        ret['lineage'] = ret['lineage'].replace("'","")
-        return ret
+        ret['lineage'] = ret['lineage'][level]
+
+    return ret
 
 def it_parse_lin(row, tar, ex):
     if row['lineage'] == "Not_in_taxdb":
