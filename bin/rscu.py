@@ -41,7 +41,7 @@ from infotable import infotable
 
 #%%
 
-bin_dir =os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+bin_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 pkg_home = os.path.dirname(bin_dir)
 path_to_this_file = inspect.getfile(inspect.currentframe())
 this_module = "codons"
@@ -53,8 +53,8 @@ parser.add_argument('-g', '--targets', metavar = 'target_taxa', action='store', 
 parser.add_argument('-x', '--exceptions', metavar = 'exceptions_to_target_taxa', action='store', required=False, default=None, help="A comma-separated list with NO spaces of any exlusions to the taxonomic levels specified in -g|--targets. For instance if you included Fungi in targets but want to exclude ascomycetes use: '-x Ascomycota'")
 parser.add_argument('-f','--prefix', metavar = 'prefix_for_output', required=False, default='scgid', help="The prefix that you would like to be used for all output files. DEFAULT = scgid")
 parser.add_argument('--cpus', metavar = 'cores', action = 'store', required = False, default = "1", help = "The number of cores available for BLAST to use.")
-parser.add_argument('--mode', metavar = "mode", action="store",required=False, default ='blastn', help = "The type of blast results that you would like to use to annotate the tips of the RSCU tree ('blastp' or 'blastn'). This module will automatically do a blastn search of the NCBI nt database for you. At this time, a blastp search can not be run directly from this script. INSTEAD, if using mode 'blastp' (DEFAULT, recommended) you must specify a scgid blob-derived _info_table.tsv file with -i|--infotable")
-
+parser.add_argument('--mode', metavar = "mode", action="store",required=False, default ='blastp', help = "The type of blast results that you would like to use to annotate the tips of the RSCU tree ('blastp' or 'blastn'). This module will automatically do a blastn search of the NCBI nt database for you. At this time, a blastp search can not be run directly from this script. INSTEAD, if using mode 'blastp' (DEFAULT, recommended) you must specify a scgid blob-derived _info_table.tsv file with -i|--infotable")
+parser.add_argument('--minsize', metavar = 'minsize', action = 'store', required = False, default = '3000', help = 'Minimum length of CDS concatenate to be kept and used to build RSCU tree. Highly fragmented assemblies will need this to be reduced. Reduce in response to `Tree too small.` error.')
 parser.add_argument('-sp','--augustus_sp', metavar = "augustus_species", action="store",required=False, default=None, help = "Augustus species for gene predicition. Type `augustus --species=help` for list of available species designations.")
 parser.add_argument('-e', '--evalue', metavar = 'e-value_cutoff', action = 'store', required = False, default = '1e-5', help = "The evalue cutoff for blast. Default: 1xe-5)")
 parser.add_argument('-b','--blastout', metavar = "blastout", action="store",required=False, help = "The blast output file from a blastn search of the NCBI nt database with your contigs as query. If you have not done this yet, this script will do it for you.")
@@ -239,7 +239,7 @@ nucl = pkl_fasta_in_out (nucl_path)
 
 logger.info("Nucleotide FASTA read-in successfully.")
 
-minsize = 3000
+minsize = int(args.minsize)
 cds_cat = extract_cds_gff3(gff3, nucl)
 cds_cat_large = remove_small_sequences(cds_cat, minsize)
 
@@ -360,14 +360,50 @@ logger.info("Wrote RSCU NJ tree as a Newick string to "+os.path.join(os.getcwd()
 nj_tree = Tree(treefile)
 #nj_tree = Tree("../amphi_adaptOnlyTrim_rscu_nj.tre")
 
-### using phytools in R to draw tree
-# call =
-
 if args.mode == 'blastp':
     colnames = ["contig","prot_len","coverage","gc","pid","sp_os","lineage","evalue","parse_lineage"]
     info_table = infotable(target_taxa)
     info_table.load(info_table_path)
-    taxlvl = info_table.taxon_level(level=1).lineage.to_dict()
+    info_table.parse_lineage()
+    taxlvl = info_table.taxon_level(level=1)
+
+    def get_by_idx (row):
+        ret = []
+        for i in row.maxes:
+            ret.append(row.lineage[i])
+        return ret
+    def count_unique (l):
+        if len(l) == 1:
+            return l[0]
+        else:
+            counts = {}
+            for ele in set(l):
+                counts[l.count(ele)] = ele
+            best = {c:ele for c,ele in counts.iteritems() if c == max(counts.keys())}
+            if len(best.keys()) > 1:
+                logger.critical("Too many best hits...write more code to deal with this.")
+                sys.exit(-5)
+            else:
+                return best[best.keys()[0]]
+
+    taxlvl = taxlvl.groupby("contig").agg({ "lineage": lambda x: ','.join(x).split(','),
+        "evalue": lambda x: [e for e in x]
+        })
+    ### get all evalues equal to best evalues, and their indices
+    taxlvl['maxes'] = taxlvl.evalue.apply(lambda x: [i for i,e in enumerate(x) if e == min(x)])
+
+    ### match hits with the evalue for that hit
+    taxlvl['maxtax'] = taxlvl.apply(get_by_idx, axis=1)
+
+    ### Get best taxonomy based on counts of best evalue taxa
+    taxlvl['decide'] = taxlvl['maxtax'].apply(count_unique)
+    taxlvl_decisions = taxlvl[["decide"]]
+
+    #print taxlvl_decisions
+    #print taxlvl_decisions.shape
+    #for row in taxlvl.itertuples():
+    #    if len(row.decide.keys()) > 1:
+    #        print row
     annotated_tree = annotate_tips_prot (nj_tree, target_taxa, info_table)
 else:
     annotated_tree = annotate_tips(nj_tree, target_taxa, '{}.best.taxids'.format(blastout))
@@ -375,10 +411,11 @@ else:
 with open("{}_rscuTree_annot.csv".format(prefix),'w') as f:
     for l in [ [x.name, x.annotation] for x in annotated_tree.iter_leaves()]:
         try:
-            l.insert(1,taxlvl[l[0]])
+            l.insert(1,taxlvl_decisions.loc[l[0]].item())
         except:
             l.insert(1,'unclassified')
-        f.write("{}\n".format(','.join(l)))
+        l = [i.strip() for i in l]
+        f.write("{}\n".format( ','.join(l) ))
 
 circ = TreeStyle()
 circ.scale=500
