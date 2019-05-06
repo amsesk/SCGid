@@ -587,6 +587,7 @@ def remove_small_sequences (list_of_sequence_objects, min_len):
 
 #%%
 def annotate_tips_prot (tree, target_taxa, info_table):
+    '''
     ## tip styling by annotation ##
     tar = NodeStyle()
     tar["vt_line_color"] = "blue"
@@ -605,8 +606,10 @@ def annotate_tips_prot (tree, target_taxa, info_table):
     no_class["hz_line_color"] = "black"
     no_class["shape"] = "circle"
     no_class["hz_line_width"] = 25
+    '''
 
     info_table.decide_taxonomy()
+
     '''
     #Reformat info table for tip annotation
     grouped = info_table.groupby('contig')
@@ -651,14 +654,15 @@ def annotate_tips_prot (tree, target_taxa, info_table):
             n.add_feature("annotation","unclassified")
             if n.name in info_table.keep:
                 n.annotation = "target"
-                n.set_style(tar)
-                n.add_face(TextFace(n.name,fsize=500),column=0)
+                #n.set_style(tar)
+                #n.add_face(TextFace(n.name,fsize=500),column=0)
             elif n.name in info_table.dump:
                 n.annotation = "nontarget"
-                n.set_style(ntar)
+                #n.set_style(ntar)
 
             else:
-                n.set_style(no_class)
+                pass
+                #n.set_style(no_class)
     #sys.exit()
     return tree
 
@@ -799,7 +803,7 @@ def replace_line(file, old, new):
                 break
             pos += len(line)
         if present is False:
-            raise ValueError("The line you want to replace is not present in the file.")
+            raise ValueError("Line '{}', not present in the file.".format(old))
         f.seek(0)
         head = f.read(line_start)
         f.seek(line_end)
