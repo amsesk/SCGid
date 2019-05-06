@@ -23,7 +23,7 @@ import cPickle as pickle
 from collections import namedtuple
 from sequence import *
 from lib import *
-from infotable import infotable
+from infotable import infotable, it_get_taxonomy_level
 import settings
 #import matplotlib.pyplot as plt
 
@@ -255,6 +255,10 @@ for p in proteins:
 
 ## (2nd) Grab hit info from the parsed blast output file and use OS=<blah> to grab lineage information from the taxdb
 pattern = re.compile(SPDB_OS_REGEXP_PATTERN)
+
+## This should be set somewhere else
+taxlvl_idx = 1
+
 for line in open(blastout).readlines():
     spl = [x.strip() for x in line.split('\t')]
     query = spl[0]
@@ -269,13 +273,17 @@ for line in open(blastout).readlines():
     ## Raise useful error message if there is a mismatch between taxbd and blastout
     try:
         lineage = taxdb[sp_os]
-    except KeyError:
-        logger.warning("'"+sp_os+"' is missing from the taxdb. You probably specified a -t|--taxdb file built from a likely out-of-date swissprot database other than the one you blasted against. Rerun build_taxdb or specify a different taxdb to correct. Lineage set as 'Not_in_taxdb' for this run.")
-        lineage = "Not_in_taxdb"
+    except:
+        try:
+            # Can get rid of these once local taxdb is rebuilt
+            sp_os = sp_os.replace("'","")
+            sp_os = sp_os.replace("#","")
+            lineage = taxdb[sp_os]
+        except KeyError:
+            logger.warning("'"+sp_os+"' is missing from the taxdb. You probably specified a -t|--taxdb file built from a likely out-of-date swissprot database other than the one you blasted against. Rerun build_taxdb or specify a different taxdb to correct. Lineage set as 'Not_in_taxdb' for this run.")
+            lineage = "Not_in_taxdb"
 
-    # Can get rid of these once local taxdb is rebuilt
-    sp_os = sp_os.replace("'","")
-    sp_os = sp_os.replace("#","")
+
 
 ## (3rd) For each row, make a dictionary and append to ldict list
     newrow = {
@@ -298,7 +306,15 @@ info_table.populate(ldict, colnames)
 
 info_table.df.contig = info_table.df.contig.apply(node_num_only)
 info_table.df.lineage = info_table.df.lineage.apply(str.replace,args=('; ','.'))
+
+### Need to fix this crap and deal with this when building taxdb - too late to be doing this nonsense
+info_table.df.lineage = info_table.df.lineage.apply(str.replace,args=(", ",'_'))
+info_table.df.lineage = info_table.df.lineage.apply(str.replace, args=(',','_'))
+
 info_table.df.lineage = info_table.df.lineage.apply(str.split,args='.')
+
+## Get taxonomy level now so R doesn't freak out later
+info_table.df['pertinent_taxlvl'] = info_table.df.apply(it_get_taxonomy_level, args=(taxlvl_idx,), axis=1)['lineage']
 info_table.df.reset_index()
 
 #Parse lineage info into target|nontarget|unclassified
@@ -385,9 +401,19 @@ with open(prefix+'.windows.all.out','w') as f:
     blogger.info(header)
     f.write('\t'.join(["Type","p(target)","p(nontarget)","GC Range","Cov Range"])+'\n')
     for win in windows:
-        winrow = row.format(win.expPat, win.tp, win.ntp, win.gc_range, win.coverage_range)
+        winrow = row.format(win.expPat,
+                round(win.tp,4),
+                round(win.ntp,4),
+                [round(x,4) for x in win.gc_range],
+                [round(x,4) for x in win.coverage_range]
+                )
         blogger.info(winrow)
-        f.write('\t'.join([win.expPat, str(win.tp), str(win.ntp), str(win.gc_range), str(win.coverage_range)])+'\n' )
+        f.write('\t'.join([win.expPat,
+            str(round(win.tp,4)),
+            str(round(win.ntp,4)),
+            str([round(x,4) for x in win.gc_range]),
+            str([round(x,4) for x in win.coverage_range])
+            ])+'\n')
 
 while True:
     below_thresh = wdf[wdf.ntp <= stringency_thresh]
