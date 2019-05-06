@@ -11,8 +11,8 @@ color_pal = sample(brewer.pal(9,"Set1"))
 #tree = "/Users/kevinamses/Documents/Flux_Downlaods/dissertation/rhop_neo/scgid/RHalf-1f_scgid_output/rscu/RHalf-1f_rscu_nj.tre"
 #annot = "/Users/kevinamses/Documents/Flux_Downlaods/dissertation/rhop_neo/scgid/RHalf-1f_scgid_output/rscu/RHalf-1f_rscuTree_annot.csv"
 
-tree = "/Users/kevinamses/Documents/Flux_Downlaods/dissertation/scgid/stylopage_scgid_output/rscu/stylopage_rscu_nj_annotated.tre"
-annot = "/Users/kevinamses/Documents/Flux_Downlaods/dissertation/scgid/stylopage_scgid_output/rscu/stylopage_rscuTree_annot.csv"
+tree = "/Users/kevinamses/Documents/Flux_Downlaods/dissertation/scgid/amphiamblys/scgid_041819/augRhior/augRhior_tarFung_dbEDFmicro_scgid_output/rscu/augRhior_tarFung_dbEDFmicro_rscu_nj.tre"
+annot = "/Users/kevinamses/Documents/Flux_Downlaods/dissertation/scgid/amphiamblys/scgid_041819/augRhior/augRhior_tarFung_dbEDFmicro_scgid_output/rscu/augRhior_tarFung_dbEDFmicro_rscuTree_annot.csv"
 
 args<-commandArgs(trailingOnly = TRUE)
 tree = args[1]
@@ -32,6 +32,10 @@ p=1
 #only important taxon groups
 imp<-annot %>% group_by(taxlvl) %>% summarise(n=n()) %>% 
   filter(n>length(annot$taxlvl)/100)
+if (dim(imp)[1]+1 > length(color_pal)) {
+  bigger_pal = colorRampPalette(color_pal)
+  color_pal = bigger_pal(dim(imp)[1]+1)
+}
 try(annot[!annot$taxlvl %in% imp$taxlvl,]$taxlvl<-"Other")
 
 taxon_groups<-annot %>% group_by(taxlvl) %>% summarise(n=n())
