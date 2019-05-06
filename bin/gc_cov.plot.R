@@ -9,9 +9,12 @@ getTaxLevel <- function (row) {
 }
 
 ### Test case
-#args = c("~/Documents/Flux_Downlaods/dissertation/rhop_neo/scgid/RHalf-1f_scgid_output/blob/RHalf-1f_info_table.tsv",
-#         "~/Documents/Flux_Downlaods/dissertation/rhop_neo/scgid/RHalf-1f_scgid_output/blob/RHalf-1f_unclassified_info_table.tsv",
-#         "(0.41,0.75","(0.0468227,8.0)")
+args = c("~/Documents/Flux_Downlaods/dissertation/rhop_neo/scgid/RHalf-1f_scgid_output/blob/RHalf-1f_info_table.tsv",
+         "~/Documents/Flux_Downlaods/dissertation/rhop_neo/scgid/RHalf-1f_scgid_output/blob/RHalf-1f_unclassified_info_table.tsv",
+         "(0.41,0.75","(0.0468227,8.0)")
+args = c("~/Documents/Flux_Downlaods/dissertation/scgid/amphiamblys/scgid_041819/augRhior/augRhior_tarFung_dbEDFmicro_scgid_output/blob/augRhior_tarFung_dbEDFmicro_info_table.tsv",
+         "~/Documents/Flux_Downlaods/dissertation/scgid/amphiamblys/scgid_041819/augRhior/augRhior_tarFung_dbEDFmicro_scgid_output/blob/augRhior_tarFung_dbEDFmicro_info_table.tsv",
+         "(0.41,0.75","(0.0468227,8.0)")
 ### Read in data from <scgid gc-cov>
 
 #tigInfo<-read.table(args[1],sep="\t",
@@ -27,7 +30,7 @@ args<-commandArgs(trailingOnly = TRUE)
 
 tigInfo<-read.table(args[1],sep="\t")
 unclass<-read.table(args[2],sep="\t")
-colnames(tigInfo)<-c("contigid","plen","coverage","gc","pid","hitsp","hitlin","evalue","parse_lin")
+colnames(tigInfo)<-c("contigid","plen","coverage","gc","pid","hitsp","hitlin","evalue","parse_lin","pertinent_taxlvl")
 colnames(unclass)<-c("contigid","coverage","gc","parse_lin")
 gc_window<-args[3]
 cov_window<-args[4]
@@ -36,8 +39,8 @@ output<-args[5]
 lin<-as.character(tigInfo$hitlin)
 lin<-sub("\\[","",lin)
 lin<-sub("\\]","",lin)
-linapp<-unlist(lapply(lin, getTaxLevel))
-tigInfo$hitlin_level<-linapp
+tigInfo$hitlin_level<-tigInfo$pertinent_taxlvl
+tigInfo<-tigInfo %>% mutate(hitlin_level = as.character(hitlin_level))
 
 gc_window = gsub("[()]","",gc_window)
 cov_window = gsub("[()]","",cov_window)
@@ -48,7 +51,7 @@ window$col<-"Best Window"
 
 
 imp<-tigInfo %>% group_by(hitlin_level) %>% summarise (n = n()) %>% 
-  filter(n>dim(tigInfo)[1]/100)
+  filter(n/dim(tigInfo)[1]>=0.125)
 
 try(tigInfo[!tigInfo$hitlin_level %in% imp$hitlin_level,]$hitlin_level <- "Other", silent = TRUE)
 try(tigInfo[tigInfo$evalue == 0,]$evalue<-2.225074e-308, silent = TRUE)
@@ -96,8 +99,8 @@ ggplot(plt, aes(coverage, gc, color=hitlin_level, size=log_evalue/-150)) +
   xlab("log(Coverage)")+
   ylab("GC content") +
   scale_colour_manual(values=myDark2_blk) +
-  geom_point(data=unclass, aes(coverage, gc, size=0.15, color=parse_lin), 
-             alpha=1.0, inherit.aes = FALSE) +
+  geom_point(data=unclass, aes(coverage, gc, color=parse_lin), 
+             alpha=1.0, size=0.15, inherit.aes = FALSE) +
   guides(
     alpha = FALSE,
     color = guide_legend(override.aes = list(alpha=1), title="Hit Taxonomy"), 
@@ -136,7 +139,7 @@ ggplot(plt, aes(coverage, gc, color=hitlin_level, size=log_evalue/-150)) +
     size = FALSE,
     fill = guide_legend(title="Windows")
   ) +
-  geom_point(data=unclass, aes(coverage, gc, size=0.15, color=included), alpha=1.0, inherit.aes = FALSE) +
+  geom_point(data=unclass, aes(coverage, gc, color=included), alpha=1.0, size=0.15, inherit.aes = FALSE) +
   geom_rect(data=window, aes(xmin=cov_window[1], ymin=gc_window[1], 
                              xmax=cov_window[2], ymax=gc_window[2], fill=col), color="black", alpha=0.2, inherit.aes = FALSE) +
   theme_bw()
