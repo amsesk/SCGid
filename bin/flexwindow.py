@@ -359,7 +359,7 @@ def calc_1d_window_symm (it, axis, inc_factor = 0.01, plot = False):
     axis_ss = target.summary_stats(axis)
     pdist = axis_ss.max - axis_ss.mean
     ndist = axis_ss.mean - axis_ss.min
-    dist = max( [pdist,ndist] )
+    dist = min( [pdist,ndist] )
     step_size = inc_factor * axis_ss.std
     population_whole = it.tnt_population()
     steps_to_take = int(np.floor(dist/step_size))
