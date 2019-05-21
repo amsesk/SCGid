@@ -55,7 +55,9 @@ except:
     os.mkdir(args.prefix+'_scgid_output')
     os.chdir(args.prefix+'_scgid_output')
 
-logger = start_logging(this_module, sys.argv)
+logs = start_logging(this_module, args, sys.argv)
+logger = logs[0]
+blogger = logs[1]
 
 try:
     os.chdir('esom')
