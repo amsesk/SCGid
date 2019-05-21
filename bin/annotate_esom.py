@@ -68,7 +68,9 @@ except:
 
 #%%
 
-logger = start_logging(this_module, sys.argv)
+logs = start_logging(this_module, args, sys.argv)
+logger = logs[0]
+blogger = logs[1]
 
 #%% see if nt.blast.out has been done for rscu or is present here in the esom folder under its default name
 if mode == 'blastn':
