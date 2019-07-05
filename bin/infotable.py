@@ -115,7 +115,7 @@ class infotable(object):
         self.ex = new_target_taxa['exception']
 
     def taxon_level(self, level):
-        return self.df.apply(it_get_taxonomy_level, axis=1, args=(level,)).set_index('contig')
+        return self.df.apply(it_get_taxonomy_level, axis=1, args=(level,))
 
     def parse_lineage(self):
         self.df = self.df.apply(it_parse_lin, axis=1, args=(self.tar, self.ex,))
