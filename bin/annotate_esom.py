@@ -9,7 +9,7 @@ Created on Wed Dec 20 14:13:57 2017
 import argparse
 import os
 import subprocess
-#from ete3 import NCBITaxa
+from ete3 import NCBITaxa
 from lib import *
 import settings
 
@@ -57,7 +57,7 @@ if blastout is not None:
 if info_table is not None:
     info_table = os.path.abspath(info_table)
 
-blastout_check = True #use this to decide whether or not blastn has to be run or an IOError has to be raised 
+blastout_check = True #use this to decide whether or not blastn has to be run or an IOError has to be raised
 
 #%% navigate to head of working directory
 try:
@@ -99,7 +99,7 @@ except:
     os.chdir('esom')
 
 #%% BLASTN, if necessary ###
-if mode == 'blastn': 
+if mode == 'blastn':
     if not blastout_check:
 
         #Make sure that BLAST is available
@@ -111,18 +111,24 @@ if mode == 'blastn':
 
         logger.info("No blastn output file detected. Running blastn on contig file.")
 
-        outfmt = "6 qseqid sseqid pident qlen length mismatch gapope evalue bitscore staxids"
+        outfmt = "6 qseqid sseqid pident qlen length mismatch gapopen evalue bitscore staxids"
         blastn_cmd = ["blastn","-query",nucl_path,"-max_target_seqs","1","-num_threads",args.cpus,"-db","nt","-outfmt", outfmt, "-evalue",args.evalue,"-out",prefix+".nt.blast.out"]
         logger.info(' '.join(blastn_cmd))
         p = subprocessP(blastn_cmd, logger)
+
+    bestfile = "{}.best".format(blastout)
+    taxidfile= "{}.taxids".format(bestfile)
+    if os.path.isfile(bestfile): os.remove(bestfile)
+    if os.path.isfile(taxidfile): os.remove(taxidfile)
+
 
     for key,best in best_blast_hit(blastout).iteritems():
         with open(blastout+".best",'a') as f:
             f.write('\t'.join(best))
             f.write('\n')
         with open(blastout+".best.taxids",'a') as f:
-            f.write(best[0]+"\t"+best[8]+"\n")
-    
+            f.write(best[0]+"\t"+best[9]+"\n")
+
     logger.info("Pulling taxonomic information for nucleotide scaffolds from ncbi taxonomy database...")
     ncbi = NCBITaxa()
     ids = {}
@@ -144,11 +150,11 @@ if mode == 'blastn':
 else:
     info_table = pd.read_csv(info_table, sep="\t", header = None)
     info_table.columns = ["contig","prot_len","coverage","gc","pid","sp_os","lineage","evalue","parse_lineage"]
-    
+
 
 ##### ANNOTATION #####
 ##using target-except mode
-        
+
 if targetexcept is True:
     annotation_file_towrite = ""
     scheme = args.annotation_scheme
