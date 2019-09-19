@@ -17,6 +17,7 @@ from itertools import izip
 from lib import subprocessC, start_logging, replace_line_by_pattern, file_yield_lines
 
 bin_dir =os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+this_module = "spexpand"
 
 #%% argument handling
 parser = argparse.ArgumentParser()
@@ -43,7 +44,8 @@ try:
 except:
     os.mkdir(outdir)
     os.chdir(outdir)
-logger = start_logging('spexpand', sys.argv)
+logs = start_logging(this_module, args, sys.argv)
+logger = logs[0]
 
 #%% Some checks and balances
 
@@ -109,7 +111,7 @@ if args.defaults:
     replace_line_by_pattern(os.path.join(bin_dir,"settings.py"), "path_to_taxdb=", "path_to_taxdb=\"%s\"" % (taxdb_end))
 
 logger.info("scgid spexpand DONE")
-    
+
 #%%
 
 
@@ -118,10 +120,10 @@ logger.info("scgid spexpand DONE")
 
 
 
-            
-        
-        
-        
+
+
+
+
 
 
 
