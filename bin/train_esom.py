@@ -16,6 +16,23 @@ import re
 import settings
 from lib import start_logging, specify_Xmx_esom, subprocessP, subprocessC, do_long_wait
 
+### Module functions
+def parse_mode(args, logger):
+    parser = {
+        "det": "Databioincs ESOM Tool",
+        "s": "somoclu"
+    }
+    if args.mode not in parser.keys():
+        logger.critcal("Invalid mode selection, \"{}\"".format(args.mode))
+        sys.exit(1)
+    if args.mode == "s" and "cpus" not in vars(args):
+        logger.critical("--cpus must be specified for mode \"s\", as it is going to run MPI")
+        sys.exit(1)
+    elif args.mode == "det" and "cpus" in vars(args):
+        logger.warning("You set --cpus in mode \"det\". Databioincs ESOM Tool (det) can and will only use one thread. Ignoring argument.")
+
+    return parser[args.mode]
+
 #%%
 
 ## Argument Handling ##
@@ -29,6 +46,8 @@ parser.add_argument('-w','--window', metavar = "window_size", action="store",req
 parser.add_argument('-k','--kmer', metavar = "kmer_size", action="store",required=False, default="4", help = "Kmer size for which frequencies will be calculated. Default = 4")
 
 ## esomtrn options
+parser.add_argument('--mode', metavar = "mode", action="store", required=False, default = "det", help = "Mode to train the ESOM. [det|s]")
+parser.add_argument('--cpus', metavar = "mode", action="store", required=False, help = "Number of CPUs to use for training (Somoclu only)")
 parser.add_argument('-r','--rows', metavar = "rows_in_map", action="store",required=False, help = "The number of rows to be present in the output ESOM. Default = 5.5x the number of neurons")
 parser.add_argument('-c','--cols', metavar = "columns_in_map", action="store",required=False, help = "The number of columns to be present in the output ESOM. Default = 5.5x the number of neurons")
 
@@ -47,7 +66,6 @@ prefix = args.prefix
 assembly = os.path.abspath(args.nucl)
 file_prefix = os.path.split(assembly)[1]
 
-
 #%%
 try:
     os.chdir(args.prefix+'_scgid_output')
@@ -58,6 +76,8 @@ except:
 logs = start_logging(this_module, args, sys.argv)
 logger = logs[0]
 blogger = logs[1]
+
+mode = parse_mode(args, logger)
 
 try:
     os.chdir('esom')
@@ -78,14 +98,14 @@ do_long_wait(lambda: subprocessP(arguments, logger), 'none')
 
 ## If rows and cols aren't provided, make a square map that is big enough for number of neurons #
 if args.rows is None and args.cols is None:
-    logger.info("Nothing specified for -r|--rows or -c|--cols. Using defult dimensions for map.")
     nodes = len(open(file_prefix+".lrn").readlines()) - 4 ## number of lines in .lrn file minus 4 header lines
     neurons = float(nodes*5.5)
     dim = float(math.sqrt(neurons))
     rows = str(round(dim)).split('.')[0]
     cols = str(round(dim)).split('.')[0]
+    logger.info("Nothing specified for -r|--rows or -c|--cols. There are {} nodes in the lrn file, using defult dimensions of {}x{}, i.e., sqrt(5.5*nnodes)".format(nodes, rows, cols))
 else:
-    logger.info("Using user-specified dimensions for map: "+arg.rows+"x"+args.cols)
+    logger.info("Using user-specified dimensions for map: "+args.rows+"x"+args.cols)
     rows = args.rows
     cols = args.cols
 
@@ -97,13 +117,24 @@ b = file_prefix+"."+rows+"x"+cols+"e"+args.epochs+".bm"
 specify_Xmx_esom(os.path.join(esom_bin,"esomstart"),args.Xmx)
 
 ##Train the ESOM
-logger.info("Starting ESOM training process")
-train_args = [os.path.join(esom_bin,"esomtrn"), "--permute", "--out", out,"-b", b,"--cls", file_prefix+".cls", "--lrn",file_prefix+".lrn", "--algorithm", "kbatch", "--rows", rows, "--columns", cols, "-bmc", "6", "--start-radius", args.start_radius, "--epochs", args.epochs, "-k", "0.15", "--bmsearch", "standard", "--dist", "euc"]
+if args.mode == "det":
+    logger.info("Training ESOM with {}".format(mode))
+    train_args = [os.path.join(esom_bin,"esomtrn"), "--permute", "--out", out,"-b", b,"--cls", file_prefix+".cls", "--lrn",file_prefix+".lrn", "--algorithm", "kbatch", "--rows", rows, "--columns", cols, "-bmc", "6", "--start-radius", args.start_radius, "--epochs", args.epochs, "-k", "0.15", "--bmsearch", "standard", "--dist", "euc"]
 
-logger.info(' '.join(train_args))
+    logger.info(' '.join(train_args))
 
-do_long_wait(lambda: subprocessP(train_args, logger), 'none')
+    do_long_wait(lambda: subprocessP(train_args, logs, log_stdout=True), 'none')
 
-logger.info("ESOM trained successfully, time to annotate.")
+    logger.info("ESOM training ended - confirm no OOM error above.")
+
+elif args.mode == "s":
+    logger.info("Training ESOM with {}".format(mode))
+    train_args = [settings.mpicmd, "-np {}".format(args.cpus), "--permute", "--out", out,"-b", b,"--cls", file_prefix+".cls", "--lrn",file_prefix+".lrn", "--algorithm", "kbatch", "--rows", rows, "--columns", cols, "-bmc", "6", "--start-radius", args.start_radius, "--epochs", args.epochs, "-k", "0.15", "--bmsearch", "standard", "--dist", "euc"]
+
+    logger.info(' '.join(train_args))
+
+    do_long_wait(lambda: subprocessP(train_args, logger), 'none')
+
+    logger.info("ESOM trained.")
 
 ## DONE
