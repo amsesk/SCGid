@@ -31,5 +31,10 @@ reset = ['git','reset','--hard','origin/master']
 subprocess.call(fetch)
 subprocess.call(reset)
 
-## restore settings
+## check if settings have changed. If not, restore old settings
+with open(os.path.join(scgid_bin, 'settings.py.sav')) as old, open(os.path.join(scgid_bin, 'settings.py')) as new:
+    new_names = [x.split("=")[0] for x  in new.readlines()]
+    old_names = [x.split("=")[0] for x in old.readlines()]
+    print old_names
+    print new_names
 os.rename(os.path.join(scgid_bin,'settings.py.sav'), os.path.join(scgid_bin,'settings.py'))
