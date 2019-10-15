@@ -11,8 +11,8 @@ color_pal = sample(brewer.pal(9,"Set1"))
 #tree = "/Users/kevinamses/Documents/Flux_Downlaods/dissertation/rhop_neo/scgid/RHalf-1f_scgid_output/rscu/RHalf-1f_rscu_nj.tre"
 #annot = "/Users/kevinamses/Documents/Flux_Downlaods/dissertation/rhop_neo/scgid/RHalf-1f_scgid_output/rscu/RHalf-1f_rscuTree_annot.csv"
 
-tree = "/Users/kevinamses/Documents/Flux_Downlaods/dissertation/scgid/amphiamblys/scgid_041819/augRhior/augRhior_tarFung_dbEDFmicro_scgid_output/rscu/augRhior_tarFung_dbEDFmicro_rscu_nj.tre"
-annot = "/Users/kevinamses/Documents/Flux_Downlaods/dissertation/scgid/amphiamblys/scgid_041819/augRhior/augRhior_tarFung_dbEDFmicro_scgid_output/rscu/augRhior_tarFung_dbEDFmicro_rscuTree_annot.csv"
+tree = "/home/aimzez/work/jason/NRRL_3617/scgid_spades/r1_scgid_output/rscu/r1_rscu_nj.tre"
+annot = "/home/aimzez/work/jason/NRRL_3617/scgid_spades/r1_scgid_output/rscu/r1_rscuTree_annot.csv"
 
 args<-commandArgs(trailingOnly = TRUE)
 tree = args[1]
@@ -39,7 +39,9 @@ if (dim(imp)[1]+1 > length(color_pal)) {
 try(annot[!annot$taxlvl %in% imp$taxlvl,]$taxlvl<-"Other")
 
 taxon_groups<-annot %>% group_by(taxlvl) %>% summarise(n=n())
-taxon_groups = taxon_groups[-match('unclassified', taxon_groups$taxlvl),]
+if (!is.na(match('unclassified', taxon_groups$taxlvl))) {
+  taxon_groups = taxon_groups[-match('unclassified', taxon_groups$taxlvl),]
+}
 
 for (t in taxon_groups$taxlvl) {
   taxon_entire_clades = c()
