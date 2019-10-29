@@ -14,7 +14,7 @@ import inspect
 import math
 import re
 import settings
-from lib import start_logging, specify_Xmx_esom, subprocessP, subprocessC, do_long_wait
+from lib import start_logging, specify_Xmx_esom, subprocessP, subprocessC, do_long_wait, Depends, Module, CaseDependency, Dependencies, ConstDependency
 
 ### Module functions
 def parse_mode(args, logger):
@@ -55,13 +55,18 @@ parser.add_argument('-sr','--start_radius', metavar = "start_radius", action="st
 parser.add_argument('-e','--epochs', metavar = "training_epochs", action="store",required=False, default = "20", help = "Number of epochs to train over. Default = 20")
 parser.add_argument('--Xmx', metavar = "available_memory", action="store",required=False, default = "512m", help = "Set memoray available to train the ESOM. Specicy as such: X megabytes = Xm, X gigabytes = Xg")
 
-args =  parser.parse_args()
+
+args = parser.parse_args()
+
+d = Dependencies(args, CaseDependency("somoclu", "mode", "s"))
+this_module = Module("train", dependencies=d, name="kmers")
+this_module.initialize()
+
 esom_bin = os.path.join(settings.esom_path,'bin')
 bin_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 pkg_home = os.path.dirname(bin_dir)
 
 #%%
-this_module = "kmers"
 prefix = args.prefix
 assembly = os.path.abspath(args.nucl)
 file_prefix = os.path.split(assembly)[1]
@@ -73,7 +78,7 @@ except:
     os.mkdir(args.prefix+'_scgid_output')
     os.chdir(args.prefix+'_scgid_output')
 
-logs = start_logging(this_module, args, sys.argv)
+logs = start_logging(this_module.name, args, sys.argv)
 logger = logs[0]
 blogger = logs[1]
 
@@ -94,6 +99,7 @@ subprocess.call(arguments)
 call = os.path.join(bin_dir,'print_tetramer_freqs_deg_filter_esom_VD.pl')
 arguments = ['perl',call,'-s',file_prefix,'-m',args.mintig,'-w',args.window,'-k',args.kmer]
 logger.info(' '.join(arguments))
+
 do_long_wait(lambda: subprocessP(arguments, logger), 'none')
 
 ## If rows and cols aren't provided, make a square map that is big enough for number of neurons #
@@ -109,15 +115,15 @@ else:
     rows = args.rows
     cols = args.cols
 
-## Train ESOM ##
-out = file_prefix+"."+rows+"x"+cols+"e"+args.epochs+".wts"
-b = file_prefix+"."+rows+"x"+cols+"e"+args.epochs+".bm"
-
-#Alter hard-coded memory-availability in esomstart to match user-specified resources
-specify_Xmx_esom(os.path.join(esom_bin,"esomstart"),args.Xmx)
-
 ##Train the ESOM
 if args.mode == "det":
+
+    out = file_prefix+"."+rows+"x"+cols+"e"+args.epochs+".wts"
+    b = file_prefix+"."+rows+"x"+cols+"e"+args.epochs+".bm"
+
+    #Alter hard-coded memory-availability in esomstart to match user-specified resources
+    specify_Xmx_esom(os.path.join(esom_bin,"esomstart"),args.Xmx)
+
     logger.info("Training ESOM with {}".format(mode))
     train_args = [os.path.join(esom_bin,"esomtrn"), "--permute", "--out", out,"-b", b,"--cls", file_prefix+".cls", "--lrn",file_prefix+".lrn", "--algorithm", "kbatch", "--rows", rows, "--columns", cols, "-bmc", "6", "--start-radius", args.start_radius, "--epochs", args.epochs, "-k", "0.15", "--bmsearch", "standard", "--dist", "euc"]
 
@@ -129,12 +135,10 @@ if args.mode == "det":
 
 elif args.mode == "s":
     logger.info("Training ESOM with {}".format(mode))
-    train_args = [settings.mpicmd, "-np {}".format(args.cpus), "--permute", "--out", out,"-b", b,"--cls", file_prefix+".cls", "--lrn",file_prefix+".lrn", "--algorithm", "kbatch", "--rows", rows, "--columns", cols, "-bmc", "6", "--start-radius", args.start_radius, "--epochs", args.epochs, "-k", "0.15", "--bmsearch", "standard", "--dist", "euc"]
-
-    logger.info(' '.join(train_args))
-
-    do_long_wait(lambda: subprocessP(train_args, logger), 'none')
-
-    logger.info("ESOM trained.")
-
+    sys.exit()
+    train_args = [settings.mpicmd, "-np {}".format(args.cpus), "somoclu", "-e", args.epochs, "-l", "0.5", "-L", "0.1", "-m", "toroid", "-r", args.start_radius, "-x", rows, "-y", cols, "-v", "2", "{}.lrn".format(file_prefix), "{}".format(file_prefix)]
+    logger.info(" ".join(train_args))
+    subprocessP(train_args, blogger, log_stdout=True)
+    #do_long_wait(lambda: subprocessP(train_args, blogger, log_stdout=True), 'none')
+    logger.info("ESOM training complete.")
 ## DONE
