@@ -14,9 +14,14 @@ import inspect
 import math
 import re
 import settings
-from lib import start_logging, specify_Xmx_esom, subprocessP, subprocessC, do_long_wait, Depends, Module, CaseDependency, Dependencies, ConstDependency
+from lib import start_logging, specify_Xmx_esom, subprocessP, do_long_wait
 
-### Module functions
+from Module import Module
+from Depends import Dependencies, CaseDependency
+
+# Module functions
+
+
 def parse_mode(args, logger):
     parser = {
         "det": "Databioincs ESOM Tool",
@@ -35,17 +40,17 @@ def parse_mode(args, logger):
 
 #%%
 
-## Argument Handling ##
+# Argument Handling
 parser = argparse.ArgumentParser()
 parser.add_argument('-n','--nucl', metavar = "contig_fasta", action="store",required=True, help = "A FASTA file containing the nucleotide assembly. (MANDATORY)")
 parser.add_argument('-f','--prefix', metavar = 'prefix_for_output', required=False, default='scgid', help="The prefix that you would like to be used for all output files. DEFAULT = scgid")
 
-## print_tetramer_freqs options
+# print_tetramer_freqs options
 parser.add_argument('-m','--mintig', metavar = "minimum_contig_size", action="store",required=False, default="1000", help = "Contig size cutoff (in nucleotides) for inclusion in the ESOM training. Default = 1000 bp")
 parser.add_argument('-w','--window', metavar = "window_size", action="store",required=False, default="1000", help = "Size of the window in which kmer frequencies are calculated. Default = 1000 bp")
 parser.add_argument('-k','--kmer', metavar = "kmer_size", action="store",required=False, default="4", help = "Kmer size for which frequencies will be calculated. Default = 4")
 
-## esomtrn options
+# esomtrn options
 parser.add_argument('--mode', metavar = "mode", action="store", required=False, default = "det", help = "Mode to train the ESOM. [det|s]")
 parser.add_argument('--cpus', metavar = "mode", action="store", required=False, help = "Number of CPUs to use for training (Somoclu only)")
 parser.add_argument('-r','--rows', metavar = "rows_in_map", action="store",required=False, help = "The number of rows to be present in the output ESOM. Default = 5.5x the number of neurons")
@@ -66,15 +71,13 @@ esom_bin = os.path.join(settings.esom_path,'bin')
 bin_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 pkg_home = os.path.dirname(bin_dir)
 
-#%%
 prefix = args.prefix
 assembly = os.path.abspath(args.nucl)
 file_prefix = os.path.split(assembly)[1]
 
-#%%
 try:
     os.chdir(args.prefix+'_scgid_output')
-except:
+except OSError:
     os.mkdir(args.prefix+'_scgid_output')
     os.chdir(args.prefix+'_scgid_output')
 
