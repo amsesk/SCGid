@@ -137,7 +137,7 @@ if args.mode == "det":
 
 elif args.mode == "s":
     logger.info("Training ESOM with {}".format(mode))
-    train_args = [settings.mpicmd, "-np {}".format(args.cpus), "somoclu", "-e", args.epochs, "-l", "0.5", "-L", "0.1", "-m", "toroid", "-r", args.start_radius, "-x", rows, "-y", cols, "-v", "2", "{}.lrn".format(file_prefix), "{}".format(file_prefix)]
+    train_args = [settings.mpicmd, "-np", args.cpus, "somoclu", "-e", args.epochs, "-l", "0.5", "-L", "0.1", "-m", "toroid", "-r", args.start_radius, "-x", rows, "-y", cols, "-v", "2", "{}.lrn".format(file_prefix), "{}".format(file_prefix)]
     logger.info(" ".join(train_args))
     subprocessP(train_args, logs, log_stdout=True)
     #do_long_wait(lambda: subprocessP(train_args, blogger, log_stdout=True), 'none')
