@@ -13,7 +13,6 @@ import cPickle as pickle
 import subprocess
 import itertools
 import settings
-import enum
 import Error
 from time import localtime, strftime, sleep
 from collections import namedtuple
