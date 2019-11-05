@@ -1,4 +1,7 @@
- class Module ():
+import Error
+import sys
+
+class Module ():
     def __init__(self, call, dependencies, name = None):
         self.call = call
         self.name = call

@@ -1,5 +1,7 @@
 from collections import namedtuple
 from Error import MissingDependencyError
+import itertools
+import os
 
 CaseDependencyCouplet = namedtuple("CaseDependencyCouplet", ["argid", "value"])
 class Dependency(object):
@@ -24,22 +26,22 @@ class CaseDependency(Dependency):
 
 
 class Dependencies():
-def __init__(self, parsed_args, *args):
-    self.deps = args
-    self.pargs = vars(parsed_args)
+    def __init__(self, parsed_args, *args):
+        self.deps = args
+        self.pargs = vars(parsed_args)
 
-def check(self):
-    if any([isinstance(x, CaseDependency) for x in self.deps]) and self.pargs is None:
-        raise ValueError
-    avail = list(itertools.chain.from_iterable([os.listdir(x) for x in os.environ["PATH"].split(":")]))
-    for d in self.deps:
-        d.available = d.is_available(avail)
+    def check(self):
+        if any([isinstance(x, CaseDependency) for x in self.deps]) and self.pargs is None:
+            raise ValueError
+        avail = list(itertools.chain.from_iterable([os.listdir(x) for x in os.environ["PATH"].split(":")]))
+        for d in self.deps:
+            d.available = d.is_available(avail)
 
-    missing = [x.cmd for x in self.deps if isinstance(x, ConstDependency) and not x.available] + [x.cmd for x in self.deps if isinstance(x, CaseDependency) and self.pargs[x.couplet.argid] == x.couplet.value]
-    if len(missing) > 0:
-        return MissingDependencyError(missing)
-    else:
-        return 0
+        missing = [x.cmd for x in self.deps if isinstance(x, ConstDependency) and not x.available] + [x.cmd for x in self.deps if isinstance(x, CaseDependency) and self.pargs[x.couplet.argid] == x.couplet.value]
+        if len(missing) > 0:
+            return MissingDependencyError(missing)
+        else:
+            return 0
 
 '''
 class Depends():
