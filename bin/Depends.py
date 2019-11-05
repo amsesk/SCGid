@@ -38,7 +38,7 @@ class Dependencies():
         for d in self.deps:
             d.available = d.is_available(avail)
 
-        missing = [x.cmd for x in self.deps if isinstance(x, ConstDependency) and not x.available] + [x.cmd for x in self.deps if isinstance(x, CaseDependency) and self.pargs[x.couplet.argid] == x.couplet.value]
+        missing = [x.cmd for x in self.deps if isinstance(x, ConstDependency) and not x.available] + [x.cmd for x in self.deps if isinstance(x, CaseDependency) and self.pargs[x.couplet.argid] == x.couplet.value and not x.available]
         if len(missing) > 0:
             return MissingDependencyError(missing)
         else:
