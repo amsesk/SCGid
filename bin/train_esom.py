@@ -62,9 +62,15 @@ parser.add_argument('--Xmx', metavar = "available_memory", action="store",requir
 
 args = parser.parse_args()
 
-d = Dependencies(args, CaseDependency("somoclu", "mode", "s"))
-this_module = Module("train", dependencies=d, name="kmers")
+this_module = Module("train", pargs=args, name="kmers")
+'''
+this_module.set_dependencies( \
+    CaseDependency("somoclu", "mode", "s"), \
+    CaseDependency(settings.mpicmd, "mode","s") )
+'''
 this_module.initialize()
+print this_module.config
+sys.exit()
 
 esom_bin = os.path.join(settings.esom_path,'bin')
 bin_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
@@ -140,6 +146,5 @@ elif args.mode == "s":
     train_args = [settings.mpicmd, "-np", args.cpus, "somoclu", "-e", args.epochs, "-l", "0.5", "-L", "0.1", "-m", "toroid", "-r", args.start_radius, "-x", rows, "-y", cols, "-v", "2", "{}.lrn".format(file_prefix), "{}".format(file_prefix)]
     logger.info(" ".join(train_args))
     subprocessP(train_args, logs, log_stdout=True)
-    #do_long_wait(lambda: subprocessP(train_args, blogger, log_stdout=True), 'none')
     logger.info("ESOM training complete.")
 ## DONE

@@ -26,9 +26,9 @@ class CaseDependency(Dependency):
 
 
 class Dependencies():
-    def __init__(self, parsed_args, *args):
-        self.deps = args
-        self.pargs = vars(parsed_args)
+    def __init__(self, pargs, *deps):
+        self.deps = deps
+        self.pargs = vars(pargs)
 
     def check(self):
         if any([isinstance(x, CaseDependency) for x in self.deps]) and self.pargs is None:
