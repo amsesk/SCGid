@@ -33,7 +33,7 @@ class Dependencies():
     def check(self):
         if any([isinstance(x, CaseDependency) for x in self.deps]) and self.pargs is None:
             raise ValueError
-        avail = [x for x in os.environ["PATH"].split(":") is os.path.isdir(x)]
+        avail = [x for x in os.environ["PATH"].split(":") if os.path.isdir(x)]
         avail = list(itertools.chain.from_iterable([os.listdir(x) for x in avail]))
         for d in self.deps:
             d.available = d.is_available(avail)
