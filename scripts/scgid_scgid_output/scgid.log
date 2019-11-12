@@ -1,0 +1,76 @@
+XXXXXXXXXXXXXXXX NEW CALL TO <SCGID TRAINESOM> ON NOVEMBER 06, 2019 AT 17:18:26 XXXXXXXXXXXXXXXX
+
+ORIGINAL SCGID CALL
+------------------------------
+scgid TrainEsom -n bleh -sr 75 --mode s
+
+RUN OPTIONS
+------------------------------
+() start_radius   75             
+() mintig         1000           
+() rows           <not specified>
+() Xmx            512m           
+() nucl           bleh           
+() window         1000           
+() module         TrainEsom      
+() cpus           <not specified>
+() epochs         20             
+() prefix         scgid          
+() call           scgid TrainEsom -n bleh -sr 75 --mode s
+() mode           s              
+() run_wd         /Users/kevinamses/scgid/bin/scgid_scgid_output
+() cols           <not specified>
+() kmer           4              
+
+[19-11-06 @ 17:18:26][TrainEsom] Starting kmer-based genome selection process.
+XXXXXXXXXXXXXXXX NEW CALL TO <SCGID TRAIN> ON NOVEMBER 06, 2019 AT 17:38:34 XXXXXXXXXXXXXXXX
+
+ORIGINAL SCGID CALL
+------------------------------
+scgid Train -n bleh -sr 75 --mode s
+
+RUN OPTIONS
+------------------------------
+() start_radius   75             
+() mintig         1000           
+() rows           <not specified>
+() Xmx            512m           
+() nucl           bleh           
+() window         1000           
+() module         Train          
+() cpus           <not specified>
+() epochs         20             
+() prefix         scgid          
+() call           scgid Train -n bleh -sr 75 --mode s
+() mode           s              
+() run_wd         /Users/kevinamses/scgid/bin/scgid_scgid_output
+() cols           <not specified>
+() kmer           4              
+
+[19-11-06 @ 17:38:34][Train] Starting kmer-based genome selection process.
+XXXXXXXXXXXXXXXX NEW CALL TO <SCGID TRAIN> ON NOVEMBER 06, 2019 AT 21:44:30 XXXXXXXXXXXXXXXX
+
+ORIGINAL SCGID CALL
+------------------------------
+scgid Train -n bleh -sr 75 --mode det
+
+RUN OPTIONS
+------------------------------
+() start_radius   75             
+() mintig         1000           
+() rows           <not specified>
+() Xmx            512m           
+() nucl           bleh           
+() window         1000           
+() module         Train          
+() cpus           <not specified>
+() epochs         20             
+() prefix         scgid          
+() call           scgid Train -n bleh -sr 75 --mode det
+() mode           det            
+() run_wd         /Users/kevinamses/scgid/bin/scgid_scgid_output
+() cols           <not specified>
+() kmer           4              
+
+[19-11-06 @ 21:44:30][Train] You set --cpus in mode "det". Databioincs ESOM Tool (det) can and will only use one thread. Ignoring argument.
+[19-11-06 @ 21:44:30][Train] Starting kmer-based genome selection process.

@@ -16,7 +16,8 @@ import re
 import settings
 from lib import start_logging, specify_Xmx_esom, subprocessP, do_long_wait
 
-from Module import Module
+#from Module import Module
+import Module
 from Depends import Dependencies, CaseDependency
 
 # Module functions
@@ -36,9 +37,28 @@ def parse_mode(args, logger):
         logger.warning("You set --cpus in mode \"det\". Databioincs ESOM Tool (det) can and will only use one thread. Ignoring argument.")
 
     return parser[args.mode]
+'''
+def train_somoclu():
+    logger.info("Training ESOM with {}".format(mode))
+    train_args = [module.config.get("mpicmd"), "-np", module.config.get("cpus"), "somoclu", "-e", module.config.get("epochs"), "-l", "0.5", "-L", "0.1", "-m", "toroid", "-r", module.config.get("startradius"), "-x", rows, "-y", cols, "-v", "2", "{}.lrn".format(file_prefix), "{}".format(file_prefix)]
+    logger.info(" ".join(train_args))
+    subprocessP(train_args, logs, log_stdout=True)
+    logger.info("ESOM training complete.")
+    return 0
+'''
+
+#%% Define module
+
+module = Module.Train()
+print module.config
+sys.exit()
+print module.__class__
+module.config.dependencies.populate( \
+    CaseDependency("somoclu", "mode", "s"), \
+    CaseDependency(module.config.get("mpicmd"), "mode","s") \
+)
 
 #%%
-
 # Argument Handling
 parser = argparse.ArgumentParser()
 parser.add_argument('-n','--nucl', metavar = "contig_fasta", action="store",required=True, help = "A FASTA file containing the nucleotide assembly. (MANDATORY)")
@@ -54,39 +74,27 @@ parser.add_argument('--mode', metavar = "mode", action="store", required=False, 
 parser.add_argument('--cpus', metavar = "mode", action="store", required=False, help = "Number of CPUs to use for training (Somoclu only)")
 parser.add_argument('-r','--rows', metavar = "rows_in_map", action="store",required=False, help = "The number of rows to be present in the output ESOM. Default = 5.5x the number of neurons")
 parser.add_argument('-c','--cols', metavar = "columns_in_map", action="store",required=False, help = "The number of columns to be present in the output ESOM. Default = 5.5x the number of neurons")
-
 parser.add_argument('-sr','--start_radius', metavar = "start_radius", action="store",required=False, default = '50', help = "Start radius for the ESOM. (MANDATORY)")
 parser.add_argument('-e','--epochs', metavar = "training_epochs", action="store",required=False, default = "20", help = "Number of epochs to train over. Default = 20")
 parser.add_argument('--Xmx', metavar = "available_memory", action="store",required=False, default = "512m", help = "Set memoray available to train the ESOM. Specicy as such: X megabytes = Xm, X gigabytes = Xg")
-
-
 args = parser.parse_args()
 
-this_module = Module("train", pargs=args, name="kmers")
-'''
-this_module.set_dependencies( \
-    CaseDependency("somoclu", "mode", "s"), \
-    CaseDependency(settings.mpicmd, "mode","s") )
-'''
-this_module.initialize()
-print this_module.config
-sys.exit()
+module.config.load_cmdline(args)
+module.config.dependencies.check(vars(args))
 
-esom_bin = os.path.join(settings.esom_path,'bin')
-bin_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-pkg_home = os.path.dirname(bin_dir)
+esom_bin = module.config.get("esom_path")
 
-prefix = args.prefix
-assembly = os.path.abspath(args.nucl)
+prefix = module.config.get("prefix")
+assembly = os.path.abspath(module.config.get("nucl"))
 file_prefix = os.path.split(assembly)[1]
 
 try:
-    os.chdir(args.prefix+'_scgid_output')
+    os.chdir(prefix+'_scgid_output')
 except OSError:
-    os.mkdir(args.prefix+'_scgid_output')
-    os.chdir(args.prefix+'_scgid_output')
+    os.mkdir(prefix+'_scgid_output')
+    os.chdir(prefix+'_scgid_output')
 
-logs = start_logging(this_module.name, args, sys.argv)
+logs = start_logging(module.name, args , sys.argv)
 logger = logs[0]
 blogger = logs[1]
 
@@ -100,11 +108,14 @@ except:
 
 #%% Let's get started
 logger.info("Starting kmer-based genome selection process.")
+
+sys.exit()
+
 logger.info("Calculating 4-mer frequencies across scaffolds and generating ESOM input files.")
 ## print tetramer freqs ##
 arguments = ['cp',assembly,file_prefix]
 subprocess.call(arguments)
-call = os.path.join(bin_dir,'print_tetramer_freqs_deg_filter_esom_VD.pl')
+call = os.path.join(module.config.SCGIDBIN,'print_tetramer_freqs_deg_filter_esom_VD.pl')
 arguments = ['perl',call,'-s',file_prefix,'-m',args.mintig,'-w',args.window,'-k',args.kmer]
 logger.info(' '.join(arguments))
 

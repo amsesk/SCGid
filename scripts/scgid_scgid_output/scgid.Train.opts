@@ -1,0 +1,16 @@
+RUN DATE & TIME: 11/06/19, 21:44:30
+start_radius=75
+mintig=1000
+rows=None
+Xmx=512m
+nucl=bleh
+window=1000
+module=Train
+cpus=None
+epochs=20
+prefix=scgid
+call=scgid Train -n bleh -sr 75 --mode det
+mode=det
+run_wd=/Users/kevinamses/scgid/bin/scgid_scgid_output
+cols=None
+kmer=4

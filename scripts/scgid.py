@@ -38,6 +38,11 @@ import sys
 import subprocess
 import os
 import inspect
+import logging
+import logging.config
+from loghandlers import ExitOnExceptionHandler
+
+from gct import Gct 
 
 bin_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 pkg_home = os.path.dirname(bin_dir)
@@ -132,6 +137,13 @@ elif sys.argv[1] == "qualcheck":
     py = sys.executable
     arguments.insert(0,py)
     subprocess.call(arguments)
+
+elif sys.argv[1] == "gct":
+    logging.config.fileConfig(os.path.join(bin_dir, "logging_config.ini"))
+    log = logging.getLogger(__name__)
+    log.info("Calling NewModule")
+    result = Gct().run()
+    log.info("Final message from root.")
 
 else:
     print "\nERROR: Bad module selection. Printing help screen...\n"

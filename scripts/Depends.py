@@ -1,5 +1,6 @@
 from collections import namedtuple
 from Error import MissingDependencyError
+import logging
 import itertools
 import os
 
@@ -26,24 +27,29 @@ class CaseDependency(Dependency):
 
 
 class Dependencies():
-    def __init__(self, pargs, *deps):
-        self.deps = deps
-        self.pargs = vars(pargs)
+    def __init__(self):
+        self.deps = ()
+        self.log = logging.getLogger(__name__)
 
-    def check(self):
-        if any([isinstance(x, CaseDependency) for x in self.deps]) and self.pargs is None:
-            raise ValueError
+    def __repr__(self):
+        return ", ".join([x.cmd for x in self.deps])
+
+    def populate (self, *deps):
+        self.deps = deps
+
+    def check(self, parsed_args):
         avail = [x for x in os.environ["PATH"].split(":") if os.path.isdir(x)]
         avail = list(itertools.chain.from_iterable([os.listdir(x) for x in avail]))
         for d in self.deps:
             d.available = d.is_available(avail)
 
-        missing = [x.cmd for x in self.deps if isinstance(x, ConstDependency) and not x.available] + [x.cmd for x in self.deps if isinstance(x, CaseDependency) and self.pargs[x.couplet.argid] == x.couplet.value and not x.available]
+        missing = [x.cmd for x in self.deps if isinstance(x, ConstDependency) and not x.available] + [x.cmd for x in self.deps if isinstance(x, CaseDependency) and parsed_args.__dict__[x.couplet.argid] == x.couplet.value and not x.available]
         if len(missing) > 0:
-            return MissingDependencyError(missing)
+            self.log.critical(MissingDependencyError(missing))
+            raise MissingDependencyError(missing)
         else:
             return 0
-
+        
 '''
 class Depends():
     def __init__(self, deptree=None, *args):
