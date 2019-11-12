@@ -129,7 +129,7 @@ if args.mode == "det":
 
 elif args.mode == "s":
     logger.info("Training ESOM with {}".format(mode))
-    train_args = [settings.mpicmd, "-np {}".format(args.cpus), "--permute", "--out", out,"-b", b,"--cls", file_prefix+".cls", "--lrn",file_prefix+".lrn", "--algorithm", "kbatch", "--rows", rows, "--columns", cols, "-bmc", "6", "--start-radius", args.start_radius, "--epochs", args.epochs, "-k", "0.15", "--bmsearch", "standard", "--dist", "euc"]
+    train_args = [settings.mpicmd, "-np", "{}".format(args.cpus), "--permute", "--out", out,"-b", b,"--cls", file_prefix+".cls", "--lrn",file_prefix+".lrn", "--algorithm", "kbatch", "--rows", rows, "--columns", cols, "-bmc", "6", "--start-radius", args.start_radius, "--epochs", args.epochs, "-k", "0.15", "--bmsearch", "standard", "--dist", "euc"]
 
     logger.info(' '.join(train_args))
 
