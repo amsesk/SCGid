@@ -1,19 +1,20 @@
 import sys
 import os
 import yaml
-from lib import SimpleNamespace
 import inspect
 import shutil
-import Error
 import logging
-from Depends import Dependencies
+from scripts.dependencies import Dependencies
+from scripts.reuse import ReusableOutputManager
+from scripts.loglib import logger_name_gen, LoggingEntity
+from scripts.error import MissingConfigError, MalformedConfigError
 
 class Module (object):
     def __init__(self, call, name = None, parent=None):
         self.call = call
         self.name = call
-        self.parent = parent
-        self.OUTPUTSUFFIX = "_scgid_output"
+        self.caller = inspect.stack()[1][0].f_locals["self"]
+        self.wd = None
         if name is not None:
             self.name = name
         self.log = None
@@ -21,19 +22,22 @@ class Module (object):
         #Set by self.initialize()
         self.config = Config()
     def start_logging(self):
-        self.log = logging.getLogger("{}.{}".format(
-            self.parent.__name__,
-            ".".join(self.config.get("mod"))
-            ))
+        self.log = logging.getLogger(
+            logger_name_gen()
+        )
 
     def setwd (self, name, prefix):
-        rundir = "{}{}".format(prefix, self.OUTPUTSUFFIX)
+        name = name.split(".")[1]
+        rundir = "{}{}".format(prefix, self.config.OUTPUTSUFFIX)
         try:
             os.chdir(rundir)
         except:
             os.mkdir(rundir)
             os.chdir(rundir)
             self.log.info("Creating directory `%s`", os.getcwd())
+        
+        self.config.rundir = os.getcwd()
+        
         try:
             os.chdir(name)
         except:
@@ -46,6 +50,7 @@ class Module (object):
         os.mkdir('temp')
         os.chdir('temp')
         self.log.info("Entering working directory: `%s`", os.getcwd())
+        self.wd = os.getcwd()
 
     def initialize(self):
         pass
@@ -68,21 +73,24 @@ class Module (object):
                 sys.exit(Err.exitcode)
     '''
 
-class Config(object):
+class Config(LoggingEntity):
     def __init__(self):
-        self.SCGIDBIN = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-        self.SCGID = os.path.dirname(self.SCGIDBIN)
+        self.SCGID_SCRIPTS = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+        self.SCGID = os.path.dirname(self.SCGID_SCRIPTS)
+        self.OUTPUTSUFFIX = "_scgid_output"
         self.dependencies = Dependencies()
+        self.reusable = ReusableOutputManager()
         self.__dict__.update(self.load_yaml(self.SCGID))
+        self.rundir = None
 
     def __repr__(self):
-        return "\n".join(["{}: {}".format(key, setting) for key,setting in self.__dict__.iteritems()])
+        return "\n".join(["{}: {}".format(key, setting) for key,setting in self.__dict__.items()])
 
     def get(self, value):
         return getattr(self, value)
 
     def load_cmdline(self, parsed_args):
-        for unset in [x for x,p in parsed_args.__dict__.iteritems() if p is None]:
+        for unset in [x for x,p in parsed_args.__dict__.items() if p is None]:
             try:
                 setattr(parsed_args, unset, getattr(self, "DEFAULT_{}".format(unset)))
             except:
@@ -95,15 +103,10 @@ class Config(object):
             loc = "{}.local".format(loc)
         try:
             with open(loc, 'r') as cfg:
-                return yaml.load(cfg)
+                return yaml.load(cfg, Loader=yaml.BaseLoader)
         except IOError:
-            raise Error.MissingConfigError("Unable to locate config.yaml")
+            raise MissingConfigError("Unable to locate config.yaml")
         except:
-            raise Error.MalformedConfigError("Malformed config.yaml")
-class Kmers(Module):
-    def __init__(self):
-        super(Kmers, self).__init__("kmers")
-class Train(Kmers):
-    def __init__(self):
-        super(Train, self).__init__()
+            raise MalformedConfigError("Malformed config.yaml")
+
             

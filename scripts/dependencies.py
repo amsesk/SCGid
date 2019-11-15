@@ -1,8 +1,10 @@
 from collections import namedtuple
-from Error import MissingDependencyError
 import logging
+import inspect
 import itertools
 import os
+from scripts.error import MissingDependencyError
+from scripts.loglib import logger_name_gen, LoggingEntity
 
 CaseDependencyCouplet = namedtuple("CaseDependencyCouplet", ["argid", "value"])
 class Dependency(object):
@@ -18,18 +20,20 @@ class Dependency(object):
 
 class ConstDependency(Dependency):
     def __init__(self, cmd):
-        super(ConstDependency, self).__init__(cmd)
+        super().__init__(cmd)
 
 class CaseDependency(Dependency):
     def __init__(self, cmd, argid, value):
-        super(CaseDependency, self).__init__(cmd)
+        super().__init__(cmd)
         self.couplet = CaseDependencyCouplet(argid, value)
 
 
-class Dependencies():
+class Dependencies(LoggingEntity):
     def __init__(self):
         self.deps = ()
-        self.log = logging.getLogger(__name__)
+        self.log = logging.getLogger(
+            logger_name_gen()
+            )
 
     def __repr__(self):
         return ", ".join([x.cmd for x in self.deps])
@@ -46,7 +50,6 @@ class Dependencies():
         missing = [x.cmd for x in self.deps if isinstance(x, ConstDependency) and not x.available] + [x.cmd for x in self.deps if isinstance(x, CaseDependency) and parsed_args.__dict__[x.couplet.argid] == x.couplet.value and not x.available]
         if len(missing) > 0:
             self.log.critical(MissingDependencyError(missing))
-            raise MissingDependencyError(missing)
         else:
             return 0
         

@@ -1,34 +1,46 @@
 import logging
-import inspect
 import sys
 import re
 import os
-from Depends import CaseDependency, ConstDependency
-from Module import Module, Config
+from scripts.dependencies import CaseDependency, ConstDependency
+from scripts.module import Module, Config
+from scripts.reuse import ReusableOutputManager, ReusableOutput, augustus_predict, protein_blast
+from scripts.loglib import LoggingEntity, Head
 import argparse
 
-class Gct(Module):
+class Gct (Module, LoggingEntity, Head):
     def __init__(self):
-        super(Gct, self).__init__(self.__class__)
-        frm = inspect.stack()[1]
-        self.parent = inspect.getmodule(frm[0])
+        super().__init__(self.__class__)
         self.argparser = self.generate_argparser()
         self.parsed_args = self.argparser.parse_args()
-        self.config.load_cmdline( self.parsed_args )
-        self.start_logging()
-        setattr(self.config, "files_to_generate", self.locate_input_files(
-            {
-            "prot": ".*[.]aug[.]out[.]fasta$",
-            "blastout": ".*[.]spdb[.]blast[.]out$"
-            }
-        ))
-
+        self.config.load_cmdline( self.parsed_args ) # Copy command line args defined by self.argparser to self.config
+        self.config.reusable.populate(
+            ReusableOutput(
+                arg = "prot", 
+                pattern = ".*[.]aug[.]out[.]fasta$",  
+                genfunc = augustus_predict,
+                genfunc_args = {
+                    "prefix": self.config.get("prefix"),
+                    "nucl": self.config.get("nucl"),
+                    "augustus_sp": self.config.get("augustus_sp")
+                }
+            ),
+            ReusableOutput(
+                arg = "blastout",
+                pattern = ".*[.]spdb[.]blast[.]out$",
+                genfunc = protein_blast,
+                genfunc_args = {
+                    "prefix": self.config.get("prefix"),
+                    "prot": self.config.get("prot"),
+                    "db": self.config.get("DEFAULT_spdb"),
+                    "evalue": self.config.get("evalue"),
+                    "cpus": self.config.get("cpus")
+                })
+        )
         self.config.dependencies.populate(
             CaseDependency("blastp", "blastout", None),
             CaseDependency("augustus", "prot", None),
         )
-
-        self.config.dependencies.check( self.parsed_args )
     
     def generate_argparser (self):
 
@@ -51,61 +63,14 @@ class Gct(Module):
         parser.add_argument('-p','--prot', metavar = "protein_fasta", action="store",required=False, help = "A FASTA file containing the proteins called from the genome.")
         
         return parser
-    
-    def locate_slow_step_outputs(self, slowsteps):
-        for i,step in enumerate(slowsteps):
-            if self.config.get(step.arg) is not None:
-                slowsteps.pop(i)
-        to_generate = {}
-        update_config = {}
-        relpath = os.path.join(
-            "{}_scgid_output".format(self.parsed_args.prefix),
-            __name__)
-        compiled = { arg: re.compile(p) for (arg,p) in patterns.iteritems() }
-        listdir = os.listdir(relpath)
-        for arg, c in compiled.iteritems():
-            matches = [os.path.join(relpath, fname) for fname in listdir if re.match(c,fname)]
-            if len(matches) == 0:
-                self.log.info("No match found for missing argument `%s`, planning to run additional step to generate", arg)
-                to_generate[arg] = True
-            elif len(matches) == 1:
-                updated_arg = os.path.abspath(matches[0])
-                update_config[arg] = { arg: updated_arg }
-                to_generate[arg] = False
-                self.log.info("Found matching file for missing argument `%s` at `%s`", arg, updated_arg)
-            else:
-                self.log.critical("Found multiple files matching pattern for argument `%s`, doing nothing")
-
-    def local_input_files(self, patterns):
-        for arg in patterns.keys():
-            if self.config.get(arg) is not None:
-                patterns.pop(arg)
-        to_generate = {}
-        update_config = {}
-        relpath = os.path.join(
-            "{}_scgid_output".format(self.parsed_args.prefix),
-            __name__)
-        compiled = { arg: re.compile(p) for (arg,p) in patterns.iteritems() }
-        listdir = os.listdir(relpath)
-        for arg, c in compiled.iteritems():
-            matches = [os.path.join(relpath, fname) for fname in listdir if re.match(c,fname)]
-            if len(matches) == 0:
-                self.log.info("No match found for missing argument `%s`, planning to run additional step to generate", arg)
-                to_generate[arg] = True
-            elif len(matches) == 1:
-                updated_arg = os.path.abspath(matches[0])
-                update_config[arg] = { arg: updated_arg }
-                to_generate[arg] = False
-                self.log.info("Found matching file for missing argument `%s` at `%s`", arg, updated_arg)
-            else:
-                self.log.critical("Found multiple files matching pattern for argument `%s`, doing nothing")
-
-        for arg, fname in update_config.iteritems():
-            setattr(self.config, arg, fname)
-        return to_generate
 
     def run(self):
+        self.start_logging()
         self.setwd( __name__, self.config.get("prefix") )
+        self.config.reusable.check()
+        self.config.dependencies.check(self.config)
+        self.config.reusable.generate_outputs()
+        self.log.info("Everything good till now")
         
 
 if __name__ == "__main__":

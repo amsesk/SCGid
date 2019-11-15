@@ -183,6 +183,7 @@ if not blastout_check or not augout_check: #this means we have to predict and/or
 else:
     logger.info("Found protein fasta: "+prot)
     logger.info("Found blast output file: "+blastout)
+#------------------------------------------------------------------- refactored and impl in python3
 
 # get best blast hit
 output = []

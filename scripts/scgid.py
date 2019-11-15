@@ -40,15 +40,22 @@ import os
 import inspect
 import logging
 import logging.config
-from loghandlers import ExitOnExceptionHandler
-
-from gct import Gct 
+from scripts.loglib import LoggingEntity, logger_name_gen, ExitOnExceptionHandler
+from scripts.gct import Gct 
 
 bin_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 pkg_home = os.path.dirname(bin_dir)
 
+logging.config.fileConfig(os.path.join(bin_dir, "logging_config.ini"))
+log = logging.getLogger("SCGid")
+
+class SCGid(LoggingEntity, object):
+    def __init__(self, call):
+        if call == "gct":
+            Gct().run()
+
 if len(sys.argv) == 1 or sys.argv[1] in ['-h','--help','-help']:
-    print help_msg
+    print (help_msg)
 
 elif sys.argv[1] == "init":
     arguments = sys.argv[2:]
@@ -139,12 +146,10 @@ elif sys.argv[1] == "qualcheck":
     subprocess.call(arguments)
 
 elif sys.argv[1] == "gct":
-    logging.config.fileConfig(os.path.join(bin_dir, "logging_config.ini"))
-    log = logging.getLogger(__name__)
-    log.info("Calling NewModule")
-    result = Gct().run()
+    log.info("Calling Gct")
+    result = SCGid(sys.argv[1])
     log.info("Final message from root.")
 
 else:
-    print "\nERROR: Bad module selection. Printing help screen...\n"
-    print help_msg
+    print("\nERROR: Bad module selection. Printing help screen...\n")
+    print(help_msg)
