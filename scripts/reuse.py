@@ -6,6 +6,7 @@ import logging
 import shutil
 from scripts.loglib import LoggingEntity, logger_name_gen, get_head
 from scripts.library import subprocessP, gff3_to_fasta, is_fasta
+import scripts.pkg_settings as pkg_settings
 
 class ReusableOutput:
     def __init__(self, arg, pattern, genfunc, genfunc_args):
@@ -115,7 +116,7 @@ def protein_blast( prefix, prot, db, evalue, cpus ):
     verify_blastdb(db)
     
     print (prot)
-    cmd = ["blastp", "-query", prot, "-max_target_seqs", "1", "-evalue", evalue, "-db", db, "-outfmt", "6", "-out", "{prefix}.spdb.blast.out", "-num_threads", cpus]
+    cmd = ["blastp", "-query", prot, "-max_target_seqs", "1", "-evalue", evalue, "-db", db, "-outfmt", pkg_settings.BLAST_OUTFMT, "-out", "{prefix}.spdb.blast.out", "-num_threads", cpus]
     logger.info(' '.join(cmd))
     #subprocessP(blastp_cmd, logger)
 
