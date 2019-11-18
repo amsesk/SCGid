@@ -40,7 +40,7 @@ import os
 import inspect
 import logging
 import logging.config
-from scripts.loglib import LoggingEntity, logger_name_gen, ExitOnExceptionHandler
+from scripts.modcomm import LoggingEntity, logger_name_gen, ExitOnExceptionHandler
 from scripts.gct import Gct 
 
 bin_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))

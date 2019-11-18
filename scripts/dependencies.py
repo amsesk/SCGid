@@ -4,7 +4,7 @@ import inspect
 import itertools
 import os
 from scripts.error import MissingDependencyError
-from scripts.loglib import logger_name_gen, LoggingEntity
+from scripts.modcomm import logger_name_gen, LoggingEntity
 
 CaseDependencyCouplet = namedtuple("CaseDependencyCouplet", ["argid", "value"])
 class Dependency(object):

@@ -4,7 +4,7 @@ import os
 import inspect
 import logging
 import shutil
-from scripts.loglib import LoggingEntity, logger_name_gen, get_head
+from scripts.modcomm import LoggingEntity, logger_name_gen, get_head
 from scripts.library import subprocessP, gff3_to_fasta, is_fasta
 import scripts.pkg_settings as pkg_settings
 
@@ -20,19 +20,22 @@ class ReusableOutput:
 
     def try_reuse (self):
         rundir = self.head.config.rundir
+        reusable = False
         for item in [os.path.join(rundir, x) for x in os.listdir(rundir)]:
             if os.path.isdir(item):
                 matches = [x for x in os.listdir(item) if re.match(self.re_pattern, x)]
                 if len(matches) == 0:
-                    return False
+                    continue
 
                 elif len(matches) == 1:
-                    updated_arg = os.path.join(rundir, matches[0])
+                    updated_arg = os.path.join(item, matches[0])
                     setattr(self.caller.config, self.arg, updated_arg)
-                    return True
-            else:
-                pass # Create error class for this and pass to ReusableOutputManager for logging
-                #self.log.critical( f"Found multiple files matching pattern for argument `{self.arg}`. Specify preference in command line arugment." )
+                    reusable = True
+                    break
+                else:
+                    pass # Create error class for this and pass to ReusableOutputManager for logging
+                    #self.log.critical( f"Found multiple files matching pattern for argument `{self.arg}`. Specify preference in command line arugment." )
+        return reusable
 
     def update_from_config(self):
         for k,v in self.genfunc_args.items():
@@ -46,18 +49,22 @@ class ReusableOutput:
 class ReusableOutputManager(LoggingEntity):
     def __init__(self, *reusable):
         self.log = logging.getLogger( logger_name_gen() )
+        self.head = get_head()
     
     def populate(self, *reusable):
         self.reusable = list(reusable)
 
     def check (self):
         for r in self.reusable:
-            if not r.try_reuse():
-                self.log.info( f"No match found for required file specified by `{r.arg}`." )
-                r.needs_doing = True
+            if self.head.config.get(r.arg) is None:
+                if not r.try_reuse():
+                    self.log.info( f"No match found for required file specified by `{r.arg}`." )
+                    r.needs_doing = True
+                else:
+                    self.log.info( f"Found matching file for missing argument `{r.arg}` at `{get_head().config.get(r.arg)}`" )
+                    r.needs_doing = False
             else:
-                self.log.info( f"Found matching file for missing argument `{r.arg}` at `{get_head().config.get(r.arg)}`" )
-                r.needs_doing = False
+                continue
 
     def generate_outputs(self):
         for r in self.reusable:

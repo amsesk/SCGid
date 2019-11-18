@@ -3,7 +3,7 @@ import numpy as np
 import ast
 from collections import namedtuple
 
-class infotable(object):
+class InfoTable(object):
     def __init__(self, target_taxa = None, ident="HEAD"):
         self.colnames = ["contig","prot_len","coverage","gc","pid","sp_os","lineage","evalue","parse_lineage"]
 
@@ -17,6 +17,8 @@ class infotable(object):
 
         self.df = pd.DataFrame(empty_infotable, columns=self.colnames)
         self.ttd = target_taxa
+        self.tar = None
+        self.ex = None
         if target_taxa is not None:
             self.tar = target_taxa['target']
             self.ex = target_taxa['exception']
@@ -35,7 +37,7 @@ class infotable(object):
             assert len(duplicate_children) == 1, "Internatl error, runaway children creation"
             return duplicate_children[0]
         else:
-            child = infotable(self.ttd, ident=ident)
+            child = InfoTable(self.ttd, ident=ident)
             child.df = nested_frame
             self.children.append(child)
             child.parent = self
@@ -44,15 +46,15 @@ class infotable(object):
 
     def iter_descendants(self, at_head=True):
         if at_head:
-            print self.ident
+            print (self.ident)
         for c in self.children:
             backbone = 0
             if c.depth > 1:
                 backbone = 1
-            print "{}{}|----> {}".format(
+            print ("{}{}|----> {}".format(
                     "|"*(backbone),
                     " "*2*(c.depth-1),
-                    c.ident)
+                    c.ident))
             if len(c.children) != 0:
                 c.iter_descendants(at_head=False)
 
@@ -110,9 +112,12 @@ class infotable(object):
         self.keep = None
         self.dump = None
 
-    def set_target(self, new_target_taxa):
-        self.tar = new_target_taxa['target']
-        self.ex = new_target_taxa['exception']
+    def set_target(self, target, exceptions):
+        self.tar = target.split(',')
+        if exceptions is None:
+            self.ex = []
+        else:
+            self.ex = exceptions.split(',')
 
     def taxon_level(self, level):
         return self.df.apply(it_get_taxonomy_level, axis=1, args=(level,))
@@ -154,7 +159,7 @@ class infotable(object):
 
 
 def it_get_taxonomy_level(row, level):
-    ret = row.loc[ ['contig','lineage','evalue'] ]
+    ret = row.reindex( ['contig','lineage','evalue'] )
 
     if row['lineage'] == "Not_in_taxdb":
         ret['lineage'] = "unclassified"
@@ -168,7 +173,7 @@ def it_get_taxonomy_level(row, level):
 def it_parse_lin(row, tar, ex):
     if row['lineage'] == "Not_in_taxdb":
         row['parse_lineage'] = 'unclassified'
-    elif any(i in tar for i in row['lineage']) is True and any(i in ex for i in row['lineage']) is False:
+    elif any([i in tar for i in row['lineage']]) is True and any([i in ex for i in row['lineage']]) is False:
         row['parse_lineage'] = 'target'
     else:
         row['parse_lineage'] = 'nontarget'

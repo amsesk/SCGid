@@ -1,7 +1,10 @@
 import subprocess
 import re
 import sys
+import os
+import pickle
 from io import StringIO
+from scripts.sequence import readFasta
 from scripts.sequence import Sequence
 
 def is_fasta(f, strict=False, verbose = False):
@@ -105,3 +108,28 @@ def subprocessP (args, log_inst, log_stdout=False):
 def subprocessT (args):
     p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = p.communicate()
+
+def pickle_loader (pklFile):
+    try:
+        while True:
+            yield pickle.load(pklFile)
+    except EOFError:
+            pass
+#%%
+def pkl_fasta_in_out (org_fname, seq_type = "nucl", contig_info = True):
+    #pkl_fname = org_fname.split("/")[-1]+'.pkl'
+    pkl_fname = "{}.pkl".format(org_fname)
+    #if os.path.isfile(os.getcwd()+"/"+pkl_fname):
+    if os.path.isfile(pkl_fname) and os.stat(org_fname).st_ctime < os.stat(pkl_fname).st_ctime:
+        #print "LOADING FROM
+        objlist = []
+        with open(pkl_fname,'rb') as infile:
+            for seq in pickle_loader(infile):
+                objlist.append(seq)
+    else:
+        #print "MAKING NEW PKL"
+        objlist = readFasta(org_fname, seq_type, contig_info)
+        with open(pkl_fname,'wb') as output:
+            for seq in objlist:
+                pickle.dump(seq, output, pickle.HIGHEST_PROTOCOL)
+    return objlist

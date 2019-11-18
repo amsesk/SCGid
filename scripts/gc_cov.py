@@ -183,7 +183,6 @@ if not blastout_check or not augout_check: #this means we have to predict and/or
 else:
     logger.info("Found protein fasta: "+prot)
     logger.info("Found blast output file: "+blastout)
-#------------------------------------------------------------------- refactored and impl in python3
 
 # get best blast hit
 output = []
@@ -241,6 +240,7 @@ else:
         taxdb = ast.literal_eval(s)
     logger.info("Taxonomy database imported successfully.")
 
+
 #### BUILD INFOTABLE ####
 ## (1st) Gather contig and protein information from sequence objects
 ldict = []
@@ -288,6 +288,9 @@ for line in open(blastout).readlines():
             logger.warning("'"+sp_os+"' is missing from the taxdb. You probably specified a -t|--taxdb file built from a likely out-of-date swissprot database other than the one you blasted against. Rerun build_taxdb or specify a different taxdb to correct. Lineage set as 'Not_in_taxdb' for this run.")
             lineage = "Not_in_taxdb"
 
+
+
+#------------------------------------------------------------------- refactored and impl in python3
 
 
 ## (3rd) For each row, make a dictionary and append to ldict list
@@ -434,40 +437,6 @@ while True:
         best = largest.iloc[0,:].expPat
         best = [x for x in windows if x.expPat == best][0]
         break
-
-''' old code
-## Note that this does not account for multiple maxima yet
-keep_going = True
-best_window_idx = None
-best_window = None
-
-while keep_going is True:
-    if len(window_stats['window']) == 0:
-        logger.critical("No best window at stringency={}, raise it or add more options to target_taxa.".format(stringency_thresh))
-        sys.exit(-5)
-    best_window_idx = window_stats['tp'].index(max(window_stats['tp']))
-    if window_stats['ntp'][best_window_idx] <= stringency_thresh:
-        keep_going = False
-
-        # This is the best window based on the data and stringency threshold
-        best_window = gc_cov_window(lower_gc=window_stats['window'][best_window_idx]['gc'][0],
-                                    upper_gc=window_stats['window'][best_window_idx]['gc'][1],
-                                    lower_cov=window_stats['window'][best_window_idx]['cov'][0],
-                                    upper_cov=window_stats['window'][best_window_idx]['cov'][1],
-                                    tailedness=window_stats['names'][best_window_idx],
-                                    tp=window_stats['tp'][best_window_idx],
-                                    ntp=window_stats['ntp'][best_window_idx])
-
-        #print gc-cov plot and draw window lines
-        #print_plot_cmd = [settings.path_to_Rscript,'--vanilla',os.path.join(bin_dir,'gc_cov.plot.R'),prefix+'_info_table.tsv',prefix+'_unclassified_info_table.tsv',str(window_stats['window'][best_window_idx]['gc']),str(window_stats['window'][best_window_idx]['cov']),prefix+"_gc_coverage_plots.pdf"]
-        #logger.info(" ".join(print_plot_cmd))
-        #out = subprocessP(print_plot_cmd, logger)
-    else:
-        window_stats['names'].pop(best_window_idx)
-        window_stats['tp'].pop(best_window_idx)
-        window_stats['ntp'].pop(best_window_idx)
-        window_stats['window'].pop(best_window_idx)
-'''
 
 blogger.info("\nBest window at -s|--stringency = {}.".format(stringency_thresh))
 blogger.info("-"*40)

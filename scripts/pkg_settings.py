@@ -15,3 +15,4 @@ BLAST_OUTFMT = [
     "bitscore", 
     "staxids"
     ]
+BLAST_HEADERS = {v: k for k,v  in enumerate(BLAST_OUTFMT[1::])}

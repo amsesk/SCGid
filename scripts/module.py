@@ -6,7 +6,7 @@ import shutil
 import logging
 from scripts.dependencies import Dependencies
 from scripts.reuse import ReusableOutputManager
-from scripts.loglib import logger_name_gen, LoggingEntity
+from scripts.modcomm import logger_name_gen, LoggingEntity
 from scripts.error import MissingConfigError, MalformedConfigError
 
 class Module (object):
@@ -17,12 +17,12 @@ class Module (object):
         self.wd = None
         if name is not None:
             self.name = name
-        self.log = None
+        self.logger = None
 
         #Set by self.initialize()
         self.config = Config()
     def start_logging(self):
-        self.log = logging.getLogger(
+        self.logger = logging.getLogger(
             logger_name_gen()
         )
 
@@ -34,22 +34,22 @@ class Module (object):
         except:
             os.mkdir(rundir)
             os.chdir(rundir)
-            self.log.info("Creating directory `%s`", os.getcwd())
+            self.logger.info("Creating directory `%s`", os.getcwd())
         
         self.config.rundir = os.getcwd()
         
         try:
             os.chdir(name)
         except:
-            self.log.info("Creating directory `%s`", name)
+            self.logger.info("Creating directory `%s`", name)
             os.mkdir(name)
             os.chdir(name)
-            self.log.info("Creating directory `%s`", os.getcwd())
+            self.logger.info("Creating directory `%s`", os.getcwd())
         if os.path.isdir('temp'):
             shutil.rmtree('temp')
         os.mkdir('temp')
         os.chdir('temp')
-        self.log.info("Entering working directory: `%s`", os.getcwd())
+        self.logger.info("Entering working directory: `%s`", os.getcwd())
         self.wd = os.getcwd()
 
     def initialize(self):
