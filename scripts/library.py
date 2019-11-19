@@ -4,8 +4,8 @@ import sys
 import os
 import pickle
 from io import StringIO
-from scripts.sequence import readFasta
-from scripts.sequence import Sequence
+from collections import OrderedDict
+from scripts.sequence import DNASequence, DNASequenceCollection, AASequence, AASequenceCollection
 
 def is_fasta(f, strict=False, verbose = False):
     lines = [l.strip() for l in open(f).readlines()]
@@ -75,6 +75,8 @@ def gff3_to_fasta(gff3, outname):
 
 def log_command_line_errors (err, log_inst):
     if err != '':
+        print(err)
+        return 0
         err = err.split('\n')
         for i in err:
             if len(i) > 0:
@@ -103,7 +105,7 @@ def subprocessP (args, log_inst, log_stdout=False):
         if p.returncode != 0:
             log_command_line_errors(err, log_inst)
             sys.exit(1)
-    return str(out)
+    return out
 
 def subprocessT (args):
     p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -116,20 +118,33 @@ def pickle_loader (pklFile):
     except EOFError:
             pass
 #%%
-def pkl_fasta_in_out (org_fname, seq_type = "nucl", contig_info = True):
+def pkl_fasta_in_out (org_fname, seq_type = "nucl", spades = False):
     #pkl_fname = org_fname.split("/")[-1]+'.pkl'
     pkl_fname = "{}.pkl".format(org_fname)
     #if os.path.isfile(os.getcwd()+"/"+pkl_fname):
     if os.path.isfile(pkl_fname) and os.stat(org_fname).st_ctime < os.stat(pkl_fname).st_ctime:
         #print "LOADING FROM
-        objlist = []
+        objlist = OrderedDict()
         with open(pkl_fname,'rb') as infile:
-            for seq in pickle_loader(infile):
-                objlist.append(seq)
+            headers = []
+            obj = []
+            for header, sequence in pickle_loader(infile):
+                headers.append(header)
+                obj.append(sequence)
+            objlist = dict(zip(headers,obj))
+            if seq_type == "nucl":
+                return DNASequenceCollection().from_dict(objlist)
+            else:
+                return AASequenceCollection().from_dict(objlist)
+
     else:
         #print "MAKING NEW PKL"
-        objlist = readFasta(org_fname, seq_type, contig_info)
+        if seq_type == "nucl":
+            objlist = DNASequenceCollection().from_fasta(org_fname, spades)
+        else:
+            objlist = AASequenceCollection().from_fasta(org_fname)
+
         with open(pkl_fname,'wb') as output:
-            for seq in objlist:
+            for seq in objlist.odict.items():
                 pickle.dump(seq, output, pickle.HIGHEST_PROTOCOL)
     return objlist

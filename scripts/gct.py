@@ -20,13 +20,14 @@ class Gct (Module, LoggingEntity, Head):
         self.config.load_cmdline( self.parsed_args ) # Copy command line args defined by self.argparser to self.config
         self.config.reusable.populate(
             ReusableOutput(
-                arg = "prot", 
-                pattern = ".*[.]aug[.]out[.]fasta$",  
+                arg = "prot",
+                pattern = ".*[.]aug[.]out[.]fasta$",
                 genfunc = augustus_predict,
                 genfunc_args = {
                     "prefix": self.config.get("prefix"),
                     "nucl": self.config.get("nucl"),
-                    "augustus_sp": self.config.get("augustus_sp")
+                    "augustus_sp": self.config.get("augustus_sp"),
+                    "outpath": f"{self.config.get('prefix')}.aug.out.fasta"
                 }
             ),
             ReusableOutput(
@@ -38,7 +39,8 @@ class Gct (Module, LoggingEntity, Head):
                     "prot": self.config.get("prot"),
                     "db": self.config.get("spdb"),
                     "evalue": self.config.get("evalue"),
-                    "cpus": self.config.get("cpus")
+                    "cpus": self.config.get("cpus"),
+                    "outpath": f"{self.config.get('prefix')}.spdb.blast.out"
                 })
         )
         self.config.dependencies.populate(
@@ -48,7 +50,7 @@ class Gct (Module, LoggingEntity, Head):
 
         self.infotable = InfoTable()
         self.unclassified_infotable = InfoTable()
-    
+
     def generate_argparser (self):
 
         parser = argparse.ArgumentParser()
@@ -68,7 +70,7 @@ class Gct (Module, LoggingEntity, Head):
         # MAYBE PROVIDED BY EARLIER PART OF SCRIPT
         parser.add_argument('-b','--blastout', metavar = "blastout", action=PathAction,required=False, help = "The blast output file from a search of the swissprot database with your proteins as query. Defaults to outfmt=6 and max_target_seqs=1. Provided by earlier script.")
         parser.add_argument('-p','--prot', metavar = "protein_fasta", action=PathAction, required=False, help = "A FASTA file containing the proteins called from the genome.")
-        
+
         return parser
 
     def run(self):
@@ -101,7 +103,7 @@ class Gct (Module, LoggingEntity, Head):
             )
         colnames = p.parsed_hits[0].keys()
         self.infotable.populate(p.parsed_hits, colnames)
-        
+
         # Various clean-up actions (e.g., remove problem characters and split lineage into list)
         self.infotable.tidy(taxlvl_idx)
 
@@ -110,11 +112,11 @@ class Gct (Module, LoggingEntity, Head):
 
         # Create infotable object for unclassified contigs as well (i.e., contigs with no protein hits)
         self.unclassified_infotable = self.infotable.collect_unclassifieds(nucl)
-    
+
         # Write infotables for classified and unclassified contigs to csv
         self.infotable.df.to_csv(f"{self.config.get('prefix')}.infotable.tsv", sep='\t', index = False, header = False)
         self.unclassified_infotable.df.to_csv(f"{self.config.get('prefix')}_unclassified.infotable.tsv", sep = '\t', index = False, header = False)
-        
+
         target = self.infotable.target_filter()
         print(self.infotable.df["coverage"])
         windows = generate_windows(self.infotable)
@@ -123,7 +125,7 @@ class Gct (Module, LoggingEntity, Head):
 
 
         self.logger.info("Everything good till now")
-        
+
 
 if __name__ == "__main__":
     pass

@@ -1,18 +1,18 @@
 SPDB_OS_REGEXP_PATTERN = "OS=(.+?)(?:OX=.+|GN=.+|PE=.+|SV=.+|$)"
 BLAST_OUTFMT = [
     "6",
-    "qseqid", 
-    "sseqid", 
-    "pident",  
-    "length", 
-    "mismatch", 
+    "qseqid",
+    "sseqid",
+    "pident",
+    "length",
+    "mismatch",
     "gapopen",
     "qstart",
     "qend",
     "sstart",
-    "send", 
-    "evalue", 
-    "bitscore", 
+    "send",
+    "evalue",
+    "bitscore",
     "staxids"
     ]
 BLAST_OUTFMT_STR = ' '.join(BLAST_OUTFMT)

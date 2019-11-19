@@ -65,7 +65,7 @@ class InfoTable(object):
 
     def collect_unclassifieds(self, nucl):
         ldict = []
-        unclassifieds = [s for s in nucl if s.shortname not in self.df.contig.values]
+        unclassifieds = [s for s in nucl.seqs() if s.shortname not in self.df.contig.values]
         for u in unclassifieds:
             ldict.append(
                 {
@@ -81,7 +81,7 @@ class InfoTable(object):
 
     def tidy (self, taxlvl_idx):
         self.df.lineage = self.df.lineage.apply(str.replace,args=('; ','.'))
-        
+
         ### Need to fix this crap and deal with this when building taxdb - too late to be doing this nonsense
         self.df.lineage = self.df.lineage.apply(str.replace,args=(", ",'_'))
         self.df.lineage = self.df.lineage.apply(str.replace, args=(',','_'))

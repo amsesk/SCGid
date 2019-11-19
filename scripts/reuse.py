@@ -50,7 +50,7 @@ class ReusableOutputManager(LoggingEntity):
     def __init__(self, *reusable):
         self.log = logging.getLogger( logger_name_gen() )
         self.head = get_head()
-    
+
     def populate(self, *reusable):
         self.reusable = list(reusable)
 
@@ -69,22 +69,23 @@ class ReusableOutputManager(LoggingEntity):
     def generate_outputs(self):
         for r in self.reusable:
             if r.needs_doing:
-                r.generate()
+                path = r.generate()
+                setattr(self.head.config, r.arg, path)
             else:
                 pass
 
-def augustus_predict( prefix, nucl, augustus_sp ):
+def augustus_predict( prefix, nucl, augustus_sp, outpath ):
     log = get_head().logger
     gff3_fname = f"{prefix}.aug.out.gff3"
     prot_fname = f"{prefix}.aug.out.fasta"
-    
+
     cmd = ["augustus", f"--species={augustus_sp}", "--gff3=on", nucl, "--uniqueGeneId=true"]
 
-    log.info( ' '.join(cmd)) 
+    log.info( ' '.join(cmd))
     out = subprocessP( cmd, log )
 
     log.info( f"Writing augustus output to {gff3_fname}" )
-    with open( gff3_fname, 'w' ) as f:
+    with open( gff3_fname, 'wb' ) as f:
         f.write(out)
 
     gff3_to_fasta( gff3_fname, prot_fname )
@@ -94,7 +95,7 @@ def augustus_predict( prefix, nucl, augustus_sp ):
     shutil.copyfile( gff3_fname, f"../{gff3_fname}" )
     shutil.copyfile( prot_fname, f"../{prot_fname}" )
 
-    return 0
+    return outpath
 
 def verify_blastdb(db):
     logger = get_head().logger
@@ -109,25 +110,24 @@ def verify_blastdb(db):
             print(new_dbname)
             logger.info( f"Database FASTA found at `{db}`" )
             logger.info( f"Making blastdb from `{db}``" )
-            build_cmd = ["makeblastdb", "-in", db, "-dbtype", "prot", "-title", new_dbname, "-out", db]
-            logger.info(' '.join(build_cmd))
-            #subprocessP(build_cmd, logger)
+            cmd = ["makeblastdb", "-in", db, "-dbtype", "prot", "-title", new_dbname, "-out", db]
+            logger.info(' '.join(cmd))
+            subprocessP(cmd, logger)
         else:
             logger.critical("Malformed database FASTA")
-        
+
     return 0
 
-def protein_blast( prefix, prot, db, evalue, cpus ):
+def protein_blast( prefix, prot, db, evalue, cpus, outpath):
     logger = get_head().logger
     logger.info( f"Blasting predicted proteins against the swissprot database located at `{db}`" )
     verify_blastdb(db)
-    
-    print (prot)
-    cmd = ["blastp", "-query", prot, "-max_target_seqs", "1", "-evalue", evalue, "-db", db, "-outfmt", pkg_settings.BLAST_OUTFMT_STR, "-out", f"{prefix}.spdb.blast.out", "-num_threads", cpus]
+
+    cmd = ["blastp", "-query", prot, "-max_target_seqs", "1", "-evalue", evalue, "-db", db, "-outfmt", pkg_settings.BLAST_OUTFMT_STR, "-out", outpath, "-num_threads", cpus]
     logger.info(' '.join(cmd))
-    #subprocessP(blastp_cmd, logger)
+    subprocessP(cmd, logger)
 
     # Move blastout to default locations if finished successfully in temp
     shutil.copyfile(prefix+'.spdb.blast.out','../'+prefix+'.spdb.blast.out')
 
-    return 0
+    return outpath

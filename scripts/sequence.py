@@ -12,13 +12,20 @@ def reverse (string):
     return ''.join(chars)
 
 class DNASequenceCollection(object):
-    
+
     def __init__(self):
         self.odict = OrderedDict()
-    
+
     def get(self, header):
         return self.odict[header]
-    
+
+    def seqs(self):
+        return self.odict.values()
+
+    def from_dict(self, odict):
+        self.odict.update(odict)
+        return self
+
     def from_fasta(self, fasta, spades = False):
         header_pattern = re.compile("^>(.+)")
         header = str()
@@ -33,7 +40,7 @@ class DNASequenceCollection(object):
                 m = re.match(header_pattern, line)
                 if m is not None:
                     if len(header) > 0:
-                        self.odict[header] = DNASequence(header, sequence, spades) 
+                        self.odict[header] = DNASequence(header, sequence, spades)
                         header = m.group(1)
                         sequence = str()
                     else:
@@ -42,7 +49,7 @@ class DNASequenceCollection(object):
                     sequence += line
             ## add the last sequence to the list
             self.odict[header] = DNASequence(header, sequence, spades)
-        
+
         return self
 
     def rekey_by_shortname (self):
@@ -61,7 +68,7 @@ class DNASequence(object):
             spl = header.split('_')
             self.coverage = float(spl[5])
             self.shortname = "_".join(spl[0:2])
-        
+
         self.gc = float()
         self.gcCount = 0
         for letter in self.string:
@@ -70,13 +77,20 @@ class DNASequence(object):
         self.gc = float(self.gcCount)/float(self.length)
 
 class AASequenceCollection(object):
-    
+
     def __init__(self):
         self.odict = OrderedDict()
-    
+
     def get(self, header):
         return self.odict[header]
-    
+
+    def seqs(self):
+        return self.odict.values()
+
+    def from_dict (self, odict):
+        self.odict.update(odict)
+        return self
+
     def from_fasta(self, fasta):
         header_pattern = re.compile("^>(.+)")
         header = str()
@@ -91,7 +105,7 @@ class AASequenceCollection(object):
                 m = re.match(header_pattern, line)
                 if m is not None:
                     if len(header) > 0:
-                        self.odict[header] = AASequence(header, sequence) 
+                        self.odict[header] = AASequence(header, sequence)
                         header = m.group(1)
                         sequence = str()
                     else:
@@ -100,7 +114,7 @@ class AASequenceCollection(object):
                     sequence += line
             ## add the last sequence to the list
             self.odict[header] = AASequence(header, sequence)
-        
+
         return self
 
 class AASequence(object):
@@ -110,12 +124,12 @@ class AASequence(object):
         self.string = string
         self.length = len(self.string)
 
-# Old shit 
+# Old shit
 class Sequence(object):
     def __init__(self, label, seq, seq_type = "nucl", contig_info = False):
         self.label = label
         self.id = label
-        
+
         if seq_type == "prot" and contig_info == True:
             try:
                 self.coverage = float(".".join(label.split("_")[5].split(".")[0:len(label.split("_")[5].split("."))-1]))
