@@ -2,7 +2,10 @@ import pandas as pd
 import numpy as np
 import operator
 import sys
+import os
 from collections import namedtuple
+from scripts.modcomm import get_head
+from scripts.library import subprocessP
 
 ### Definitions
 PltOut = namedtuple("PltOut", ["axis","mean","window","points"])
@@ -478,13 +481,8 @@ def generate_windows(it, inc_factor=0.01):
             'co2gc1',
             'co2gc2'
             ]
-    windows = []
-    for p in patterns:
-        windows.append(FlexibleSelectionWindow(p))
-    for w in windows:
-        w.calculate(it, inc_factor)
-
-    return windows
+    
+    return WindowManager(it, patterns, inc_factor)
     
 WindowFunc = {
         1: calc_1d_window_symm,
@@ -520,6 +518,9 @@ class FlexibleSelectionWindow(object):
         self.tp = None
         self.ntp = None
         self.Wtable = None
+
+        self.head = get_head()
+    
     def show(self):
         outstr = "Type: {}\np(target): {}\np(nontarget): {}\nGC Range: {}\nCoverage Range: {}\n".format(
                 self.expPat, 
@@ -590,4 +591,26 @@ class FlexibleSelectionWindow(object):
         self.tp = target_in_window / all_target
         self.ntp = nontarget_in_window / all_nontarget
 
+    def to_pdf(self):
+        cmd = [
+            os.path.join(self.head.config.get("path_to_Rscript"), "Rscript"),
+            "--vanilla",
+            os.path.join(self.head.config.SCGID_SCRIPTS, "gc_cov.plot.R"),
+            f"{self.head.config.get('prefix')}.infotable.tsv",
+            f"{self.head.config.get('prefix')}_unclassified_info_table.tsv",
+            ','.join(map(str,self.gc_range)),
+            ','.join(map(str,self.coverage_range)),
+            os.path.join("windows",
+                f"{self.head.config.get('prefix')}.{self.expPat}.pdf"
+                )
+            ]
+        
+        subprocessP(cmd, self.head.logger)
 
+        return 0
+
+class WindowManager(object):
+    def __init__(self, infotable, patterns, inc_factor):
+        self.windows = {p: FlexibleSelectionWindow(p) for p in patterns}
+        for w in self.windows.values():
+            w.calculate(infotable, inc_factor)

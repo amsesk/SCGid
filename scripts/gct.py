@@ -36,7 +36,7 @@ class Gct (Module, LoggingEntity, Head):
                 genfunc_args = {
                     "prefix": self.config.get("prefix"),
                     "prot": self.config.get("prot"),
-                    "db": self.config.get("DEFAULT_spdb"),
+                    "db": self.config.get("spdb"),
                     "evalue": self.config.get("evalue"),
                     "cpus": self.config.get("cpus")
                 })
@@ -47,6 +47,7 @@ class Gct (Module, LoggingEntity, Head):
         )
 
         self.infotable = InfoTable()
+        self.unclassified_infotable = InfoTable()
     
     def generate_argparser (self):
 
@@ -100,24 +101,20 @@ class Gct (Module, LoggingEntity, Head):
             )
         colnames = p.parsed_hits[0].keys()
         self.infotable.populate(p.parsed_hits, colnames)
-        self.infotable.df.lineage = self.infotable.df.lineage.apply(str.replace,args=('; ','.'))
         
-        ### Need to fix this crap and deal with this when building taxdb - too late to be doing this nonsense
-        self.infotable.df.lineage = self.infotable.df.lineage.apply(str.replace,args=(", ",'_'))
-        self.infotable.df.lineage = self.infotable.df.lineage.apply(str.replace, args=(',','_'))
-
-        self.infotable.df.lineage = self.infotable.df.lineage.apply(str.split,args='.')
-
-        ## Get taxonomy level now so R doesn't freak out later
-        self.infotable.df['pertinent_taxlvl'] = self.infotable.df.apply(it_get_taxonomy_level, args=(taxlvl_idx,), axis=1)['lineage']
-        self.infotable.df.reset_index()
+        # Various clean-up actions (e.g., remove problem characters and split lineage into list)
+        self.infotable.tidy(taxlvl_idx)
 
         #Parse lineage info into target|nontarget|unclassified
         self.infotable.parse_lineage()
-        
-        # Write infotable to csv
-        self.infotable.df.to_csv(f"{self.config.get('prefix')}.infotable.tsv", sep='\t', index = False, header = False)
 
+        # Create infotable object for unclassified contigs as well (i.e., contigs with no protein hits)
+        self.unclassified_infotable = self.infotable.collect_unclassifieds(nucl)
+    
+        # Write infotables for classified and unclassified contigs to csv
+        self.infotable.df.to_csv(f"{self.config.get('prefix')}.infotable.tsv", sep='\t', index = False, header = False)
+        self.unclassified_infotable.df.to_csv(f"{self.config.get('prefix')}_unclassified.infotable.tsv", sep = '\t', index = False, header = False)
+        
         target = self.infotable.target_filter()
         print(self.infotable.df["coverage"])
         windows = generate_windows(self.infotable)
