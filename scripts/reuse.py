@@ -74,7 +74,7 @@ class ReusableOutputManager(LoggingEntity):
                 pass
 
 def augustus_predict( prefix, nucl, augustus_sp ):
-    log = get_head().log
+    log = get_head().logger
     gff3_fname = f"{prefix}.aug.out.gff3"
     prot_fname = f"{prefix}.aug.out.fasta"
     
@@ -97,7 +97,7 @@ def augustus_predict( prefix, nucl, augustus_sp ):
     return 0
 
 def verify_blastdb(db):
-    logger = get_head().log
+    logger = get_head().logger
     db_check_name = '.'.join( [db, 'phr'] )
     if os.path.isfile(db_check_name):
         logger.info( f"Found blastdb associated with database fasta at `{db}`" )
@@ -123,14 +123,11 @@ def protein_blast( prefix, prot, db, evalue, cpus ):
     verify_blastdb(db)
     
     print (prot)
-    cmd = ["blastp", "-query", prot, "-max_target_seqs", "1", "-evalue", evalue, "-db", db, "-outfmt", pkg_settings.BLAST_OUTFMT, "-out", "{prefix}.spdb.blast.out", "-num_threads", cpus]
+    cmd = ["blastp", "-query", prot, "-max_target_seqs", "1", "-evalue", evalue, "-db", db, "-outfmt", pkg_settings.BLAST_OUTFMT, "-out", f"{prefix}.spdb.blast.out", "-num_threads", cpus]
     logger.info(' '.join(cmd))
     #subprocessP(blastp_cmd, logger)
 
     # Move blastout to default locations if finished successfully in temp
-    try:
-        shutil.copyfile(prefix+'.spdb.blast.out','../'+prefix+'.spdb.blast.out')
-    except:
-        pass
+    shutil.copyfile(prefix+'.spdb.blast.out','../'+prefix+'.spdb.blast.out')
 
     return 0
