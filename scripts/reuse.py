@@ -118,7 +118,7 @@ def verify_blastdb(db):
     return 0
 
 def protein_blast( prefix, prot, db, evalue, cpus ):
-    logger = get_head().log
+    logger = get_head().logger
     logger.info( f"Blasting predicted proteins against the swissprot database located at `{db}`" )
     verify_blastdb(db)
     

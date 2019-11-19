@@ -103,7 +103,7 @@ def subprocessP (args, log_inst, log_stdout=False):
         if p.returncode != 0:
             log_command_line_errors(err, log_inst)
             sys.exit(1)
-    return out
+    return str(out)
 
 def subprocessT (args):
     p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
