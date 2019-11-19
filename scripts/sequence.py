@@ -1,6 +1,7 @@
 import sys
 import numpy
 import re
+from collections import OrderedDict
 
 def reverse (string):
     chars = ["x"]*len(string)
@@ -9,6 +10,107 @@ def reverse (string):
         chars[pos] = l
         pos -= 1
     return ''.join(chars)
+
+class DNASequenceCollection(object):
+    
+    def __init__(self):
+        self.odict = OrderedDict()
+    
+    def get(self, header):
+        return self.odict[header]
+    
+    def from_fasta(self, fasta, spades = False):
+        header_pattern = re.compile("^>(.+)")
+        header = str()
+        sequence = str()
+
+        with open(fasta, 'r') as f:
+            for line in f.readlines():
+                line = line.strip()
+                if len(line) == 0:
+                    continue
+
+                m = re.match(header_pattern, line)
+                if m is not None:
+                    if len(header) > 0:
+                        self.odict[header] = DNASequence(header, sequence, spades) 
+                        header = m.group(1)
+                        sequence = str()
+                    else:
+                        header = m.group(1)
+                else:
+                    sequence += line
+            ## add the last sequence to the list
+            self.odict[header] = DNASequence(header, sequence, spades)
+        
+        return self
+
+    def rekey_by_shortname (self):
+        self.odict = {"_".join(k.split("_")[0:2]): v for k,v in self.odict.items()}
+
+class DNASequence(object):
+
+    def __init__(self, header, string, spades = False):
+        self.header = header
+        self.string = string
+        self.length = len(self.string)
+
+        self.coverage = None
+        self.shortname = None
+        if spades:
+            spl = header.split('_')
+            self.coverage = float(spl[5])
+            self.shortname = "_".join(spl[0:2])
+        
+        self.gc = float()
+        self.gcCount = 0
+        for letter in self.string:
+            if letter == "G" or letter == "C":
+                self.gcCount += 1
+        self.gc = float(self.gcCount)/float(self.length)
+
+class AASequenceCollection(object):
+    
+    def __init__(self):
+        self.odict = OrderedDict()
+    
+    def get(self, header):
+        return self.odict[header]
+    
+    def from_fasta(self, fasta):
+        header_pattern = re.compile("^>(.+)")
+        header = str()
+        sequence = str()
+
+        with open(fasta, 'r') as f:
+            for line in f.readlines():
+                line = line.strip()
+                if len(line) == 0:
+                    continue
+
+                m = re.match(header_pattern, line)
+                if m is not None:
+                    if len(header) > 0:
+                        self.odict[header] = AASequence(header, sequence) 
+                        header = m.group(1)
+                        sequence = str()
+                    else:
+                        header = m.group(1)
+                else:
+                    sequence += line
+            ## add the last sequence to the list
+            self.odict[header] = AASequence(header, sequence)
+        
+        return self
+
+class AASequence(object):
+
+    def __init__(self, header, string):
+        self.header = header
+        self.string = string
+        self.length = len(self.string)
+
+# Old shit 
 class Sequence(object):
     def __init__(self, label, seq, seq_type = "nucl", contig_info = False):
         self.label = label
@@ -161,5 +263,4 @@ def get_attribute_list (instanceList, attribute):
     for i in instanceList:
         listToOutput.append(getattr(i,attribute))
     return listToOutput
-
 

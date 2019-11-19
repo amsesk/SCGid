@@ -461,6 +461,31 @@ def calc_1d_window_asymm (it, axis, inc_factor = 0.01, plot = False):
     return PltOut(axis, axis_ss.mean, (final_window[-1], final_window[1]), points)
 #%%
 
+def generate_windows(it, inc_factor=0.01):
+    # factorial window expansion combinations MINUS redundancy ie gc0co0 = co0gc0
+    patterns = [
+            'gc0co0',
+            'gc0co1',
+            'gc0co2',
+            'gc1co1',
+            'gc1co2',
+            'gc2co1',
+            'gc2co2',
+            'co0gc1',
+            'co0gc2',
+            'co1gc1',
+            'co1gc2',
+            'co2gc1',
+            'co2gc2'
+            ]
+    windows = []
+    for p in patterns:
+        windows.append(FlexibleSelectionWindow(p))
+    for w in windows:
+        w.calculate(it, inc_factor)
+
+    return windows
+    
 WindowFunc = {
         1: calc_1d_window_symm,
         2: calc_1d_window_asymm,

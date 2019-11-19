@@ -1,0 +1,8 @@
+DEFAULT_spdb: /Users/kevinamses/scgid_local/database/uniprot_sprot_18-Jul-2018.fasta
+DEFAULT_taxdb: /Users/kevinamses/scgid_local/database/uniprot_sprot_18-Jul-2018.fasta.taxdb
+taxonomy_all_tab:
+esom_path: /Applications/ESOM
+clams_path: /Applications/ClaMS-CLI
+AUGUSTUS_CONFIG_PATH:
+path_to_Rscript: /usr/local/bin
+mpicmd: mpirun
