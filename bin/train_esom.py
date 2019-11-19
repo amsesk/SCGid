@@ -129,11 +129,10 @@ if args.mode == "det":
 
 elif args.mode == "s":
     logger.info("Training ESOM with {}".format(mode))
-    train_args = [settings.mpicmd, "-np", "{}".format(args.cpus), "--permute", "--out", out,"-b", b,"--cls", file_prefix+".cls", "--lrn",file_prefix+".lrn", "--algorithm", "kbatch", "--rows", rows, "--columns", cols, "-bmc", "6", "--start-radius", args.start_radius, "--epochs", args.epochs, "-k", "0.15", "--bmsearch", "standard", "--dist", "euc"]
-
+    train_args = [settings.mpicmd, "-np", args.cpus, "somoclu", "-e", args.epochs, "-l", "0.5", "-L", "0.1", "-m", "toroid", "-r", args.start_radius, "-x", rows, "-y", cols, "-v", "2", "{}.lrn".format(file_prefix), "{}".format(file_prefix)]
     logger.info(' '.join(train_args))
 
-    do_long_wait(lambda: subprocessP(train_args, logger), 'none')
+    subprocessP(train_args, logs, log_stdout=True)
 
     logger.info("ESOM trained.")
 
