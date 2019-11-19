@@ -39,7 +39,7 @@ class SPDBTaxonomy(LoggingEntity):
                     # Can get rid of these once local taxdb is rebuilt
                     sp_os = sp_os.replace("'","")
                     sp_os = sp_os.replace("#","")
-                    lineage = taxdb[sp_os]
+                    lineage = self.taxdb[sp_os]
                 except KeyError:
                     self.logger.warning(f"{sp_os} is missing from the taxdb. You probably specified an older -t|--taxdb file than the one associated with the SPDB blasted against. Rerun build_taxdb or specify a different taxdb to correct. Lineage set as 'Not_in_taxdb' for this run.")
                     lineage = "Not_in_taxdb"
@@ -103,7 +103,7 @@ class BlastoutParser(LoggingEntity):
                 desc = spdb.loc[acc].description
                 
             except:
-                self.logger.critical(MissingAccessionError(accession = acc, db_path = ))
+                self.logger.critical(MissingAccessionError(accession = acc, db_path = self.head.config.get("spdb")))
             
             s = re.search(search_pattern, desc)
             if s is None:
@@ -127,7 +127,7 @@ class BlastoutParser(LoggingEntity):
     
 class MissingAccessionError (Error):
     def __init__(self, accession, db_path):
-        super().__init__(path)
+        super().__init__(db_path)
         self.accession = accession
         self.db_path = db_path
         self.exitcode = 4

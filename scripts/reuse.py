@@ -123,7 +123,7 @@ def protein_blast( prefix, prot, db, evalue, cpus ):
     verify_blastdb(db)
     
     print (prot)
-    cmd = ["blastp", "-query", prot, "-max_target_seqs", "1", "-evalue", evalue, "-db", db, "-outfmt", pkg_settings.BLAST_OUTFMT, "-out", f"{prefix}.spdb.blast.out", "-num_threads", cpus]
+    cmd = ["blastp", "-query", prot, "-max_target_seqs", "1", "-evalue", evalue, "-db", db, "-outfmt", pkg_settings.BLAST_OUTFMT_STR, "-out", f"{prefix}.spdb.blast.out", "-num_threads", cpus]
     logger.info(' '.join(cmd))
     #subprocessP(blastp_cmd, logger)
 

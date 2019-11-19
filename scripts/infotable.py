@@ -63,6 +63,35 @@ class InfoTable(object):
         child = self.spawn_child("target", child_frame)
         return child
 
+    def collect_unclassifieds(self, nucl):
+        ldict = []
+        unclassifieds = [s for s in nucl if s.shortname not in self.df.contig.values]
+        for u in unclassifieds:
+            ldict.append(
+                {
+                    "contig": u.shortname,
+                    "gc": u.gc,
+                    "coverage": u.coverage,
+                    "taxonomy": "Unclassified"
+                }
+            )
+        unclassifieds = InfoTable()
+        unclassifieds.populate(ldict, ldict[0].keys())
+        return unclassifieds
+
+    def tidy (self, taxlvl_idx):
+        self.df.lineage = self.df.lineage.apply(str.replace,args=('; ','.'))
+        
+        ### Need to fix this crap and deal with this when building taxdb - too late to be doing this nonsense
+        self.df.lineage = self.df.lineage.apply(str.replace,args=(", ",'_'))
+        self.df.lineage = self.df.lineage.apply(str.replace, args=(',','_'))
+
+        self.df.lineage = self.df.lineage.apply(str.split,args='.')
+
+        ## Get taxonomy level now so R doesn't freak out later
+        self.df['pertinent_taxlvl'] = self.df.apply(it_get_taxonomy_level, args=(taxlvl_idx,), axis=1)['lineage']
+        self.df.reset_index()
+
     def rfilter(self, feature, window, child_label=""):
         child_frame = self.df.loc[(self.df[feature] >= window[0]) & (self.df[feature] <= window[1])]
         child_ident = "{}:{}{}".format(child_label, feature, window)
