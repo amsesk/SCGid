@@ -289,10 +289,6 @@ for line in open(blastout).readlines():
             lineage = "Not_in_taxdb"
 
 
-
-#------------------------------------------------------------------- refactored and impl in python3
-
-
 ## (3rd) For each row, make a dictionary and append to ldict list
     newrow = {
             'contig': query,
@@ -422,6 +418,8 @@ with open(prefix+'.windows.all.out','w') as f:
             str([round(x,4) for x in win.gc_range]),
             str([round(x,4) for x in win.coverage_range])
             ])+'\n')
+
+#------------------------------------------------------------------- refactored and impl in python3
 
 while True:
     below_thresh = wdf[wdf.ntp <= stringency_thresh]

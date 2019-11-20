@@ -3,6 +3,7 @@ import sys
 import re
 import os
 import argparse
+import shutil
 from scripts.dependencies import CaseDependency, ConstDependency
 from scripts.module import Module, Config
 from scripts.reuse import ReusableOutputManager, ReusableOutput, augustus_predict, protein_blast
@@ -114,14 +115,19 @@ class Gct (Module, LoggingEntity, Head):
         self.unclassified_infotable = self.infotable.collect_unclassifieds(nucl)
 
         # Write infotables for classified and unclassified contigs to csv
-        self.infotable.df.to_csv(f"{self.config.get('prefix')}.infotable.tsv", sep='\t', index = False, header = False)
-        self.unclassified_infotable.df.to_csv(f"{self.config.get('prefix')}_unclassified.infotable.tsv", sep = '\t', index = False, header = False)
+        self.infotable.df.drop("sseqid", axis=1).to_csv(f"{self.config.get('prefix')}.infotable.tsv", sep='\t', index = False, header = False)
+        self.unclassified_infotable.df.to_csv(f"{self.config.get('prefix')}.unclassified.infotable.tsv", sep = '\t', index = False, header = False)
 
         target = self.infotable.target_filter()
-        print(self.infotable.df["coverage"])
         windows = generate_windows(self.infotable)
+        
+        # Print windows to pdf in directory `windows`
+        if os.path.isdir('../windows'):
+            shutil.rmtree('../windows')
+        os.mkdir('windows')
+        #windows.print_all_pdf("windows")
+        windows.print_all_tsv(f"{ self.config.get('prefix') }.windows.all.out")
 
-        print(windows)
 
 
         self.logger.info("Everything good till now")

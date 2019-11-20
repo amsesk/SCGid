@@ -30,7 +30,10 @@ args<-commandArgs(trailingOnly = TRUE)
 
 tigInfo<-read.table(args[1],sep="\t")
 unclass<-read.table(args[2],sep="\t")
-colnames(tigInfo)<-c("contigid","plen","coverage","gc","pid","hitsp","hitlin","evalue","parse_lin","pertinent_taxlvl")
+#colnames(tigInfo)<-c("contigid","plen","coverage","gc","pid","hitsp","hitlin","evalue","parse_lin","pertinent_taxlvl")
+#colnames(tigInfo)<-c("contigid","gc","coverage","pid","length","sseqid","hitsp","desc","evalue","hitlin","pertinent_taxlvl","parse_lin")
+colnames(tigInfo)<-c("contigid","gc","coverage","pid","length","hitsp","desc","evalue","hitlin","pertinent_taxlvl","parse_lin")
+
 colnames(unclass)<-c("contigid","coverage","gc","parse_lin")
 gc_window<-args[3]
 cov_window<-args[4]
@@ -66,8 +69,8 @@ tntPalette <- c("darkred","blue")
 
 unclass$coverage = log(unclass$coverage)
 unclass$included<-"Unclassified_Dumped"
-unclass[((unclass$coverage>=cov_window[1] & unclass$coverage<=cov_window[2]) & 
-           (unclass$gc>=gc_window[1] & unclass$gc<=gc_window[2])),]$included<-"Unclassified_Kept"
+try(unclass[((unclass$coverage>=cov_window[1] & unclass$coverage<=cov_window[2]) & 
+           (unclass$gc>=gc_window[1] & unclass$gc<=gc_window[2])),]$included<-"Unclassified_Kept")
 
 myDark2<-brewer.pal(dim(imp)[1]+1, "Dark2")
 myDark2_blk<-c(myDark2, "black")
