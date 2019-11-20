@@ -792,7 +792,7 @@ class WindowManager(object):
         colnames = ldict[0].keys()
 
         self.window_frame = pd.DataFrame(ldict, columns = colnames)
-        self.window_frame.assign(sqfootage=(self.window_frame.gc_width * self.window_frame.co_width))
+        self.window_frame = self.window_frame.assign(sqfootage=(self.window_frame.gc_width * self.window_frame.co_width))
         
         self.logger = logging.getLogger ( logger_name_gen() )
     def print_all_pdf(self, outdir):
@@ -841,15 +841,34 @@ class WindowManager(object):
     
     def pick(self, stringency):
         while True:
-            below_thresh = self.window_frame[self.window_frame.ntp <= stringency]
+            below_thresh = self.window_frame[self.window_frame.ntp <= float(stringency)]
             if below_thresh.shape[0] == 0:
                 self.logger.info( f"No usable window at set stringency threshold, `s = {stringency}`" )
-                sys.exit(-5)
+                
+                self.window_frame = self.window_frame.assign(
+                    quotient = lambda x: x.tp / x.ntp
+                )
+                self.window_frame.sort_values(
+                    by = ["quotient", "sqfootage"],
+                    ascending = False,
+                    inplace = True
+                    )
+                best = self.window_frame.iloc[0,:].to_dict()
+
+                if self.window_frame.quotient.value_counts()["quotient"] > 1 and self.window_frame.sqfootage.value_counts()["sqfootage"] > 1:
+                    self.logger.warning("More than one best window.")
+
+                return self.windows[ best["expPat"] ]
+
+            # Filter for window(s) with the highest proportion of target
             max_target = below_thresh[below_thresh.tp == below_thresh.tp.max()]
+
+            # Filter for largest window(s)
             largest = max_target[max_target.sqfootage == max_target.sqfootage.max()]
+
             if largest.shape[0] > 1:
                 self.logger.critical("Too many best windows.") ## seems very unlikely
-                sys.exit(-6)
+                sys.exit(-6) # This seems recoverable
             else:
                 best = largest.iloc[0,:].expPat
                 best = [x for x in windows if x.expPat == best][0]

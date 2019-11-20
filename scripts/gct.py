@@ -128,6 +128,10 @@ class Gct (Module, LoggingEntity, Head):
         #windows.print_all_pdf("windows")
         windows.print_all_tsv(f"{ self.config.get('prefix') }.windows.all.out")
 
+        # Pick the best window and store in `best`
+        best = windows.pick( self.config.get("stringency") )
+        print (best.show())
+
 
 
         self.logger.info("Everything good till now")
