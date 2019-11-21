@@ -1,22 +1,18 @@
-## ***scgid***, a python-based tool for scaffold binning and genome prediction from single-cell sequencing libraries
-### version 0.1b
+## ***SCGid***, a consensus approach to contig filtering and genome prediction from single-cell sequencing libraries
+### Version: 0.1b
+#### Author: Kevin Amses
+#### Conctact: amsesk@umich.edu
 -----
 
-### What is ***scgid*** for?
-*scgid* is a python-based tool aimed at extracting a draft genome sequence for a single organism from a mildly metagenomic sequencing library resulting from single-cell genomic amplifications. The only thing that you need to start is your assebmly in FASTA format and *scgid* will do the rest.
+### IMPORTANT STATEMENT ABOUT THIS BETA VERSION (0.1b) - PLEASE READ BEFORE CLONING
+#### Updated Nov 21, 2019
+Please note that this version of *SCGid* constitutes an early-release version that is currently under active development toward a stable version coinciding with the release of the accepted manuscript introduing it. I am now porting SCGid to python 3 and stabilizing it for full release as SCGid (v1.0) within the next few weeks. This development is taking place on a separate branch. In the mean time, this beta version is working and available for use. I am available to assist with any problems you run into run *SCGid* on this branch as well as patch bugs. If you encounter a bug or confusing error while running the beta version of *SCGid*, please open an issue on this repositiory. 
 
-*scgid* takes your SPAdes assebmly and subjects it to three binning methods each based on a different sequence signature. It takes the output of each, draws consensus based on majority-rule, and yields one final consensus-genome draft at the intersection of all three methods. 
+To ensure that you are able to take advantage of these bug fixes, make sure that you are updating your local repo consistently. Here's how:
 
-As of this version, *scgid* is only compatible with genome assemblies generated with SPAdes (http://bioinf.spbau.ru/en/spades_for_remove) that have their sequence fasta headers **unchanged** (this is very important - just rename them after you're done with *scgid*). 
+Enter `scgid update` and confirm to automatically pull the current source from this repo, saving configuration settings.
 
-Please note that this version of *scgid* constitutes an early-release beta version. Some aspects of it and its documentation may be incomplete and/or under development. We actively support *scgid* and are working to expand and test it. If you encounter an error or obstacle when running *scgid*, please open an issue on this github repositiory so that we can address it and get you up and running again. See the next section below for some more notes about this version of *scgid*.
-
-### A couple of notes about the beta version, 0.1b
-This pre-publication release version of *scgid* is still under active development and thus updates to the GitHub repository are being made quite consistently. To ensure that you are able to take advantage of new features and bug fixes, make sure that you are updating your local repo consistently. We've tried to make this easy for you.
-
-Type `scgid update` and confirm to automatically pull the current source from this repo.
-
-One of the most obvious inconsistencies that we still need to correct involve some naming differences in between the module calls and the file architecture of the output folder. This will be fixed in the next version, but in the mean time, here are the synonyms:  
+One of the most obvious inconsistencies that we still need to correct involve some naming differences in between the module calls and the file architecture of the output folder. This will be fixed in the stable version, but in the mean time, here are the synonyms:  
 ```
 scgid kmers [args...]		Outputs to <prefix>_scgid_output/esom
 scgid gc-cov [args...]		Outputs to <prefix>_scgid_output/blob
@@ -24,21 +20,29 @@ scgid codons [args...]		Outputs to <prefix>_scgid_output/rscu
 scgid consensus [args...]	Outputs to <prefix>_scgid_output/consensus
 ```
 
-In this version of *scgid*,  
+In this version of *SCGid*,  
 	(i) `scgid kmers` can only be annotated with blastn searches of the NCBI nt database. This will be expanded in later versions. `scgid kmers` will perform this BLAST search for you.  
 	(ii) `scgid gc-cov` results can be annotated with blastp searches against a local swissprot-style protein database (see below section for what exactly this means. `scgid gc-cov` will perform this BLAST search for you.  
-	(iii) `scgid codons` results can be annotated with either blastn searches against the NCBI nt database (default, done for you) OR blastp searches against a local swissprot-style protein database. This latter feature is still in the process of being fully integrated into *scgid*. We found that we got a higher proportion of tree leaf annotations using blastp searches. For the time being, `scgid codons` will not perform the blastp search for you. Instead, run `scgid gc-cov` on your assembly first and then provide the `blob/<prefix>_info_table.tsv` file to `scgid codons` using the `-i|--infotable` option and specify `--mode blastp`. Doing so will allow `scgid codons` to use the results of the blastp search against the local swissprot-style database.  
+	(iii) `scgid codons` results can be annotated with either blastn searches against the NCBI nt database (default, done for you) OR blastp searches against a local swissprot-style protein database. This latter feature is still in the process of being fully implemented. We found that we got a higher proportion of tree leaf annotations using blastp searches. For the time being, `scgid codons` will not perform the blastp search for you. Instead, run `scgid gc-cov` on your assembly **first** and then provide the `blob/<prefix>_info_table.tsv` file to `scgid codons` using the `-i|--infotable` option and specify `--mode blastp`. Doing so will cause `scgid codons` to use the results of the blastp search against the local swissprot-style database instead.  
 
-This version of *scgid* has been tested on MacOS X and several Linux distributions (CentOS, Ubuntu, and Arch).  
+### Compatibility
+*SCGid* has been tested on MacOS X and several Linux distributions (CentOS, Ubuntu, and Arch).  
 
-Please report any and all errors and issues that you run into while using *scgid*. Its development is a top priority for me at this time and I want it to work for you! Please open issues here on the GitHub page or [email me directly](amsesk@umich.edu).  
+Please report any and all errors and issues that you run into while using *scgid*. Its development is a top priority for me at this time and I'm happy to work with you. Please open issues on this repository and post the contents of `scgid.log` and 
+
+### What is ***scgid*** for?
+*SCGid* is a python-based tool aimed at filtering out contamination from initial *de novo* assemblies from the mildly metagenomic sequencing libraries characterisitic of single-cell genomics targetting uncultured eukaryotes. The only thing that you need to start is an assebmly in FASTA format.
+
+*SCGid* takes your SPAdes assebmly and subjects it to three binning methods each based on a different sequence signature. Fingally, it draws consensus between the independent methods based on majority-rule, and yields one final consensus-filtered draft assembly at the intersection of all three methods. 
+
+As of this version, *scgid* is only compatible with genome assemblies generated with [SPAdes](http://cab.spbu.ru/software/spades/) with the FASTA headers **unchanged** (for now, this is where SCGid gets it's coverage estimates). 
 
 ### Dependencies
-* python 2.7 (*scgid* is not compatbile with python 3.x.x)
-	* pandas 1.15.0
-	* numpy 0.23.4
+* python 2.7, *SCGid* (v0.1b) is not compatbile with python 3.x.x
+	* pandas 0.23.4
+	* numpy 1.51.4
 	* ETE3 toolkit 3.1.1  
-**Note** *scgid* will try to install these python dependencies if using automatic setup (recommended) below.
+**Note** *SCGid* will try to install these python dependencies if using automatic setup (recommended) below.
 * R 3.4.1
 	* ape 
 	`install.packages("ape")`
@@ -46,6 +50,8 @@ Please report any and all errors and issues that you run into while using *scgid
     `install.packages("dplyr")`
     * phytools
     `install.packages("phytools")`
+    * ggplot2
+    `install.packages("ggplot2")`
     * Rscript (included with most R distributions)
 * NCBI Blast+
 * Augustus (http://bioinf.uni-greifswald.de/augustus/)
@@ -56,7 +62,6 @@ Please report any and all errors and issues that you run into while using *scgid
 * Java
 * Databionic ESOM (http://www.databionin-esom.sourceforge.net)  
     (i) Download the ESOM Installer .jar file and follow the instructions in the GUI installer.
-* BASH
 
 ### Downloading and Installing ***scgid***
 * Clone the repository at [https://github.com/amsesk/scgid.git](https://github.com/amsesk/scgid.git)
@@ -213,11 +218,6 @@ For your reference, I'm going to go through the content of the output folders fo
 	./codons/
 		<put file descriptions here>
 ```
-
-### Command Line Arguments, explained
-**\<In progress\>**  
-For now, type `scgid <module> -h` or `scgid <module> --help` into your command line for descriptions of supported command-line arguments.
-
 
 ### Citations
 Altschup, S. F., Gish, W., Pennsylvania, T., & Park, U. (1990). Basic Local Alignment Search Tool 2Department of Computer Science, 403–410.  
