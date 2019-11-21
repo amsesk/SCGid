@@ -6,7 +6,7 @@
 
 ### IMPORTANT STATEMENT ABOUT THIS BETA VERSION (0.1b) - PLEASE READ BEFORE CLONING
 #### Updated Nov 21, 2019
-Please note that this version of *SCGid* constitutes an early-release version that is currently under active development toward a stable version coinciding with the release of the accepted manuscript introduing it. I am now porting SCGid to python 3 and stabilizing it for full release as SCGid (v1.0) within the next few weeks. This development is taking place on a separate branch. In the mean time, this beta version is working and available for use. I am available to assist with any problems you run into run *SCGid* on this branch as well as patch bugs. If you encounter a bug or confusing error while running the beta version of *SCGid*, please open an issue on this repositiory. 
+Please note that this version of *SCGid* constitutes an early-release version that is currently under active development toward a stable version coinciding with the release of the accepted manuscript introduing it. I am now porting SCGid to python 3 and stabilizing it for full release as SCGid (v1.0) within the next few weeks. This development is taking place on a separate branch. In the mean time, this beta version is working and available for use. I am available to assist with any problems you run into while using this branch of *SCGid* as well as patch bugs. If you encounter a bug or confusing error while running the beta version of *SCGid*, please open an issue on this repositiory. 
 
 To ensure that you are able to take advantage of these bug fixes, make sure that you are updating your local repo consistently. Here's how:
 
