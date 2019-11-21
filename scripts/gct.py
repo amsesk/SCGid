@@ -52,6 +52,9 @@ class Gct (Module, LoggingEntity, Head):
         self.infotable = InfoTable()
         self.unclassified_infotable = InfoTable()
 
+        self.keep = {}
+        self.dump = {}
+
     def generate_argparser (self):
 
         parser = argparse.ArgumentParser()
@@ -118,10 +121,10 @@ class Gct (Module, LoggingEntity, Head):
         self.infotable.df.drop("sseqid", axis=1).to_csv(f"{self.config.get('prefix')}.infotable.tsv", sep='\t', index = False, header = False)
         self.unclassified_infotable.df.to_csv(f"{self.config.get('prefix')}.unclassified.infotable.tsv", sep = '\t', index = False, header = False)
 
-        target = self.infotable.target_filter()
+        # Generate all 13 windows
         windows = generate_windows(self.infotable)
         
-        # Print windows to pdf in directory `windows`
+        # Print PDFs of windows to pdf in directory `windows` and stats on all windows to tsv
         if os.path.isdir('../windows'):
             shutil.rmtree('../windows')
         os.mkdir('windows')
@@ -129,12 +132,32 @@ class Gct (Module, LoggingEntity, Head):
         windows.print_all_tsv(f"{ self.config.get('prefix') }.windows.all.out")
 
         # Pick the best window and store in `best`
-        best = windows.pick( self.config.get("stringency") )
-        print (best.show())
+        best_window = windows.pick( self.config.get("stringency") )
+        self.logger.info( f"Best window at stringency level `s = {self.config.get('stringency')}`:\n\n{best_window.show()} ")
+
+        # Decide which CLASSIFIED contigs to keep based on taxonomy of their proteins
+        # Populates infotable.keep and infotable.dump
+        self.infotable.decide_inclusion()
+
+        # Pop DNASequences from nucl based on infotable decisions
+        # MUST POP because of subsequent filtering by GC-Coverage
+        for shortname in self.infotable.keep:
+            self.keep[shortname] = nucl.pop(shortname)
+        for shortname in self.infotable.dump:
+            self.dump[shortname] = nucl.pop(shortname)
+
+        # Decide which UNCLASSIFIED contigs to keep based on GC-Coverage cut-offs defined by the best window
+        sort = nucl.gc_cov_filter(best_window.gc_range, best_window.coverage_range)
+        self.keep.update(sort["keep"])
+        self.dump.update(sort["dump"])
+
+        filtered_size = sum([len(s.string) for s in self.keep.values()])
+        filtered_ncontigs = len(self.keep.values())
+
+        self.logger.info(f"Filtered assembly is contains {filtered_ncontigs} contigs with a cumulative size of {filtered_size:,} bp ({filtered_size/1e6:.2f} Mbp)")
 
 
-
-        self.logger.info("Everything good till now")
+        self.logger.info("GCT-based filtering complete. Returning to SCGid.")
 
 
 if __name__ == "__main__":

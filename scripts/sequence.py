@@ -18,6 +18,9 @@ class DNASequenceCollection(object):
 
     def get(self, header):
         return self.odict[header]
+    
+    def pop(self, header):
+        return self.odict.pop(header)
 
     def seqs(self):
         return self.odict.values()
@@ -25,6 +28,24 @@ class DNASequenceCollection(object):
     def from_dict(self, odict):
         self.odict.update(odict)
         return self
+    
+    def gc_cov_filter(self, gc_range, coverage_range):
+        gc_min, gc_max = gc_range
+        coverage_min, coverage_max = coverage_range
+        
+        sort = {
+            "keep": {},
+            "dump": {}
+        }
+
+        for key, seqobj in self.odict.items():
+            if seqobj.gc >= gc_min and seqobj.gc <= gc_max and seqobj.coverage >= coverage_min and seqobj.coverage <= coverage_max:
+                sort["keep"][key] = self.get(key)
+            else:
+                sort["dump"][key] = self.get(key)
+        
+        return sort
+
 
     def from_fasta(self, fasta, spades = False):
         header_pattern = re.compile("^>(.+)")
@@ -40,6 +61,10 @@ class DNASequenceCollection(object):
                 m = re.match(header_pattern, line)
                 if m is not None:
                     if len(header) > 0:
+                        
+                        if header in self.odict:
+                            raise KeyError("FASTA has duplicated headers")
+
                         self.odict[header] = DNASequence(header, sequence, spades)
                         header = m.group(1)
                         sequence = str()
@@ -47,7 +72,7 @@ class DNASequenceCollection(object):
                         header = m.group(1)
                 else:
                     sequence += line
-            ## add the last sequence to the list
+            # Add the last sequence to the OrderedDict
             self.odict[header] = DNASequence(header, sequence, spades)
 
         return self
@@ -75,6 +100,9 @@ class DNASequence(object):
             if letter == "G" or letter == "C":
                 self.gcCount += 1
         self.gc = float(self.gcCount)/float(self.length)
+
+    def to_fasta(self):
+        return f">{self.header}\n{self.string}"
 
 class AASequenceCollection(object):
 

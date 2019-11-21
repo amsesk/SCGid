@@ -601,8 +601,8 @@ class FlexibleSelectionWindow(LoggingEntity):
         maxes = points.loc[points.tradeoff == points.tradeoff.max()]
         if maxes.shape[0] > 1:
                 final_window = (
-                        maxes.loc[maxes["step"] == maxes["step"].max()]["lower_{}".format(axis)].item(),
-                        maxes.loc[maxes["step"] == maxes["step"].max()]["upper_{}".format(axis)].item()
+                        next( iter(maxes.loc[maxes["step"] == maxes["step"].max()]["lower_{}".format(axis)]), "no match"),
+                        next( iter(maxes.loc[maxes["step"] == maxes["step"].max()]["upper_{}".format(axis)]), "no match")
                         )
         else:
             final_window = (
@@ -630,7 +630,10 @@ class FlexibleSelectionWindow(LoggingEntity):
                 }
         except ZeroDivisionError:
             self.logger.warning("Abnormal data. Standard deviation of target points along {axis}-axis equals 0. Setting value to 1 to avoid ZeroDivisionError.")
-            steps_to_take = int(np.floor(dist/1))
+            steps_to_take = {
+                -1: int(np.floor(ndist/1)),
+                1: int(np.floor(pdist/1))
+                }
 
         points = {
                 -1: np.ndarray(shape=(steps_to_take[-1]+1, 6), dtype='float', order='C'), #negative direction
@@ -679,7 +682,7 @@ class FlexibleSelectionWindow(LoggingEntity):
             
             maxes = points[d].loc[points[d].tradeoff == points[d].tradeoff.max()]
             if maxes.shape[0] > 1:
-                final_window[d] = maxes.loc[maxes["step"] == maxes["step"].max()]["{}_{}".format(point_column[d], axis)].item()
+                final_window[d] = next( iter(maxes.loc[maxes["step"] == maxes["step"].max()]["{}_{}".format(point_column[d], axis)]), "no match")
             else:
                 final_window[d] = maxes["{}_{}".format(point_column[d], axis)].item()
         
@@ -795,6 +798,8 @@ class WindowManager(object):
         self.window_frame = self.window_frame.assign(sqfootage=(self.window_frame.gc_width * self.window_frame.co_width))
         
         self.logger = logging.getLogger ( logger_name_gen() )
+        self.head = get_head()
+
     def print_all_pdf(self, outdir):
         for w in self.windows.values():
             w.to_pdf(outdir)
@@ -840,26 +845,38 @@ class WindowManager(object):
             return 0
     
     def pick(self, stringency):
-        while True:
-            below_thresh = self.window_frame[self.window_frame.ntp <= float(stringency)]
-            if below_thresh.shape[0] == 0:
-                self.logger.info( f"No usable window at set stringency threshold, `s = {stringency}`" )
-                
-                self.window_frame = self.window_frame.assign(
-                    quotient = lambda x: x.tp / x.ntp
+
+        # Calculate tp/ntp quotient and add to frame
+        self.window_frame = self.window_frame.assign(
+                quotient = lambda x: x.tp / x.ntp
                 )
-                self.window_frame.sort_values(
-                    by = ["quotient", "sqfootage"],
-                    ascending = False,
-                    inplace = True
-                    )
-                best = self.window_frame.iloc[0,:].to_dict()
 
-                if self.window_frame.quotient.value_counts()["quotient"] > 1 and self.window_frame.sqfootage.value_counts()["sqfootage"] > 1:
-                    self.logger.warning("More than one best window.")
+        # Sort descending by tp/ntp quotient and sqfootage        
+        self.window_frame.sort_values(
+            by = ["quotient", "sqfootage"],
+            ascending = False,
+            inplace = True
+            )
 
-                return self.windows[ best["expPat"] ]
+        below_thresh = self.window_frame[self.window_frame.ntp <= float(stringency)]
 
+        if below_thresh.shape[0] == 0:
+
+            self.logger.info( f"No usable window at set stringency threshold, `s = {stringency}`. Determining next best option..." )
+            
+            # Pick best window by maximizing tp/ntp quotient and window size
+            best = self.window_frame.iloc[0,:]
+
+            # Set Gct.config.stringency to new "best" stringency level determined above by sorting by quotient and sqfootage descending
+            setattr( self.head.config, "stringency", best["ntp"] )
+
+            if self.window_frame.quotient.value_counts()[ best.quotient ] > 1 and self.window_frame.sqfootage.value_counts()[ best.sqfootage ] > 1:
+                self.logger.warning("More than one best window in terms of target:nontarget ratio and size. Arbitrarily picking 1st one.")
+
+            return self.windows[ best.expPat ]
+        
+        else:
+            
             # Filter for window(s) with the highest proportion of target
             max_target = below_thresh[below_thresh.tp == below_thresh.tp.max()]
 
@@ -867,9 +884,8 @@ class WindowManager(object):
             largest = max_target[max_target.sqfootage == max_target.sqfootage.max()]
 
             if largest.shape[0] > 1:
-                self.logger.critical("Too many best windows.") ## seems very unlikely
-                sys.exit(-6) # This seems recoverable
-            else:
-                best = largest.iloc[0,:].expPat
-                best = [x for x in windows if x.expPat == best][0]
-                break
+                
+                self.logger.warning( f"More than one best window under set stringency level `s = {self.head.config.get('stringency')}` and of maximal size. Arbitrarily picking 1st one." )
+
+            best = largest.iloc[0,:]
+            return self.windows [ best.expPat ]

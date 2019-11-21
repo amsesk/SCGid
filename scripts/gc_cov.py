@@ -419,7 +419,6 @@ with open(prefix+'.windows.all.out','w') as f:
             str([round(x,4) for x in win.coverage_range])
             ])+'\n')
 
-#------------------------------------------------------------------- refactored and impl in python3
 
 while True:
     below_thresh = wdf[wdf.ntp <= stringency_thresh]
@@ -439,6 +438,8 @@ while True:
 blogger.info("\nBest window at -s|--stringency = {}.".format(stringency_thresh))
 blogger.info("-"*40)
 blogger.info(best.show())
+
+#------------------------------------------------------------------- refactored and impl in python3
 
 ## Decide on each contigs taxonomy based on all of its proteins
 info_table.decide_taxonomy()

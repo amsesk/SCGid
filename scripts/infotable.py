@@ -154,7 +154,7 @@ class InfoTable(object):
     def parse_lineage(self):
         self.df = self.df.apply(it_parse_lin, axis=1, args=(self.tar, self.ex,))
 
-    def decide_taxonomy (self):
+    def decide_inclusion (self):
         self.keep = []
         self.dump = []
         grouped = self.df.groupby('contig')
