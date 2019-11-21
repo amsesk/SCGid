@@ -40,6 +40,9 @@ from lib import *
 from infotable import infotable
 
 #%% some specific functions that need to be generalized at some point and given a new home
+
+#------------------------------------------------------------------- refactored and impl in python3
+
 def get_by_idx (row):
     ret = []
     for i in row.maxes:

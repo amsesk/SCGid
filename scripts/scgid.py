@@ -42,6 +42,7 @@ import logging
 import logging.config
 from scripts.modcomm import LoggingEntity, logger_name_gen, ExitOnExceptionHandler
 from scripts.gct import Gct 
+from scripts.codons import Codons
 
 bin_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 pkg_home = os.path.dirname(bin_dir)
@@ -52,10 +53,22 @@ log = logging.getLogger("SCGid")
 class SCGid(LoggingEntity, object):
     def __init__(self, call):
         if call == "gct":
-            Gct().run()
+            self.gct_filtered = Gct().run()
+        elif call == "codons":
+            self.codon_filtered = Codons().run()
 
 if len(sys.argv) == 1 or sys.argv[1] in ['-h','--help','-help']:
     print (help_msg)
+
+elif sys.argv[1] == "gct":
+    log.info("Calling Gct")
+    result = SCGid(sys.argv[1])
+    log.info("Final message from root.")
+
+elif sys.argv[1] == "codons":
+    log.info("Calling Codons")
+    result = SCGid(sys.argv[1])
+    log.info("Final message from root.")
 
 elif sys.argv[1] == "init":
     arguments = sys.argv[2:]
@@ -113,14 +126,6 @@ elif sys.argv[1] == "gc-cov":
     arguments.insert(0,py)
     subprocess.call(arguments)
 
-elif sys.argv[1] == "codons":
-    arguments = sys.argv[2:]
-    call = os.path.join(bin_dir,'rscu.py')
-    arguments.insert(0,call)
-    py = sys.executable
-    arguments.insert(0,py)
-    subprocess.call(arguments)
-
 elif sys.argv[1] == "consensus":
     arguments = sys.argv[2:]
     call = os.path.join(bin_dir,'consensus.py')
@@ -144,11 +149,6 @@ elif sys.argv[1] == "qualcheck":
     py = sys.executable
     arguments.insert(0,py)
     subprocess.call(arguments)
-
-elif sys.argv[1] == "gct":
-    log.info("Calling Gct")
-    result = SCGid(sys.argv[1])
-    log.info("Final message from root.")
 
 else:
     print("\nERROR: Bad module selection. Printing help screen...\n")

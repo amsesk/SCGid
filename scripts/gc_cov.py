@@ -439,8 +439,6 @@ blogger.info("\nBest window at -s|--stringency = {}.".format(stringency_thresh))
 blogger.info("-"*40)
 blogger.info(best.show())
 
-#------------------------------------------------------------------- refactored and impl in python3
-
 ## Decide on each contigs taxonomy based on all of its proteins
 info_table.decide_taxonomy()
 
@@ -481,7 +479,9 @@ logger.info("Final draft genome FASTA has been written to "+prefix+'_blob_final_
 logger.info("Draft genome is comprised of "+str(genome_size)+" nucelotides on "+str(len(final_genome))+" contigs.")
 
 ## If you've gotten here, then everything should have worked, move everything from temp to ../ and change dir and delete temp
-for f in os.listdir('.'):
-    shutil.move(f, "../{}".format(f))
+for output_file in os.listdir('.'):
+    shutil.move(output_file, f"../{output_file}")
 os.chdir("../")
 os.rmdir("temp")
+
+#------------------------------------------------------------------- refactored and impl in python3

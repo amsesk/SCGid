@@ -52,8 +52,14 @@ class Module (object):
         self.logger.info("Entering working directory: `%s`", os.getcwd())
         self.wd = os.getcwd()
 
-    def initialize(self):
-        pass
+    def migrate_temp_dir(self):
+        for output_file in os.listdir('.'):
+            shutil.move(output_file, f"../{output_file}")
+        os.chdir("../")
+        os.rmdir("temp")
+    
+    def resetwd(self):
+        os.chdir("../../")
 
     '''
     def try_catch_error(self, op):
@@ -82,6 +88,7 @@ class Config(LoggingEntity):
         self.reusable = ReusableOutputManager()
         self.__dict__.update(self.load_yaml(self.SCGID))
         self.rundir = None
+        self.logger = logging.getLogger( logger_name_gen() )
 
     def __repr__(self):
         return "\n".join(["{}: {}".format(key, setting) for key,setting in self.__dict__.items()])
@@ -92,10 +99,13 @@ class Config(LoggingEntity):
     def load_cmdline(self, parsed_args):
         for unset in [x for x,p in parsed_args.__dict__.items() if p is None]:
             try:
-                setattr(parsed_args, unset, getattr(self, "DEFAULT_{}".format(unset)))
+                setattr(parsed_args, unset, getattr(self, unset))
             except:
-                pass
+                self.logger.debug(f"No loaded value from config.yaml to set None-type argument `{unset}`")
         self.__dict__.update( vars(parsed_args) )
+    
+    def load_argdict(self, argdict):
+        self.__dict__.update(argdict)
 
     def load_yaml(self, HOME):
         loc = os.path.join(HOME, "config.yaml")

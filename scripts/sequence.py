@@ -14,19 +14,20 @@ def reverse (string):
 class DNASequenceCollection(object):
 
     def __init__(self):
-        self.odict = OrderedDict()
+        self.index = {}
 
     def get(self, header):
-        return self.odict[header]
+        return self.index[header]
     
     def pop(self, header):
-        return self.odict.pop(header)
+        return self.index.pop(header)
 
     def seqs(self):
-        return self.odict.values()
+        return self.index.values()
 
-    def from_dict(self, odict):
-        self.odict.update(odict)
+    def from_dict(self, d):
+        self.index.clear()
+        self.index.update(d)
         return self
     
     def gc_cov_filter(self, gc_range, coverage_range):
@@ -38,7 +39,7 @@ class DNASequenceCollection(object):
             "dump": {}
         }
 
-        for key, seqobj in self.odict.items():
+        for key, seqobj in self.index.items():
             if seqobj.gc >= gc_min and seqobj.gc <= gc_max and seqobj.coverage >= coverage_min and seqobj.coverage <= coverage_max:
                 sort["keep"][key] = self.get(key)
             else:
@@ -62,10 +63,10 @@ class DNASequenceCollection(object):
                 if m is not None:
                     if len(header) > 0:
                         
-                        if header in self.odict:
+                        if header in self.index:
                             raise KeyError("FASTA has duplicated headers")
 
-                        self.odict[header] = DNASequence(header, sequence, spades)
+                        self.index[header] = DNASequence(header, sequence, spades)
                         header = m.group(1)
                         sequence = str()
                     else:
@@ -73,12 +74,17 @@ class DNASequenceCollection(object):
                 else:
                     sequence += line
             # Add the last sequence to the OrderedDict
-            self.odict[header] = DNASequence(header, sequence, spades)
+            self.index[header] = DNASequence(header, sequence, spades)
 
         return self
 
     def rekey_by_shortname (self):
-        self.odict = {"_".join(k.split("_")[0:2]): v for k,v in self.odict.items()}
+        self.index = {"_".join(k.split("_")[0:2]): v for k,v in self.index.items()}
+
+    def write_fasta (self, outpath):
+        with open(outpath, 'w') as o:
+            for _,s in self.index.items():
+                o.write(f"{s.to_fasta()}\n")
 
 class DNASequence(object):
 
@@ -107,16 +113,16 @@ class DNASequence(object):
 class AASequenceCollection(object):
 
     def __init__(self):
-        self.odict = OrderedDict()
+        self.index = {}
 
     def get(self, header):
-        return self.odict[header]
+        return self.index[header]
 
     def seqs(self):
-        return self.odict.values()
+        return self.index.values()
 
     def from_dict (self, odict):
-        self.odict.update(odict)
+        self.index.update(odict)
         return self
 
     def from_fasta(self, fasta):
@@ -133,7 +139,7 @@ class AASequenceCollection(object):
                 m = re.match(header_pattern, line)
                 if m is not None:
                     if len(header) > 0:
-                        self.odict[header] = AASequence(header, sequence)
+                        self.index[header] = AASequence(header, sequence)
                         header = m.group(1)
                         sequence = str()
                     else:
@@ -141,7 +147,7 @@ class AASequenceCollection(object):
                 else:
                     sequence += line
             ## add the last sequence to the list
-            self.odict[header] = AASequence(header, sequence)
+            self.index[header] = AASequence(header, sequence)
 
         return self
 
