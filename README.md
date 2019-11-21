@@ -30,12 +30,12 @@ In this version of *SCGid*,
 
 Please report any and all errors and issues that you run into while using *scgid*. Its development is a top priority for me at this time and I'm happy to work with you. Please open issues on this repository and post the contents of `scgid.log` and 
 
-### What is ***scgid*** for?
+### What is ***SCGid*** for?
 *SCGid* is a python-based tool aimed at filtering out contamination from initial *de novo* assemblies from the mildly metagenomic sequencing libraries characterisitic of single-cell genomics targetting uncultured eukaryotes. The only thing that you need to start is an assebmly in FASTA format.
 
 *SCGid* takes your SPAdes assebmly and subjects it to three binning methods each based on a different sequence signature. Fingally, it draws consensus between the independent methods based on majority-rule, and yields one final consensus-filtered draft assembly at the intersection of all three methods. 
 
-As of this version, *scgid* is only compatible with genome assemblies generated with [SPAdes](http://cab.spbu.ru/software/spades/) with the FASTA headers **unchanged** (for now, this is where SCGid gets it's coverage estimates). 
+As of this version, *SCGid* is only compatible with genome assemblies generated with [SPAdes](http://cab.spbu.ru/software/spades/) with the FASTA headers **unchanged** (for now, this is where SCGid gets it's coverage estimates). 
 
 ### Dependencies
 * python 2.7, *SCGid* (v0.1b) is not compatbile with python 3.x.x
@@ -63,7 +63,7 @@ As of this version, *scgid* is only compatible with genome assemblies generated 
 * Databionic ESOM (http://www.databionin-esom.sourceforge.net)  
     (i) Download the ESOM Installer .jar file and follow the instructions in the GUI installer.
 
-### Downloading and Installing ***scgid***
+### Downloading and Installing ***SCGid***
 * Clone the repository at [https://github.com/amsesk/scgid.git](https://github.com/amsesk/scgid.git)
 * Navigate to `bin` within the newly created directory
 `cd scgid/bin`
@@ -97,14 +97,14 @@ spdb_version="dd-Mon-yy" #eg 21-Jul-18
 	`export PATH=$PATH:/path/to/scgid/bin`
 * Ensure that other stand-alone dependencies (i.e. BLAST and Augustus) have also been added to $PATH.
 
-### Running ***scgid***
-To run *scgid*, all you need is a SPAdes assembly (or at least an assembly with SPAdes-style fasta headers). In its current version, SPAdes-style fasta headers are a requirement for *scgid*. This means that each fasta header contains identification, length, and coverage information for each contig in the format `NODE_XXX_length_XXX_cov_XXX.XXX`. If this is an issue for you please open a new issue and we'll try to expand compatibility in future versions.
+### Running ***SCGid***
+To run *SCGid*, all you need is a SPAdes assembly (or at least an assembly with SPAdes-style fasta headers). In its current version, SPAdes-style fasta headers are a requirement for *scgid*. This means that each fasta header contains identification, length, and coverage information for each contig in the format `NODE_XXX_length_XXX_cov_XXX.XXX`. If this is an issue for you please open a new issue and we'll try to expand compatibility in future versions.
 
-Each module of *scgid* is designed to be run separately in a bash command line. To enumerate the command-line arguments and their descriptions, merely type `scgid <module> -h` or `scgid <module> --help`. Try running `scgid -h` to get descriptions of the available module commands to see where to get started. In most cases, *scgid* will try to pull options that you don't specify from your `settings.py` file, so keep in mind what is specified there (you set-up this file when you ran `./scgid init`). You only need to explicitly specify these options when you want to use databases NOT pointed to in your `settings.py` file.
+Each module of *SCGid* is designed to be run separately in a bash command line. To enumerate the command-line arguments and their descriptions, merely type `scgid <module> -h` or `scgid <module> --help`. Try running `scgid -h` to get descriptions of the available module commands to see where to get started. In most cases, *scgid* will try to pull options that you don't specify from your `settings.py` file, so keep in mind what is specified there (you set-up this file when you ran `./scgid init`). You only need to explicitly specify these options when you want to use databases NOT pointed to in your `settings.py` file.
 
-**IMPORTANT** Output directories for runs are determined by the `-f|--prefix` option supplied to each call to the module. So, if you would like the outputs of all modules to be located in the same output head directory, make sure you are in the parent directory of the `<prefix>_scgid_output` folder and that you specify the same prefix for each call to *scgid*. This will ensure that the outputs of each module for each run (on a particular assembly) are located in the same output directory. Changing the prefix of the call to *scgid* will create a new output directory. Further, calling *scgid* from a different directory will create a new output folder in that directory. Also note that because of this, results can be overwritten. For instance, if you call `scgid gc-cov [args...]` from the same directory twice with the same prefix, the outputs contained within the `<prefix>_scgid_output/gc-cov` directory will be overwritten.
+**IMPORTANT** Output directories for runs are determined by the `-f|--prefix` option supplied to each call to the module. So, if you would like the outputs of all modules to be located in the same output head directory, make sure you are in the parent directory of the `<prefix>_scgid_output` folder and that you specify the same prefix for each call to *SCGid*. This will ensure that the outputs of each module for each run (on a particular assembly) are located in the same output directory. Changing the prefix of the call to *SCGid* will create a new output directory. Further, calling *SCGid* from a different directory will create a new output folder in that directory. Also note that because of this, results can be overwritten. For instance, if you call `scgid gc-cov [args...]` from the same directory twice with the same prefix, the outputs contained within the `<prefix>_scgid_output/gc-cov` directory will be overwritten.
 
-To take full advantage of *scgid*'s consensus-based approach, run all three binning algorithms (gc-cov, kmers, codons) prior to running `scgid consesnsus` to determine your final genome draft. The basic workflow for a *scgid* run is as follows...
+To take full advantage of *SCGid*'s consensus-based approach, run all three binning algorithms (gc-cov, kmers, codons) prior to running `scgid consesnsus` to determine your final genome draft. The basic workflow for a *SCGid* run is as follows...
 ```
 scgid gc-cov [args...] 
 scgid codons [args...]
@@ -112,7 +112,7 @@ scgid kmers train [args...] (a good reference for which options to specify for E
 scgid kmers annotate [args...]
 scgid kmers extract [args...]
 ```
-**Note** Because of the need to manually select a region from the self-organizing kmer map, the `scgid kmers...` portion of the workflow is divided into three separate commands. You will select your region of interest using the `esomana` GUI in between calls to `scgid kmers annotate` and `scgid kmers extract`. See below section for more information.
+**Note** Because of the need to manually select a region from the self-organizing kmer map, the `scgid kmers...` portion of the workflow is divided into three separate calls. You will select your region of interest using the `esomana` GUI in between calls to `scgid kmers annotate` and `scgid kmers extract`. See below section for more information.
 
 Finally, run the consensus portion of `scgid` to draw consensus between all three binning algorithms.
 
@@ -159,7 +159,7 @@ BAD HEADERS
 ```
 
 ### Expanding your swissprot-style database
-scgid was developed while working with cryptic and uncultured early-diverging fungi that are under-represented in sequence databases, including swissprot. Because of this, we saw it beneficial to expand the swissprot database to include published draft genomes of other early-diverging fungi that weren't included in the curated database prior to running scgid. While there are a couple of potential issues with this, it allowed us to be more confident in the ability to taxonomically confirm the identities of our target contigs. *scgid* allows you to do this too!
+*SCGid* was developed while working with cryptic and uncultured early-diverging fungi that are under-represented in sequence databases, including swissprot. Because of this, we saw it beneficial to expand the swissprot database to include published draft genomes of other early-diverging fungi that weren't included in the curated database prior to running scgid. While there are a couple of potential issues with this, it allowed us to be more confident in the ability to taxonomically confirm the identities of our target contigs. *scgid* allows you to do this too!
 
 Use `scgid spexpand [args...]` to expand your swissprot protein and taxonomy databases as you see fit.
 
@@ -180,7 +180,7 @@ etc..
 Now all you have to do is run `scgid spexpand [args...]` remembering to provide File #1 as `-p|--proteins` and File #2 as `-l|--lineages` and you're all set to go.
 
 ### Output Directories and Content
-*scgid* makes a separate folder for each of its modules, all contained within a shared working directory named with the `-f|--prefix` command line option. This means that if you want to keep the outputs of each module in the same working directory (which is what you should do), make sure to specify the same `-f|--prefix` for each and every call to scgid when working on a your workflow. 
+*SCGid* makes a separate folder for each of its modules, all contained within a shared working directory named with the `-f|--prefix` command line option. This means that if you want to keep the outputs of each module in the same working directory (which is what you should do), make sure to specify the same `-f|--prefix` for each and every call to scgid when working on a your workflow. 
 
 For your reference, I'm going to go through the content of the output folders for each module (excluding the prefices).The names are intended to be intuitive.
 
