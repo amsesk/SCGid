@@ -29,6 +29,7 @@ class DNASequenceCollection(object):
 
     def __init__(self):
         self.index = {}
+        self.seqtype = DNASequence
 
     def get(self, header):
         return self.index[header]
@@ -83,7 +84,7 @@ class DNASequenceCollection(object):
                         if header in self.index:
                             raise KeyError("FASTA has duplicated headers")
 
-                        self.index[header] = DNASequence(header, sequence, spades)
+                        self.index[header] = self.seqtype(header, sequence, spades)
                         header = m.group(1)
                         sequence = str()
                     else:
