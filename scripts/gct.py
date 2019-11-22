@@ -44,8 +44,7 @@ else:
                     pattern = ".*[.]spdb[.]blast[.]out$",
                     genfunc = protein_blast,
                     genfunc_args = {
-                        "prefix": self.config.get("prefix"),
-                        "prot": self.config.get("prot"),
+                        "prot_path": self.config.get("prot"),
                         "db": self.config.get("spdb"),
                         "evalue": self.config.get("evalue"),
                         "cpus": self.config.get("cpus"),

@@ -41,8 +41,6 @@ from infotable import infotable
 
 #%% some specific functions that need to be generalized at some point and given a new home
 
-#------------------------------------------------------------------- refactored and impl in python3
-
 def get_by_idx (row):
     ret = []
     for i in row.maxes:
@@ -256,6 +254,8 @@ if args.mode == 'blastn':
             logger.info("Using these previously created blast-related output files:\n\t"+blastout+".best\n\t"+blastout+".best.taxids\n\n\t---- Remove to recalculate ----")
 
 
+
+
 #%%
 ## Read in the nucleotide FASTA from pkl file or the original FASTA
 nucl = pkl_fasta_in_out (nucl_path)
@@ -289,6 +289,9 @@ for CDS_cat in cds_cat_large:
             continue
         codon_count_table[CDS_cat.label][this_codon] += 1
         pos+=3
+
+
+#------------------------------------------------------------------- refactored and impl in python3
 
 #%%
 ## Now to calculate RSCU for each codon for each contig

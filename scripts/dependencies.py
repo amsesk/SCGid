@@ -39,7 +39,10 @@ class Dependencies(LoggingEntity):
         return ", ".join([x.cmd for x in self.deps])
 
     def populate (self, *deps):
-        self.deps = deps
+        self.deps = list(deps)
+
+    def add (self, dep):
+        self.deps.append(dep)
 
     def check(self, parsed_args):
         avail = [x for x in os.environ["PATH"].split(":") if os.path.isdir(x)]

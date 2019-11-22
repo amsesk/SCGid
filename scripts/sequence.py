@@ -11,6 +11,20 @@ def reverse (string):
         pos -= 1
     return ''.join(chars)
 
+def revcomp(string):
+    convert = {
+            'A': 'T',
+            'T': 'A',
+            'G': 'C',
+            'C': 'G',
+            'N': 'N'
+        }
+    comp = [convert[l] for l in string]
+    revcomp = comp[::-1]
+
+    return ''.join(revcomp)
+    
+
 class DNASequenceCollection(object):
 
     def __init__(self):
@@ -30,6 +44,9 @@ class DNASequenceCollection(object):
         self.index.update(d)
         return self
     
+    def remove_small_sequences (self, minlen):
+        self.index = {header: seqobj for header, seqobj in self.index.items() if seqobj.length >= minlen}
+
     def gc_cov_filter(self, gc_range, coverage_range):
         gc_min, gc_max = gc_range
         coverage_min, coverage_max = coverage_range
@@ -109,6 +126,55 @@ class DNASequence(object):
 
     def to_fasta(self):
         return f">{self.header}\n{self.string}"
+    
+    def revcomp(self, inplace = False):
+        if inplace:
+            self.string = revcomp(self.string)
+        else:
+            return revcomp(self.string)
+    
+    def transcribe(self):
+        trans = {
+                'A':'U',
+                'T':'A',
+                'G':'C',
+                'C':'G',
+                'N':'N'
+                }
+        transcript = ''.join([trans[l] for l in self.string])
+        return transcript
+
+class CDSConcatenate(DNASequence):
+    def __init__(self, header, string):
+        super().__init__(header, string, spades = False)
+        self.codon_counts = {
+        'UUU': 0, 'UUC': 0, 'UUA': 0, 'UUG': 0,
+        'CUU': 0, 'CUC': 0, 'CUA': 0, 'CUG': 0,
+        'AUU': 0, 'AUC': 0, 'AUA': 0, 'AUG': 0,
+        'GUU': 0, 'GUC': 0, 'GUA': 0, 'GUG': 0,
+        'UCU': 0, 'UCC': 0, 'UCA': 0, 'UCG': 0,
+        'AGU': 0, 'AGC': 0, 'CCU': 0, 'CCC': 0,
+        'CCA': 0, 'CCG': 0, 'ACU': 0, 'ACC': 0,
+        'ACA': 0, 'ACG': 0, 'GCU': 0, 'GCC': 0,
+        'GCA': 0, 'GCG': 0, 'UAU': 0, 'UAC': 0,
+        'UAA': 0, 'UAG': 0, 'UGA': 0, 'CAU': 0,
+        'CAC': 0, 'CAA': 0, 'CAG': 0, 'AAU': 0,
+        'AAC': 0, 'AAA': 0, 'AAG': 0, 'GAU': 0,
+        'GAC': 0, 'GAA': 0, 'GAG': 0, 'UGU': 0,
+        'UGC': 0, 'UGG': 0, 'CGU': 0, 'CGC': 0,
+        'CGA': 0, 'CGG': 0, 'AGA': 0, 'AGG': 0,
+        'GGU': 0, 'GGC': 0, 'GGA': 0, 'GGG': 0
+        }
+    
+    def split_codons(self):
+        return [ self.transcribe()[i:i+3] for i in range(0, self.length, 3) ]
+    
+    def count_codons(self):
+        for codon in self.split_codons():
+            if 'N' in codon:
+                continue
+            self.codon_counts[codon] += 1
+
 
 class AASequenceCollection(object):
 
