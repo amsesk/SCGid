@@ -1,13 +1,82 @@
 import argparse
 import sys
 import re
+import pandas as pd
 from collections import namedtuple
 from scripts.module import Module
 from scripts.modcomm import LoggingEntity, Head
 from scripts.reuse import ReusableOutput, ReusableOutputManager, augustus_predict, nucleotide_blast, protein_blast
 from scripts.dependencies import CaseDependency
 from scripts.parsers import PathAction
-from scripts.sequence import DNASequenceCollection, DNASequence, CDSConcatenate, revcomp
+from scripts.sequence import DNASequenceCollection, DNASequence, revcomp, complement
+
+SYNONYMOUS_CODONS = {
+    'Phe': ['UUU','UUC'],
+    'Leu': ['UUA','UUG','CUU','CUC','CUA','CUG'],
+    'Ile': ['AUU','AUC','AUA'],
+    'Met': ['AUG'],
+    'Val': ['GUU','GUC','GUA','GUG'],
+    'Ser': ['UCU','UCC','UCA','UCG','AGU','AGC'],
+    'Pro': ['CCU','CCC','CCA','CCG'],
+    'Thr': ['ACU','ACC','ACA','ACG'],
+    'Ala': ['GCU','GCC','GCA','GCG'],
+    'Tyr': ['UAU','UAC'],
+    'STOP': ['UAA','UAG','UGA'],
+    'His': ['CAU','CAC'],
+    'Gln': ['CAA','CAG'],
+    'Asn': ['AAU','AAC'],
+    'Lys': ['AAA','AAG'],
+    'Asp': ['GAU','GAC'],
+    'Glu': ['GAA','GAG'],
+    'Cys': ['UGU','UGC'],
+    'Trp': ['UGG'],
+    'Arg': ['CGU','CGC','CGA','CGG','AGA','AGG'],
+    'Gly': ['GGU','GGC','GGA','GGG']
+    }
+
+class CDSConcatenate(DNASequence):
+    def __init__(self, header, string):
+        super().__init__(header, string, spades = False)
+        self.codon_counts = pd.Series(
+            {
+            'UUU': 0, 'UUC': 0, 'UUA': 0, 'UUG': 0,
+            'CUU': 0, 'CUC': 0, 'CUA': 0, 'CUG': 0,
+            'AUU': 0, 'AUC': 0, 'AUA': 0, 'AUG': 0,
+            'GUU': 0, 'GUC': 0, 'GUA': 0, 'GUG': 0,
+            'UCU': 0, 'UCC': 0, 'UCA': 0, 'UCG': 0,
+            'AGU': 0, 'AGC': 0, 'CCU': 0, 'CCC': 0,
+            'CCA': 0, 'CCG': 0, 'ACU': 0, 'ACC': 0,
+            'ACA': 0, 'ACG': 0, 'GCU': 0, 'GCC': 0,
+            'GCA': 0, 'GCG': 0, 'UAU': 0, 'UAC': 0,
+            'UAA': 0, 'UAG': 0, 'UGA': 0, 'CAU': 0,
+            'CAC': 0, 'CAA': 0, 'CAG': 0, 'AAU': 0,
+            'AAC': 0, 'AAA': 0, 'AAG': 0, 'GAU': 0,
+            'GAC': 0, 'GAA': 0, 'GAG': 0, 'UGU': 0,
+            'UGC': 0, 'UGG': 0, 'CGU': 0, 'CGC': 0,
+            'CGA': 0, 'CGG': 0, 'AGA': 0, 'AGG': 0,
+            'GGU': 0, 'GGC': 0, 'GGA': 0, 'GGG': 0
+            }
+        )
+        self.rscu_table = {}
+    def split_codons(self):
+        return [ complement(self.transcribe()[i:i+3]) for i in range(0, self.length, 3) ]
+    
+    def count_codons(self):
+        for codon in self.split_codons():
+            if 'N' in codon:
+                continue
+            self.codon_counts[codon] += 1
+    
+    def calculate_rscu(self):
+        for amino_acid, codons in SYNONYMOUS_CODONS.items():
+            synonymous_codon_counts = self.codon_counts[codons]
+            amino_acid_occurences = sum(synonymous_codon_counts)
+            for c in codons:
+                if amino_acid_occurences == 0:
+                    rscu = 0.00
+                else:
+                    pass
+                print (self.header, amino_acid, c, self.codon_counts[c])
 
 class Codons(Module, LoggingEntity, Head):
     def __init__(self, argdict = None):
@@ -101,7 +170,7 @@ class Codons(Module, LoggingEntity, Head):
 
         return parser
 
-    def extract_cds_gff3 (self, gff3_path, nucl):
+    def locate_cds_gff3 (self, gff3_path):
 
         contig_chunks = {}
 
@@ -135,7 +204,9 @@ class Codons(Module, LoggingEntity, Head):
                         contig_chunks[shortname] = {
                                 pid: [ CDSChunk(spl[3], spl[4], spl[6]) ]
                                 }
+        return contig_chunks
 
+    def concatenate_cds (self, contig_chunks, nucl):
         cds_concatenates = {}
 
         # Iterate through CDS chunks of predicted proteins on each contig and pull CDS sequences from nucleotide fasta
@@ -143,7 +214,7 @@ class Codons(Module, LoggingEntity, Head):
 
             contig_cds_cat = str()
             
-            for pid, chunks in pids.items():
+            for _, chunks in pids.items():
 
                 gene_cds = str()
 
@@ -153,16 +224,17 @@ class Codons(Module, LoggingEntity, Head):
                     if chunk.start == chunk.end:
                         continue
                     
-                    # Fetch CDS sequence from contig by start/stop indices listed in gff3
-                    chunk_string = nucl.index[shortname].string[
-                        int(chunk.start)-1: int(chunk.end)
-                        ]
-
-                    # Reverse complement chunk strings if they occur on reverse strand
+                    # Fetch CDS sequence from contig by start/stop indices listed in gff3 and revcomp if on reverse strand
                     if chunk.strand == '-':
-                        chunk_string = revcomp(chunk_string)
-                    
-                    # Combine chunk sequences if they occur on the same gene
+                        chunk_string = revcomp(nucl.index[shortname].string[
+                            int(chunk.start)-1: int(chunk.end)
+                            ])
+                    else: # i.e., chunk.strand == '+'
+                        chunk_string = nucl.index[shortname].string[
+                            int(chunk.start)-1: int(chunk.end)
+                            ]
+
+                    # Combine chunk sequences for each gene
                     gene_cds += chunk_string
 
                 # Toss out predicted CDS if they aren't divisible by 3 to avoid introducing frameshifts into CDS concatenate
@@ -192,16 +264,24 @@ class Codons(Module, LoggingEntity, Head):
         nucl.rekey_by_shortname()
 
         # Concatenate all CDS sequences on each contig
-        cds_concatenates = self.extract_cds_gff3(
-            self.config.get("gff3"),
+        cds_coords = self.locate_cds_gff3(
+            self.config.get("gff3")
+        )
+        for k,v in cds_coords.items():
+            print(k,v)
+        
+        #sys.exit()
+
+        cds_concatenates = self.concatenate_cds(
+            cds_coords,
             nucl
         )
         
         # Remove CDS concatenates shorter than supplied minlin
         cds_concatenates.remove_small_sequences( int(self.config.get("minlen")) )
 
+        cds_concatenates.write_fasta("large_concat.fasta")
+
         for c in cds_concatenates.seqs():
             c.count_codons()
-        
-        for c in cds_concatenates.seqs():
-            print (c.codon_counts)
+            c.calculate_rscu()
