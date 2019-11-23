@@ -1,14 +1,19 @@
 import argparse
 import sys
+import os
 import re
 import pandas as pd
+import numpy as np
 from collections import namedtuple
+from ete3 import Tree, TreeStyle, NodeStyle, NCBITaxa
 from scripts.module import Module
-from scripts.modcomm import LoggingEntity, Head
+from scripts.modcomm import LoggingEntity, Head, get_head
 from scripts.reuse import ReusableOutput, ReusableOutputManager, augustus_predict, nucleotide_blast, protein_blast
 from scripts.dependencies import CaseDependency
 from scripts.parsers import PathAction
 from scripts.sequence import DNASequenceCollection, DNASequence, revcomp, complement
+from scripts.library import subprocessP
+from scripts.infotable import InfoTable, get_by_idx, count_unique
 
 SYNONYMOUS_CODONS = {
     'Phe': ['UUU','UUC'],
@@ -57,7 +62,26 @@ class CDSConcatenate(DNASequence):
             'GGU': 0, 'GGC': 0, 'GGA': 0, 'GGG': 0
             }
         )
-        self.rscu_table = {}
+        self.rscu_table = pd.Series(
+            {
+            'UUU': 0.00, 'UUC': 0.00, 'UUA': 0.00, 'UUG': 0.00,
+            'CUU': 0.00, 'CUC': 0.00, 'CUA': 0.00, 'CUG': 0.00,
+            'AUU': 0.00, 'AUC': 0.00, 'AUA': 0.00, 'AUG': 0.00,
+            'GUU': 0.00, 'GUC': 0.00, 'GUA': 0.00, 'GUG': 0.00,
+            'UCU': 0.00, 'UCC': 0.00, 'UCA': 0.00, 'UCG': 0.00,
+            'AGU': 0.00, 'AGC': 0.00, 'CCU': 0.00, 'CCC': 0.00,
+            'CCA': 0.00, 'CCG': 0.00, 'ACU': 0.00, 'ACC': 0.00,
+            'ACA': 0.00, 'ACG': 0.00, 'GCU': 0.00, 'GCC': 0.00,
+            'GCA': 0.00, 'GCG': 0.00, 'UAU': 0.00, 'UAC': 0.00,
+            'UAA': 0.00, 'UAG': 0.00, 'UGA': 0.00, 'CAU': 0.00,
+            'CAC': 0.00, 'CAA': 0.00, 'CAG': 0.00, 'AAU': 0.00,
+            'AAC': 0.00, 'AAA': 0.00, 'AAG': 0.00, 'GAU': 0.00,
+            'GAC': 0.00, 'GAA': 0.00, 'GAG': 0.00, 'UGU': 0.00,
+            'UGC': 0.00, 'UGG': 0.00, 'CGU': 0.00, 'CGC': 0.00,
+            'CGA': 0.00, 'CGG': 0.00, 'AGA': 0.00, 'AGG': 0.00,
+            'GGU': 0.00, 'GGC': 0.00, 'GGA': 0.00, 'GGG': 0.00
+            }
+        )
     def split_codons(self):
         return [ complement(self.transcribe()[i:i+3]) for i in range(0, self.length, 3) ]
     
@@ -68,16 +92,171 @@ class CDSConcatenate(DNASequence):
             self.codon_counts[codon] += 1
     
     def calculate_rscu(self):
-        for amino_acid, codons in SYNONYMOUS_CODONS.items():
+        for _, codons in SYNONYMOUS_CODONS.items():
             synonymous_codon_counts = self.codon_counts[codons]
             amino_acid_occurences = sum(synonymous_codon_counts)
             for c in codons:
                 if amino_acid_occurences == 0:
                     rscu = 0.00
                 else:
-                    pass
-                print (self.header, amino_acid, c, self.codon_counts[c])
+                    rscu = self.codon_counts[c] / (amino_acid_occurences * (1/len(self.codon_counts[codons])))
+                
+                self.rscu_table[c] = rscu
 
+class RSCUTree(object):
+    def __init__(self, treepath):
+        self.dendrogram = Tree(treepath)
+        self.head = get_head()
+        self.mode = self.head.config.get("mode")
+
+        if self.mode == "blastp":
+            self.infotable = InfoTable()
+            self.infotable.set_target(
+                self.head.config.get("targets"),
+                self.head.config.get("exceptions")
+            )
+            self.infotable.load(self.head.config.get("infotable"))
+            self.infotable.parse_lineage()
+            '''
+            
+            '''
+
+    def annotate(self):
+        self.infotable.decide_inclusion()
+        if self.mode == "blastp":
+            self._protannot()
+        
+        elif self.mode == "blastn":
+            raise NotImplementedError("Annotation with NCBI nt blast results not yet implemented.")
+
+        else:
+            raise NotImplementedError(f"Bad mode selection: `{self.mode}`.")
+
+        return 0
+
+    def _protannot(self):
+       for n in self.dendrogram.traverse():
+            if n.is_leaf():
+                n.add_feature("annotation","unclassified")
+                if n.name in self.infotable.keep:
+                    n.annotation = "target"
+                elif n.name in self.infotable.dump:
+                    n.annotation = "nontarget"
+                else:
+                    pass # All leaves set to unclassified above, so no need to do anything
+
+    def _nuclannot(self):
+        pass
+
+    def pick_clade(self):
+        curr_best = 0.00
+        best = [] #"best" here means worth looking into, although it is going to include some real shitty trees
+        for n in self.dendrogram.iter_descendants():
+            if n.is_leaf():
+                pass
+            if len(n.get_leaves()) > 30:
+                count_t = float(len([l for l in n if l.annotation == "target"]))
+                count_nt = float(len([l for l in n if l.annotation == "nontarget"]))
+                count_unclass = float(len([l for l in n if l.annotation == "unclassified"]))
+                total_classified = float(count_t + count_nt)
+                #print count_t, count_nt, count_unclass
+                if total_classified == 0:
+                    continue
+                measure = float( (count_t - count_nt) / total_classified )
+                #print measure
+                if measure > curr_best:
+                    n.add_feature("measure",measure)
+                    n.add_feature("leaves", len(n.get_leaves()))
+                    best.append(n)
+            else:
+                continue
+
+        #order trees in order of best measure
+        #best = [n for n in best if n.measure >= 0.90]
+        best = sorted(best, key=lambda x: x.measure, reverse=True)
+
+        if len(best) ==  0:
+            pass
+            #self.head.logger.critical("Tree too small.")
+            #sys.exit(7)
+
+        #Bin trees based on common edges, or in other words look for sets of trees that aren't just nested within eachother from the list of best trees
+        #However, based on how it's written now, if a monophyletic clade is nested within another, some (likely) poorer quality clades will include both and lead to a node ending up in multiple bins, BUT hopefully selection of the best clade from each bin sorts this out
+        bins = {}
+        i=0 #index iterator to add additional bins
+        for p in best:
+            n_bins = len(bins) #number of bins present on each iteration
+            found_match = False
+            for n in range(0,n_bins):
+                for t in bins[n]:
+                    if len(p.compare(t)['common_edges']) != 0:
+                        bins[n].append(p)
+                        found_match = True
+                        break
+            if not found_match:
+                bins[i] = [p]
+                i+=1
+        #Now go through each bin and find the best tree from that bin
+        best_trees_by_bin = []
+        for b in range(0,len(bins)):
+            measures = [i.measure for i in bins[b]]
+            leaves = [i.leaves for i in bins[b]]
+            max_measure_indices = [i for i,v in enumerate(measures) if v == max(measures)]
+            if len(max_measure_indices) == 1:
+                best_idx = measures.index(max(measures))
+                best_trees_by_bin.append(bins[b][best_idx])
+            else:
+                leaves_of_maxes = [v for i,v in enumerate(leaves) if i in max_measure_indices]
+                max_leaves = max(leaves_of_maxes)
+                best_idx = leaves.index(max_leaves)
+                best_trees_by_bin.append(bins[b][best_idx])
+
+        #for i in best_trees_by_bin:
+        #    print i.leaves,"\t",i.measure
+        #Now compare the best trees from each bin to decide on a best tree (or set of best trees) for subsequent actions
+
+        max_measure = max([i.measure for i in best_trees_by_bin])
+        best_trees = [i for i in best_trees_by_bin if i.measure == max_measure]
+        if len(best_trees) > 1:
+            max_leaves = max([i.leaves for i in best_trees_by_bin])
+            best_trees = [i for i in best_trees if i.leaves == max_leaves]
+            if len(best_trees) > 1:
+                self.head.logger.info("More than one best tree detemined from codon analysis.")
+            else:
+                final_tree = best_trees[0]
+            #for tree in best_trees:
+                #tree.show(tree_style=circ)
+        else:
+            final_tree = best_trees[0]
+    
+        return final_tree
+
+    def write_for_R(self, outpath):
+        taxlvl = self.infotable.taxon_level(level=1)
+
+        taxlvl = taxlvl.groupby("contig").agg({ "lineage": lambda x: ','.join(x).split(','),
+            "evalue": lambda x: [e for e in x]
+            })
+        ### get all evalues equal to best evalues, and their indices
+        taxlvl['maxes'] = taxlvl.evalue.apply(lambda x: [i for i,e in enumerate(x) if e == min(x)])
+
+        ### match hits with the evalue for that hit
+        taxlvl['maxtax'] = taxlvl.apply(get_by_idx, axis=1)
+
+        ### Get best taxonomy based on counts of best evalue taxa
+        taxlvl['decide'] = taxlvl['maxtax'].apply(count_unique)
+        taxlvl_decisions = taxlvl[["decide"]]
+
+        with open(outpath, 'w') as f:
+            for l in [ [x.name, x.annotation] for x in self.dendrogram.iter_leaves()]:
+                try:
+                    l.insert( next( iter(1,taxlvl_decisions.loc[l[0]]) ) )
+                except:
+                    l.insert(1,'unclassified')
+                l = [i.strip() for i in l]
+                f.write("{}\n".format( ','.join(l) ))
+
+    
 class Codons(Module, LoggingEntity, Head):
     def __init__(self, argdict = None):
         super().__init__(self.__class__)
@@ -206,6 +385,7 @@ class Codons(Module, LoggingEntity, Head):
                                 }
         return contig_chunks
 
+    # Investigate inclusion of STOP codons in CDS here later - see how the trees look first excluding them?
     def concatenate_cds (self, contig_chunks, nucl):
         cds_concatenates = {}
 
@@ -249,6 +429,46 @@ class Codons(Module, LoggingEntity, Head):
         # Return all contig-level CDS concatenates as a DNASequenceCollection object
         return DNASequenceCollection().from_dict(cds_concatenates)
 
+    def rscu_distances(self, cds_concatenates):
+        headers = [s.header for s in cds_concatenates.seqs()]
+        matrix = pd.DataFrame(columns = headers, index = headers)
+        for p in cds_concatenates.seqs():
+            row = {}
+            for r in cds_concatenates.seqs():
+                row[r.header] = (1/59)*sum( abs( p.rscu_table.to_numpy() - r.rscu_table.to_numpy() ) ) 
+            matrix.loc[p.header] = row
+        
+        matrix = np.tril(matrix)
+        
+        matrix_frame = pd.DataFrame(matrix, columns = headers, index = headers)
+        matrix_frame.iloc[np.triu_indices(n = len(headers), k=1)] = np.nan
+
+        return matrix_frame
+
+    def write_nexus(self, distance_matrix, outpath):
+    
+        header = f"#NEXUS\nbegin distances;\ndimensions\nntax={distance_matrix.shape[0]};\nmatrix\n\n"
+        trailer = ";\nEND"
+
+        with open(outpath,'w') as f:
+            f.write(header)
+
+        distance_matrix.to_csv(outpath, sep=' ',index = True, header = False, mode = 'a')
+
+        with open(outpath,'a') as f:
+            f.write(trailer)
+
+    def nj_tree(self, distmat_csv, outpath):
+        cmd = [
+            os.path.join( self.config.get("path_to_Rscript"),"Rscript" ),
+            "--vanilla",
+            os.path.join(self.config.SCGID_SCRIPTS,"ape_nj.R"),
+            distmat_csv,
+            outpath
+            ]
+        self.logger.info(' '.join(cmd))
+        subprocessP(cmd, self.logger)    
+
     def run(self):
         self.start_logging()
         self.setwd( __name__, self.config.get("prefix") )
@@ -263,15 +483,18 @@ class Codons(Module, LoggingEntity, Head):
         # Rekey nucl by shortname
         nucl.rekey_by_shortname()
 
-        # Concatenate all CDS sequences on each contig
+        # Get coordinates and strand of CDS chunks
         cds_coords = self.locate_cds_gff3(
             self.config.get("gff3")
         )
-        for k,v in cds_coords.items():
-            print(k,v)
-        
-        #sys.exit()
 
+        '''
+        for k,v in cds_coords.items():
+            if "1986" in k:
+                print(k,v)
+        '''
+
+        # Concatenate all CDS sequences on each contig
         cds_concatenates = self.concatenate_cds(
             cds_coords,
             nucl
@@ -279,9 +502,46 @@ class Codons(Module, LoggingEntity, Head):
         
         # Remove CDS concatenates shorter than supplied minlin
         cds_concatenates.remove_small_sequences( int(self.config.get("minlen")) )
+        #cds_concatenates.write_fasta("large_concat.fasta")
 
-        cds_concatenates.write_fasta("large_concat.fasta")
-
+        # Count codons on each CDS concatenate
         for c in cds_concatenates.seqs():
             c.count_codons()
+
+        # Remove CDS concatenates that contain STOP codons, becaause they shouldn't... I don't think
+        
+        cds_concatenates = DNASequenceCollection().from_dict(
+            { header: seqobj for header, seqobj in cds_concatenates.index.items() if sum( seqobj.codon_counts[ SYNONYMOUS_CODONS["STOP"] ] ) == 0 }
+        )
+        
+        # Calculate RSCU for each codon on each concatenate
+        for c in cds_concatenates.seqs():
             c.calculate_rscu()
+
+        # Compute RSCU distance matrix
+        distance_matrix = self.rscu_distances(cds_concatenates)
+        
+        # Write RSCU distance matrix to NEXUS format and CSV format (for R)
+        self.write_nexus(distance_matrix, f"{self.config.get('prefix')}.rscu.distance.matrix.nex")
+        distance_matrix.to_csv(f"{self.config.get('prefix')}.rscu.distance.matrix.csv", sep=',', index = True, header = False, mode = 'w')
+
+        # Compute NJ tree and write to .tre file (use R because biopython reads big trees really slow)
+        treefile = f"{self.config.get('prefix')}_rscu_nj.tre"
+        self.nj_tree(
+            f"{self.config.get('prefix')}.rscu.distance.matrix.csv",
+            treefile
+        )
+
+        nj_tree = RSCUTree(treefile)
+        
+        nj_tree.annotate()
+
+        nj_tree.write_for_R(f"{self.config.get('prefix')}_rscuTree_annot.csv")
+
+        nj_tree.pick_clade()
+
+        # Waiting for BLAST to run on greatlakes so I have a test file big enough to actually make a tree...
+
+        self.logger.info("Everything good until here...")
+
+        

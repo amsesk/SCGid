@@ -18,7 +18,7 @@ Usage: scgid <module> [args...] --> try scgid <module> -h|--help to see module-s
 Specify a module to continue:
     
     Core Modules
-        gc-cov      Generate a draft genome based on gc-coverage-taxonomy plots
+        gct      Generate a draft genome based on gc-coverage-taxonomy plots
         kmers       Generate a draft genome based on an ESOM map
         codons      Generate a draft genome based on relative synonymous codon usage
         consensus   Draw majority rule between three draft genomes into final consensus-derived draft genome

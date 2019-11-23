@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import ast
+import sys
 from collections import namedtuple
 
 class InfoTable(object):
@@ -10,7 +11,7 @@ class InfoTable(object):
         self.colnames_new = list(self.colnames)
         self.colnames_new.append("pertinent_taxlvl")
 
-        self.unparse_colnames = self.colnames[-1]
+        self.unparse_colnames = ['contig', 'gc', 'coverage', 'pid', 'length', 'sp_os', 'desc', 'evalue', 'lineage', 'pertinent_taxlvl', 'parse_lineage']
         empty_infotable = {}
         for col in self.colnames:
             empty_infotable[col] = []
@@ -207,3 +208,23 @@ def it_parse_lin(row, tar, ex):
     else:
         row['parse_lineage'] = 'nontarget'
     return row
+
+def get_by_idx (row):
+    ret = []
+    for i in row.maxes:
+        ret.append(row.lineage[i])
+    return ret
+
+def count_unique (l):
+    if len(l) == 1:
+        return l[0]
+    else:
+        counts = {}
+        for ele in set(l):
+            counts[l.count(ele)] = ele
+        best = {c:ele for c,ele in counts.iteritems() if c == max(counts.keys())}
+        if len(best.keys()) > 1:
+            logger.critical("Too many best hits...write more code to deal with this.")
+            sys.exit(-5)
+        else:
+            return best[best.keys()[0]]

@@ -314,6 +314,7 @@ for acid in codon_table:
 
 
 #%% Now compute the RSCU distance matrix according to GCUA paper
+
 mat = {}
 i = 0
 for key,val in codon_count_table.iteritems():
@@ -413,6 +414,8 @@ if args.mode == 'blastp':
     annotated_tree = annotate_tips_prot (nj_tree, target_taxa, info_table)
 else:
     annotated_tree = annotate_tips(nj_tree, target_taxa, '{}.best.taxids'.format(blastout))
+
+#------------------------------------------------------------------- refactored and impl in python3
 
 with open("{}_rscuTree_annot.csv".format(prefix),'w') as f:
     for l in [ [x.name, x.annotation] for x in annotated_tree.iter_leaves()]:
