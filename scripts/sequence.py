@@ -205,6 +205,9 @@ class AASequence(object):
         self.header = header
         self.string = string
         self.length = len(self.string)
+    
+    def to_fasta(self):
+        return f">{self.header}\n{self.string}"
 
 # Old shit
 class Sequence(object):

@@ -64,14 +64,14 @@ def gff3_to_fasta(gff3, outname):
             s = re.search("[#][ ]end[ ]gene[ ]([A-Za-z0-9_.]+)",line)
             if s is not None:
                 recording = False
-                prots.append(Sequence(s.group(1), protein_sequence, seq_type = "prot", contig_info = False))
+                prots.append(AASequence(s.group(1), protein_sequence))
                 protein_sequence = ""
             else:
                 s = re.search("[#][ ]([a-zA-Z]+)",line)
                 protein_sequence += s.group(1)
     with open(outname,'w') as fasta:
         for i in prots:
-            fasta.write(i.outFasta()+"\n")
+            fasta.write(i.to_fasta()+"\n")
 
 def log_command_line_errors (err, log_inst):
     if err != '':

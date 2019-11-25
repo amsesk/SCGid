@@ -121,12 +121,12 @@ def verify_blastdb(db):
 
     return 0
 
-def protein_blast( prot_path, db, evalue, cpus, outpath):
+def protein_blast( prot, db, evalue, cpus, outpath):
     logger = get_head().logger
     logger.info( f"Blasting predicted proteins against the swissprot database located at `{db}`" )
     verify_blastdb(db)
 
-    cmd = ["blastp", "-query", prot_path, "-max_target_seqs", "1", "-evalue", evalue, "-db", db, "-outfmt", pkg_settings.BLAST_OUTFMT_STR, "-out", outpath, "-num_threads", cpus]
+    cmd = ["blastp", "-query", prot, "-max_target_seqs", "1", "-evalue", evalue, "-db", db, "-outfmt", pkg_settings.BLAST_OUTFMT_STR, "-out", outpath, "-num_threads", cpus]
     logger.info(' '.join(cmd))
     subprocessP(cmd, logger)
 
@@ -135,12 +135,12 @@ def protein_blast( prot_path, db, evalue, cpus, outpath):
 
     return outpath
 
-def nucleotide_blast( nucl_path, db, evalue, cpus, outpath):
+def nucleotide_blast( nucl, db, evalue, cpus, outpath):
     logger = get_head().logger
     logger.info( f"Blasting predicted proteins against the swissprot database located at `{db}`" )
     verify_blastdb(db)
 
-    cmd = ["blastn", "-query", nucl_path, "-max_target_seqs", "1", "-evalue", evalue, "-db", db, "-outfmt", pkg_settings.BLAST_OUTFMT_STR, "-out", outpath, "-num_threads", cpus]
+    cmd = ["blastn", "-query", nucl, "-max_target_seqs", "1", "-evalue", evalue, "-db", db, "-outfmt", pkg_settings.BLAST_OUTFMT_STR, "-out", outpath, "-num_threads", cpus]
     logger.info(' '.join(cmd))
     subprocessP(cmd, logger)
 
