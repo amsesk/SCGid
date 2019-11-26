@@ -222,9 +222,9 @@ def count_unique (l):
         counts = {}
         for ele in set(l):
             counts[l.count(ele)] = ele
-        best = {c:ele for c,ele in counts.iteritems() if c == max(counts.keys())}
+        best = {c:ele for c,ele in counts.items() if c == max(counts.keys())}
         if len(best.keys()) > 1:
-            logger.critical("Too many best hits...write more code to deal with this.")
+            #logger.critical("Too many best hits...write more code to deal with this.")
             sys.exit(-5)
         else:
-            return best[best.keys()[0]]
+            return best[next(iter(best.keys()))]

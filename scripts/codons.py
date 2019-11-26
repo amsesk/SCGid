@@ -83,13 +83,15 @@ class CDSConcatenate(DNASequence):
             }
         )
     def split_codons(self):
-        return [ complement(self.transcribe()[i:i+3]) for i in range(0, self.length, 3) ]
+        self.transcomp = complement(self.transcribe())
+        return [ self.transcomp[i:i+3] for i in range(0, self.length, 3) ]
     
     def count_codons(self):
         for codon in self.split_codons():
             if 'N' in codon:
                 continue
             self.codon_counts[codon] += 1
+        return " ".join(["{:<5}".format(x) for x in self.codon_counts.to_list()])
     
     def calculate_rscu(self):
         for _, codons in SYNONYMOUS_CODONS.items():
@@ -441,13 +443,13 @@ class Codons(Module, LoggingEntity, Head):
         matrix = np.tril(matrix)
         
         matrix_frame = pd.DataFrame(matrix, columns = headers, index = headers)
-        matrix_frame.iloc[np.triu_indices(n = len(headers), k=1)] = np.nan
+        #matrix_frame.iloc[np.triu_indices(n = len(headers), k=0)] = np.nan
 
         return matrix_frame
 
     def write_nexus(self, distance_matrix, outpath):
     
-        header = f"#NEXUS\nbegin distances;\ndimensions\nntax={distance_matrix.shape[0]};\nmatrix\n\n"
+        header = f"#NEXUS\nbegin distances;\ndimensions\nntax={distance_matrix.shape[0]};\nmatrix\n"
         trailer = ";\nEND"
 
         with open(outpath,'w') as f:
@@ -479,11 +481,13 @@ class Codons(Module, LoggingEntity, Head):
 
         # Read in nucleotide FASTA
         nucl = DNASequenceCollection().from_fasta(self.config.get("nucl"))
+        self.logger.info(f"Read nucleotide FASTA at `{self.config.nucl}` into memory.")
 
         # Rekey nucl by shortname
         nucl.rekey_by_shortname()
 
         # Get coordinates and strand of CDS chunks
+        self.logger.info(f"Pulling locations of CDS chunks from gff3 at `{self.config.get('gff3')}`")
         cds_coords = self.locate_cds_gff3(
             self.config.get("gff3")
         )
@@ -495,37 +499,44 @@ class Codons(Module, LoggingEntity, Head):
         '''
 
         # Concatenate all CDS sequences on each contig
+        self.logger.info(f"Concatenating CDS chunks from each contig")
         cds_concatenates = self.concatenate_cds(
             cds_coords,
             nucl
         )
         
         # Remove CDS concatenates shorter than supplied minlin
+        self.logger.info(f"Removing CDS concatenates <{self.config.get('minlen')} bp in length")
         cds_concatenates.remove_small_sequences( int(self.config.get("minlen")) )
         #cds_concatenates.write_fasta("large_concat.fasta")
 
         # Count codons on each CDS concatenate
+        self.logger.info(f"Counting codon occurences on each CDS concatenate")
         for c in cds_concatenates.seqs():
-            c.count_codons()
+            self.logger.info( c.count_codons() )
 
         # Remove CDS concatenates that contain STOP codons, becaause they shouldn't... I don't think
-        
+        self.logger.info(f"Removing CDS concatenates that contain STOP codons, because they shouldn\'t")
         cds_concatenates = DNASequenceCollection().from_dict(
             { header: seqobj for header, seqobj in cds_concatenates.index.items() if sum( seqobj.codon_counts[ SYNONYMOUS_CODONS["STOP"] ] ) == 0 }
         )
         
         # Calculate RSCU for each codon on each concatenate
+        self.logger.info(f"Calculating contig RSCU profiles")
         for c in cds_concatenates.seqs():
             c.calculate_rscu()
 
         # Compute RSCU distance matrix
+        self.logger.info(f"Constructing RSCU distance matrix")
         distance_matrix = self.rscu_distances(cds_concatenates)
         
         # Write RSCU distance matrix to NEXUS format and CSV format (for R)
         self.write_nexus(distance_matrix, f"{self.config.get('prefix')}.rscu.distance.matrix.nex")
         distance_matrix.to_csv(f"{self.config.get('prefix')}.rscu.distance.matrix.csv", sep=',', index = True, header = False, mode = 'w')
+        self.logger.info(f"Printed RSCU distance matrix in NEXUS format to `{self.config.get('prefix')}.rscu.distance.matrix.csv`")
 
         # Compute NJ tree and write to .tre file (use R because biopython reads big trees really slow)
+        self.logger.info(f"Building NJ tree from RSCU distance matrix in R")
         treefile = f"{self.config.get('prefix')}_rscu_nj.tre"
         self.nj_tree(
             f"{self.config.get('prefix')}.rscu.distance.matrix.csv",
