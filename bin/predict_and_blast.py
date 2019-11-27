@@ -67,6 +67,7 @@ if to_do[0] is '1':
     aug_sp = args.augustus_sp
 
 # make sure that augustus is available in path
+'''
     if settings.AUGUSTUS_CONFIG_PATH != "":
         AUGUSTUS_CONFIG_PATH = settings.AUGUSTUS_CONFIG_PATH
     else:
@@ -75,7 +76,7 @@ if to_do[0] is '1':
         except:
             logger.exception("Global variable $AUGUSTUS_CONFIG_PATH is not present in environment and is unset in settings.py. Unable to run augustus.")
             raise ValueError("Global variable $AUGUSTUS_CONFIG_PATH is not present in environment and is unset in settings.py. Unable to run augustus")
-
+'''
     try:
         subprocessT(['augustus','--AUGUSTUS_CONFIG_PATH='+AUGUSTUS_CONFIG_PATH,'--help'])
     except:
@@ -85,7 +86,7 @@ if to_do[0] is '1':
 # Run augustus...
     logger.info("Predicting proteins with augustus...")
 
-    run_aug_cmd = ['augustus','--AUGUSTUS_CONFIG_PATH='+AUGUSTUS_CONFIG_PATH,'--species='+aug_sp,'--gff3=on', nucl,'--uniqueGeneId=true']
+    run_aug_cmd = ['augustus','--species='+aug_sp,'--gff3=on', nucl,'--uniqueGeneId=true']
 
     logger.info(' '.join(run_aug_cmd))
     out = subprocessP(run_aug_cmd, logger)
