@@ -21,10 +21,10 @@ class Module (object):
 
         #Set by self.initialize()
         self.config = Config()
+        
     def start_logging(self):
-        self.logger = logging.getLogger(
-            logger_name_gen()
-        )
+        self.logger = logging.getLogger( logger_name_gen() )
+        self.simplelogger = logging.getLogger("SCGid.unfmt")
 
     def setwd (self, name, prefix):
         name = name.split(".")[1]
@@ -94,7 +94,13 @@ class Config(LoggingEntity):
         return "\n".join(["{}: {}".format(key, setting) for key,setting in self.__dict__.items()])
 
     def get(self, value):
-        return getattr(self, value)
+        try: 
+            attr = getattr(self, value)
+            return attr
+
+        except KeyError:
+            raise KeyError(f"Member `{value}` not in Config")
+        
 
     def load_cmdline(self, parsed_args):
         for unset in [x for x,p in parsed_args.__dict__.items() if p is None]:

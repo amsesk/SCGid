@@ -91,7 +91,8 @@ class CDSConcatenate(DNASequence):
             if 'N' in codon:
                 continue
             self.codon_counts[codon] += 1
-        return " ".join(["{:<5}".format(x) for x in self.codon_counts.to_list()])
+        logrow = "[{:<10}] ".format(self.header) + " ".join(["{:<5}".format(x) for x in self.codon_counts.to_list()])
+        return logrow
     
     def calculate_rscu(self):
         for _, codons in SYNONYMOUS_CODONS.items():
@@ -481,7 +482,7 @@ class Codons(Module, LoggingEntity, Head):
 
         # Read in nucleotide FASTA
         nucl = DNASequenceCollection().from_fasta(self.config.get("nucl"))
-        self.logger.info(f"Read nucleotide FASTA at `{self.config.nucl}` into memory.")
+        self.logger.info(f"Read nucleotide FASTA at `{self.config.get('nucl')}` into memory.")
 
         # Rekey nucl by shortname
         nucl.rekey_by_shortname()
@@ -513,7 +514,7 @@ class Codons(Module, LoggingEntity, Head):
         # Count codons on each CDS concatenate
         self.logger.info(f"Counting codon occurences on each CDS concatenate")
         for c in cds_concatenates.seqs():
-            self.logger.info( c.count_codons() )
+            self.simplelogger.info( c.count_codons() )
 
         # Remove CDS concatenates that contain STOP codons, becaause they shouldn't... I don't think
         self.logger.info(f"Removing CDS concatenates that contain STOP codons, because they shouldn\'t")
