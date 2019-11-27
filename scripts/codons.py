@@ -473,7 +473,7 @@ class Codons(Module, LoggingEntity, Head):
 
     def nj_tree(self, distmat_csv, outpath):
         cmd = [
-            os.path.join( self.config.get("path_to_Rscript"),"Rscript" ),
+            self.config.get("path_to_Rscript"),
             "--vanilla",
             os.path.join(self.config.SCGID_SCRIPTS,"ape_nj.R"),
             distmat_csv,

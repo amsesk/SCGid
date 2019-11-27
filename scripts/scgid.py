@@ -44,6 +44,7 @@ from scripts.modcomm import LoggingEntity, logger_name_gen, ExitOnExceptionHandl
 from scripts.gct import Gct 
 from scripts.codons import Codons
 from scripts.kmers import Kmers
+#from scripts.consensus import Consensus
 
 bin_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 pkg_home = os.path.dirname(bin_dir)
@@ -59,6 +60,8 @@ class SCGid(LoggingEntity, object):
             self.codon_filtered = Codons().run()
         elif call == "kmers":
             self.kmes_filtered = Kmers().run()
+        elif call == "consensus":
+            self.consensus_filtered = Consensus().run()
 
 if len(sys.argv) == 1 or sys.argv[1] in ['-h','--help','-help']:
     print (help_msg)
@@ -77,6 +80,11 @@ elif sys.argv[1] == "kmers":
     log.info("Calling Esom")
     result = SCGid(sys.argv[1])
     log.info("Final message from root.")
+
+elif sys.argv[1] == "consensus":
+    log.info("Calling Consensus")
+    result = SCGid(sys.argv[1])
+    log.info("Final message from root")
 
 elif sys.argv[1] == "init":
     arguments = sys.argv[2:]
