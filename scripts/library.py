@@ -83,7 +83,7 @@ def log_command_line_errors (err, log_inst):
                 log_inst.critical(i)
 
 def log_command_line_stdout (out, log_inst):
-    for l in [x.strip() for x in StringIO(out).readlines()] + [""]: ### Add extra line to deal with weird ESOM OOM stdout that cuts off
+    for l in [x.strip() for x in StringIO(out.decode("utf-8")).readlines()] + [""]: ### Add extra line to deal with weird ESOM OOM stdout that cuts off
         log_inst.info(l)
     return 0
 
@@ -148,3 +148,17 @@ def pkl_fasta_in_out (org_fname, seq_type = "nucl", spades = False):
             for seq in objlist.odict.items():
                 pickle.dump(seq, output, pickle.HIGHEST_PROTOCOL)
     return objlist
+
+
+def file_grep (pattern, file, mode='first'):
+    if mode not in ['first','multiple']:
+        raise NameError("Invalid option, "+mode)
+    result_list = []
+    with open(file,'r') as f:
+        for line in f.readlines():
+            if re.search(pattern,line) is not None:
+                if mode == 'first':
+                    return line.strip()
+                elif mode == 'multiple':
+                    result_list.append(line.strip())
+    return result_list

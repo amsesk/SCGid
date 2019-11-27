@@ -21,7 +21,10 @@ class Module (object):
 
         #Set by self.initialize()
         self.config = Config()
-        
+    
+    def generate_argparser(self):
+        pass
+    
     def start_logging(self):
         self.logger = logging.getLogger( logger_name_gen() )
         self.simplelogger = logging.getLogger("SCGid.unfmt")
@@ -41,7 +44,6 @@ class Module (object):
         try:
             os.chdir(name)
         except:
-            self.logger.info("Creating directory `%s`", name)
             os.mkdir(name)
             os.chdir(name)
             self.logger.info("Creating directory `%s`", os.getcwd())
@@ -49,7 +51,7 @@ class Module (object):
             shutil.rmtree('temp')
         os.mkdir('temp')
         os.chdir('temp')
-        self.logger.info("Entering working directory: `%s`", os.getcwd())
+        self.logger.info("Entering temporary working directory: `%s`", os.getcwd())
         self.wd = os.getcwd()
 
     def migrate_temp_dir(self):
@@ -102,12 +104,13 @@ class Config(LoggingEntity):
             raise KeyError(f"Member `{value}` not in Config")
         
 
-    def load_cmdline(self, parsed_args):
+    def load_cmdline(self, parsed_args, case_args={}):
         for unset in [x for x,p in parsed_args.__dict__.items() if p is None]:
             try:
                 setattr(parsed_args, unset, getattr(self, unset))
             except:
                 self.logger.debug(f"No loaded value from config.yaml to set None-type argument `{unset}`")
+        
         self.__dict__.update( vars(parsed_args) )
     
     def load_argdict(self, argdict):
@@ -124,5 +127,11 @@ class Config(LoggingEntity):
             raise MissingConfigError("Unable to locate config.yaml")
         except:
             raise MalformedConfigError("Malformed config.yaml")
+    
+    def check_case_args (self, mapper_dict):
+        for option_arg, options in mapper_dict.items():
+            choice = options[self.get(option_arg)]
+            if not choice["bool"]:
+                self.logger.warning(choice["warning"])
 
             

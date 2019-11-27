@@ -50,6 +50,7 @@ class ReusableOutputManager(LoggingEntity):
     def __init__(self, *reusable):
         self.log = logging.getLogger( logger_name_gen() )
         self.head = get_head()
+        self.reusable = []
 
     def populate(self, *reusable):
         self.reusable = list(reusable)
@@ -138,7 +139,8 @@ def protein_blast( prot, db, evalue, cpus, outpath):
 def nucleotide_blast( nucl, db, evalue, cpus, outpath):
     logger = get_head().logger
     logger.info( f"Blasting predicted proteins against the swissprot database located at `{db}`" )
-    verify_blastdb(db)
+    if not db == "nt":
+        verify_blastdb(db)
 
     cmd = ["blastn", "-query", nucl, "-max_target_seqs", "1", "-evalue", evalue, "-db", db, "-outfmt", pkg_settings.BLAST_OUTFMT_STR, "-out", outpath, "-num_threads", cpus]
     logger.info(' '.join(cmd))

@@ -43,6 +43,7 @@ import logging.config
 from scripts.modcomm import LoggingEntity, logger_name_gen, ExitOnExceptionHandler
 from scripts.gct import Gct 
 from scripts.codons import Codons
+from scripts.kmers import Kmers
 
 bin_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 pkg_home = os.path.dirname(bin_dir)
@@ -56,6 +57,8 @@ class SCGid(LoggingEntity, object):
             self.gct_filtered = Gct().run()
         elif call == "codons":
             self.codon_filtered = Codons().run()
+        elif call == "kmers":
+            self.kmes_filtered = Kmers().run()
 
 if len(sys.argv) == 1 or sys.argv[1] in ['-h','--help','-help']:
     print (help_msg)
@@ -67,6 +70,11 @@ elif sys.argv[1] == "gct":
 
 elif sys.argv[1] == "codons":
     log.info("Calling Codons")
+    result = SCGid(sys.argv[1])
+    log.info("Final message from root.")
+
+elif sys.argv[1] == "kmers":
+    log.info("Calling Esom")
     result = SCGid(sys.argv[1])
     log.info("Final message from root.")
 

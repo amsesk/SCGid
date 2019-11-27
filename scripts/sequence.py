@@ -78,6 +78,13 @@ class DNASequenceCollection(object):
         
         return sort
 
+    def header_list_filter(self, header_list):
+        seq_dict = dict()
+        for header in header_list:
+            seq_dict[header] = self.index.get(header)
+        return DNASequenceCollection().from_dict(
+            { h: seq_dict[h] for h in sorted(seq_dict) }
+        )
 
     def from_fasta(self, fasta, spades = False):
         header_pattern = re.compile("^>(.+)")
