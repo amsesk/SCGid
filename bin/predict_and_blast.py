@@ -66,19 +66,8 @@ if to_do[0] is '1':
 
     aug_sp = args.augustus_sp
 
-# make sure that augustus is available in path
-'''
-    if settings.AUGUSTUS_CONFIG_PATH != "":
-        AUGUSTUS_CONFIG_PATH = settings.AUGUSTUS_CONFIG_PATH
-    else:
-        try:
-            AUGUSTUS_CONFIG_PATH = os.environ["AUGUSTUS_CONFIG_PATH"]
-        except:
-            logger.exception("Global variable $AUGUSTUS_CONFIG_PATH is not present in environment and is unset in settings.py. Unable to run augustus.")
-            raise ValueError("Global variable $AUGUSTUS_CONFIG_PATH is not present in environment and is unset in settings.py. Unable to run augustus")
-'''
     try:
-        subprocessT(['augustus','--AUGUSTUS_CONFIG_PATH='+AUGUSTUS_CONFIG_PATH,'--help'])
+        subprocessT(['augustus','--help'])
     except:
         logger.exception("Augustus is either not installed or unavailable.")
         raise IOError("Augustus is either not installed or unavailable.")
