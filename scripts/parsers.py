@@ -9,7 +9,6 @@ from ete3 import NCBITaxa
 from scripts.error import Error
 import scripts.pkg_settings as pkg_settings
 from scripts.modcomm import get_head, logger_name_gen, LoggingEntity
-from scripts.library import pkl_fasta_in_out
 from scripts.sequence import AASequenceCollection
 
 class PathAction(argparse.Action):
