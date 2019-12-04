@@ -52,6 +52,9 @@ class DNASequenceCollection(object):
 
     def seqs(self):
         return self.index.values()
+    
+    def headers(self):
+        return self.index.keys()
 
     def from_dict(self, d):
         self.index.clear()

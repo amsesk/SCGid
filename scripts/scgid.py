@@ -44,7 +44,7 @@ from scripts.modcomm import LoggingEntity, logger_name_gen, ExitOnExceptionHandl
 from scripts.gct import Gct 
 from scripts.codons import Codons
 from scripts.kmers import Kmers
-#from scripts.consensus import Consensus
+from scripts.consensus import Consensus
 
 bin_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 pkg_home = os.path.dirname(bin_dir)

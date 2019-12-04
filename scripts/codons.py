@@ -332,6 +332,11 @@ class Codons(Module, LoggingEntity, Head):
             self.config.dependencies.add(
                 CaseDependency("blastn", "blastout", None)
             )
+
+            # Make this cleaner
+            if self.config.get("mode") == "blastp" and self.config.get("infotable") is None:
+                print ("-i|--infotable required for --mode == `blastp`")
+                sys.exit(1)
         
         else:
             print("Bad mode selection.")
@@ -641,7 +646,7 @@ class Codons(Module, LoggingEntity, Head):
         self.logger.info(f"Filtered assembly contains {filtered_ncontigs:,} contigs with a cumulative size of {filtered_size:,} bp ({filtered_size/1e6:.2f} Mbp).")
         
         # Print final filtered assembly to FASTA
-        final_fname = f"{self.config.get('prefix')}.rscu.filtered.assembly.fasta"
+        final_fname = f"{self.config.get('prefix')}.codons.filtered.assembly.fasta"
         final_assembly.write_fasta( final_fname )
 
         self.logger.info(f"Final filtered assembly written in FASTA format to `{final_fname}`")

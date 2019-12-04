@@ -510,7 +510,7 @@ else:
             self.logger.info(f"Filtered assembly contains {filtered_ncontigs:,} contigs with a cumulative size of {filtered_size:,} bp ({filtered_size/1e6:.2f} Mbp).")
             
             # Print final filtered assembly to FASTA
-            final_fname = f"{self.config.get('prefix')}.rscu.filtered.assembly.fasta"
+            final_fname = f"{self.config.get('prefix')}.kmers.filtered.assembly.fasta"
             final_assembly.write_fasta( final_fname )
 
             self.logger.info(f"Final filtered assembly written in FASTA format to `{final_fname}`")
