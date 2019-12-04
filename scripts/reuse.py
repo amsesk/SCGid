@@ -9,7 +9,7 @@ from scripts.library import subprocessP, gff3_to_fasta, is_fasta
 import scripts.pkg_settings as pkg_settings
 
 class ReusableOutput:
-    def __init__(self, arg, pattern, genfunc, genfunc_args):
+    def __init__(self, arg, pattern, genfunc = None, genfunc_args = None):
         self.arg = arg
         self.caller = inspect.stack()[1][0].f_locals["self"]
         self.re_pattern = re.compile(pattern)
@@ -64,6 +64,8 @@ class ReusableOutputManager(LoggingEntity):
                 if not r.try_reuse():
                     self.log.info( f"No match found for required file specified by `{r.arg}`." )
                     r.needs_doing = True
+                    if r.genfunc is None:
+                        self.log.critical(f"No implemented function to generate output for arg `{r.arg}`. Since it cannot be located, it must be specified from the CLI.")
                 else:
                     self.log.info( f"Found matching file for missing argument `{r.arg}` at `{get_head().config.get(r.arg)}`" )
                     r.needs_doing = False

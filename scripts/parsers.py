@@ -4,6 +4,8 @@ import argparse
 import os
 import re
 import ast
+from collections import namedtuple
+from ete3 import NCBITaxa
 from scripts.error import Error
 import scripts.pkg_settings as pkg_settings
 from scripts.modcomm import get_head, logger_name_gen, LoggingEntity
@@ -125,6 +127,40 @@ class BlastoutParser(LoggingEntity):
 
         self.logger.info(f"Cross-referenced blastout with database at {self.head.config.get('spdb')}")
         return 0
+
+    def taxids(self):
+        ret = []
+        TaxId = namedtuple("TaxId", ["query", "taxids"])
+        for q,h in self.best_hits.items():
+            ret.append( TaxId(q, h[pkg_settings.BLAST_HEADERS["staxids"]] ) )
+        return ret
+
+    def ncbi_taxrpt (self, taxids):
+            self.logger.info("Using taxids from blastout to pull lineage information from ncbi taxonomy database...")
+            ncbi = NCBITaxa()
+            ids = {}
+            ldict = []
+            for t in taxids:
+                spl = t.taxids.split(';')
+                if len(spl) > 1:
+                    ids[t.query] = {}
+                    for tid in spl:
+                        num = int(tid)
+                        if t.query in ids.keys():
+                            ids[t.query].update(ncbi.get_taxid_translator(ncbi.get_lineage(num)))
+                        else:
+                            ids[t.query] = ncbi.get_taxid_translator(ncbi.get_lineage(num))
+                else:
+                    num = int(t.taxids)
+                    ids[t.query] = ncbi.get_taxid_translator(ncbi.get_lineage(num))
+                vals  = ids[t.query].values()
+                ranks = ncbi.get_rank(ids[t.query]).values()
+                row = {k:v for k,v in list(zip(ranks,vals))}
+                row["query"] = t.query
+                ldict.append( row )
+            contig_lineages = pd.DataFrame(ldict)[["query","superkingdom","kingdom","phylum","class","order","family","genus","species"]]
+            contig_lineages.set_index("query")
+            return contig_lineages
 
 class MissingAccessionError (Error):
     def __init__(self, accession, db_path):

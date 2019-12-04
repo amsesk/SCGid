@@ -168,7 +168,7 @@ else:
             filtered_size = sum([len(s.string) for s in final_assembly.seqs()])
             filtered_ncontigs = len(final_assembly.seqs())
 
-            self.logger.info(f"Filtered assembly contains {filtered_ncontigs} contigs with a cumulative size of {filtered_size:,} bp ({filtered_size/1e6:.2f} Mbp).")
+            self.logger.info(f"Filtered assembly contains {filtered_ncontigs:,} contigs with a cumulative size of {filtered_size:,} bp ({filtered_size/1e6:.2f} Mbp).")
             
             # Print final filtered assembly to FASTA
             final_fname = f"{self.config.get('prefix')}.gct.filtered.assembly.fasta"

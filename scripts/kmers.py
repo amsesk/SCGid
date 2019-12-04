@@ -27,12 +27,18 @@ else:
     import argparse
     import subprocess
     import numpy as np
+    import pandas as pd
+    from collections import namedtuple
+    from ete3 import NCBITaxa
     from scripts.module import Module
-    from scripts.library import file_grep, subprocessP, subprocessC
-    from scripts.modcomm import LoggingEntity, Head, logger_name_gen
+    from scripts.library import file_grep, subprocessP, subprocessC, random_colors
+    from scripts.modcomm import LoggingEntity, Head, logger_name_gen, get_head, get_callstack
     from scripts.parsers import PathAction
     from scripts.dependencies import CaseDependency
     from scripts.reuse import ReusableOutput, nucleotide_blast
+    from scripts.output import Output, OutputManager
+    from scripts.parsers import BlastoutParser
+    from scripts.sequence import DNASequenceCollection
 
     class Kmers(Module, LoggingEntity, Head):
         def __init__(self,  argdict = None):
@@ -74,11 +80,11 @@ else:
                     Extract().run()
                 
                 else:
-                    print("Bad Esom mode selection.")
+                    print(esom_help)
                     sys.exit(2)
 
 
-    class Train(Kmers):
+    class Train(Kmers, LoggingEntity, Head):
         def __init__(self, argdict = None):
             super().__init__(self.__class__)
             if argdict is not None:
@@ -156,7 +162,7 @@ else:
                 new_line = "java -cp \"$CP\" -Xmx"+mem+" $MAIN \"$@\""
                 f.write(new_line)
 
-        def call_print_tetramer_freqs(self):
+        def call_print_tetramer_freqs(self, annotation_file = None):
             self.logger.info("Calculating 4-mer frequencies across scaffolds and generating ESOM input files.")
             
             nucl_path = self.config.get("nucl")
@@ -173,6 +179,9 @@ else:
                 '-w', self.config.get("window"),
                 '-k', self.config.get("kmer")
                 ]
+            if annotation_file is not None:
+                cmd.append('-a')
+                cmd.append(os.path.abspath(annotation_file))
 
             self.logger.info(' '.join(cmd))
 
@@ -298,8 +307,11 @@ else:
             else:
     
                 pass
+
+            self.migrate_temp_dir()
+            self.resetwd()
     
-    class Annotate(Kmers):
+    class Annotate(Kmers, LoggingEntity, Head):
         def __init__(self, argdict = None):
             super().__init__(self.__class__)
             if argdict is not None:
@@ -341,6 +353,7 @@ else:
 
             parser.add_argument('--cpus', metavar = 'cores', action = 'store', required = False, default = "1", help = "The number of cores available for BLAST to use.")
             parser.add_argument('-e', '--evalue', metavar = 'e-value_cutoff', action = 'store', required = False, default = '1e-5', help = "The evalue cutoff for blast. Default: 1xe-5)")
+            parser.add_argument('-k','--kmer', metavar = "kmer_size", action="store",required=False, default="4", help = "Kmer size for which frequencies will be calculated. Default = 4")
             #parser.add_argument('-rm', '--rankmode', action = 'store_true', required = False, help = "Annotate contigs at the same single taxonomic rank across all contigs. (e.g. superkingdom)")
             #parser.add_argument('-te', '--targetexcept', action = 'store_true', required = False, help = "Annotate contigs at a varietry of taxonomic ranks across all contigs. (e.g. Eukaryota, except Fungi). Must be used in combination with -s|--annotation_scheme.")
             parser.add_argument('-s','--annotation_scheme', metavar = 'annotation_scheme', action = 'store', required = True, help = "The annotation scheme to use in target_except annotation mode (RECOMMENDED). Groups MUST be mutually exclusive to avoid overlap and unincluded groups will be arbitrarily marked as 'Unclassified'. You ABSOLUTELY MUST use this basic syntax: '-s|--annotation_schem target1^exception1,excetions2/target2^exception1/target3/etc...'. Example: '-s|--annotation_scheme Eukaryota^Fungi,Metazoa/Fungi/Metazoa/Bacteria^Proteobacteria/Proteobacteria'. See documention for detailed information and more examples.")
@@ -349,6 +362,41 @@ else:
 
             return parser
 
+        def classify(self, lineages):
+            scheme = self.config.get("annotation_scheme")
+            spl = [x.split('^') for x in scheme.split('/')]
+            TEPair = namedtuple("TEPair", ["cid", "target", "exceptions"])
+            
+            scheme = []
+            i = 1
+            for pair in spl:
+                if len(pair) == 1:
+                    scheme.append(TEPair(i, pair[0], None))
+                else:
+                    scheme.append(TEPair(i, pair[0], pair[1].split(',')))
+                i+=1
+            
+            classed = lineages.apply(lineage_to_class, args=(scheme,), axis=1)
+            return classed
+
+        def color_classes(self):
+            class_defs = "%0\tUnclassified (0)\t255\t255\t255\n"
+            spl = self.config.get("annotation_scheme").split("/")
+            colors = random_colors(len(spl))
+            for i,pair in enumerate(spl):
+                class_defs += f"%{i+1}\t{pair}({i+1})\t{colors[i][0]}\t{colors[i][1]}\t{colors[i][2]}\n"
+            
+            cls_file = f"{os.path.basename(self.config.get('nucl'))}.cls"
+            with open(cls_file, 'r') as f:
+                head = f.readline()
+                data = f.read()
+            with open(cls_file, 'w') as f:
+                f.write(head)
+                f.write(class_defs)
+                f.write(data)
+            
+            return None
+
         def run(self):
             self.start_logging()
             self.setwd( __name__, self.config.get("prefix") )
@@ -356,12 +404,150 @@ else:
             self.config.dependencies.check(self.config)
             self.config.reusable.generate_outputs()
 
-    class Extract(Kmers):
-        def __init__(self):
-            pass
+            bestfile = "{}.best".format(self.config.get("blastout"))
+            taxidfile= "{}.best.taxids".format(self.config.get("blastout"))
+
+            p = BlastoutParser()
+            p.load_from_file(self.config.get("blastout"))
+            p.get_best_hits()
+                
+            # Pull taxids from blastout
+            taxids = p.taxids()
+
+            # Get lineage information into DataFrame using ete3 NCBITaxa and taxids
+            lineages = p.ncbi_taxrpt(taxids).set_index("query")
+
+            # Split contigs into classes for ESOM map based on lineages and annotation scheme and write
+            classed = self.classify(lineages)
+            
+            # Account for each of two scheme problems - either... 
+            # OVER-inclusive (CRITICAL) 
+            # or 
+            # UNDER-invlusive (WARNING)
+            if any( [c == 0 for c in classed.cid] ): 
+                self.logger.warning(f"Nonexhuastive Scheme `{self.config.get('annotation_scheme')}`... Contigs (shown below) are being marker `unclassified` despite having a BLAST hit...")
+                with pd.option_context('display.max_rows', None, 'display.max_columns', 5, 'display.width', None):
+                    self.simplelogger.warning(classed.loc[classed.cid == 0][["query","superkingdom","phylum","family","species"]])
+            
+            if any( ['/' in cid for cid in classed.cid] ):
+                self.logger.critical(f"Overlapping groups in scheme `{self.config.get('annotation_scheme')}`... Contigs have been placed into multiple classes. Make sure your groups are exclusive and rerun.")
+            
+            # Write annotation file
+            annot_path = f"{os.path.basename(self.config.get('nucl'))}.annotation"
+            classed["cid"].to_csv(annot_path, sep="\t", header=False)
+
+            # Call print_tetramer_freqs to generate cls file using new annotation file (from Train class above)
+            Train.call_print_tetramer_freqs(self, annot_path)
+
+            # Generate colors and add them to *.cls file
+            self.color_classes()
+
+            self.logger.info(f"Annotated class file written to {os.path.basename(self.config.get('nucl'))}'.cls)")
+            
+            self.migrate_temp_dir()
+            self.resetwd()
+
+    class Extract(Kmers, LoggingEntity, Head):
+        def __init__(self, argdict = None):
+            super().__init__(self.__class__)
+            if argdict is not None:
+                self.config.load_argdict(argdict)
+            else:
+                self.argparser = self.generate_argparser()
+                self.parsed_args = self.argparser.parse_args()
+                self.config.load_cmdline( self.parsed_args) # Copy command line args defined by self.argparser to self.config
+
+            self.config.reusable.populate(
+                ReusableOutput (
+                    arg = "names",
+                    pattern = ".*[.]names",
+                    genfunc = None,
+                    genfunc_args = None
+                )
+            )
+
+        def generate_argparser(self):
+            parser = argparse.ArgumentParser()
+            parser.add_argument("mod", nargs="*")
+            parser.add_argument('-n','--nucl', metavar = "contig_fasta", action= PathAction,required=True, help = "A FASTA file containing the nucleotide assembly. (MANDATORY)")
+            parser.add_argument('-c', '--cls', metavar = 'class_file', action = PathAction, required = True, help = 'The .cls output file from "esom train".')
+            parser.add_argument('-nf', '--names', metavar = 'names_file', action = PathAction, required = False, default = None, help = 'The .names output file from "esom train".')
+            parser.add_argument('-cid', '--classnum', metavar = 'class_number', action = 'store', required = True, help = "The class number of interest. That is, the class that represents the selection of target contigs you made in esomana.")
+            parser.add_argument('-f','--prefix', metavar = 'prefix_for_output', required=False, default='scgid', help="The prefix that you would like to be used for all output files. DEFAULT = scgid")
+            parser.add_argument('-l','--loyal', metavar = 'loyalty_threshold', required=False, default='51', help="The loyalty threshold for keeping a contig based on where its various windows end-up in ESOM. DEFAULT = 51")
+            return parser
         
+        def map_cls_to_nucl(self):
+            cls_refs = pd.read_csv(self.config.get("cls"), sep='\t', comment='%', header=None)
+            cls_refs.columns = ["idx", "cid"]
+
+            names_refs = pd.read_csv(self.config.get("names"), sep='\t', comment='%', header=None)
+            names_refs.columns = ["idx", "windows", "contigs"]
+            
+            map_frame = (pd.merge(cls_refs, names_refs, on="idx"))
+
+            cls_to_pull = map_frame.loc[ map_frame.cid.isin(self.config.get("classnum").split(",")) ]
+
+            return cls_to_pull
+
         def run(self):
-            pass
+            self.start_logging()
+            self.setwd( __name__, self.config.get("prefix") )
+            self.config.reusable.check()
+            self.config.dependencies.check(self.config)
+            self.config.reusable.generate_outputs()
+
+            to_keep = self.map_cls_to_nucl()
+
+            # Load nucleotide FASTA to pull contigs by cid
+            nucl = DNASequenceCollection().from_fasta(self.config.get("nucl"))
+            final_assembly = nucl.header_list_filter(to_keep.contigs.to_list())
+
+            # Compute final filtered assembly stats
+            filtered_size = sum([len(s.string) for s in final_assembly.seqs()])
+            filtered_ncontigs = len(final_assembly.seqs())
+
+            self.logger.info(f"Filtered assembly contains {filtered_ncontigs:,} contigs with a cumulative size of {filtered_size:,} bp ({filtered_size/1e6:.2f} Mbp).")
+            
+            # Print final filtered assembly to FASTA
+            final_fname = f"{self.config.get('prefix')}.rscu.filtered.assembly.fasta"
+            final_assembly.write_fasta( final_fname )
+
+            self.logger.info(f"Final filtered assembly written in FASTA format to `{final_fname}`")
+
+            self.logger.info("ESOM-based filtering complete. Returning to SCGid.")
+
+            # Migrate and then remove temp dir, cd back to starting dir
+            self.migrate_temp_dir()
+            self.resetwd()
+
+
+def lineage_to_class(row, pair_list):
+    for pair in pair_list:
+        if pair.target in row.values: 
+            if pair.exceptions is None:
+                if "cid" in row:
+                    row["cid"] += f"/{pair.cid}"
+                else:
+                    row["cid"] = f"{pair.cid}"
+            else:
+                if not any([e in row.values for e in pair.exceptions]):
+                    if "cid" in row:
+                        row["cid"] += f"/{pair.cid}"
+                    else:
+                        row["cid"] = f"{pair.cid}"
+                else: 
+                    continue
+    # One of more matches found
+    if "cid" in row:
+        return row
+
+    # No matches 
+    else:
+        row["cid"] = "0"
+        return row
+
+        
 
     '''
     ## Make sure that esom path is set correctly in the esomstart and esomtrn ##

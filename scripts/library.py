@@ -3,6 +3,8 @@ import re
 import sys
 import os
 import pickle
+import random
+import itertools as it
 from io import StringIO
 from collections import OrderedDict
 from scripts.sequence import DNASequence, DNASequenceCollection, AASequence, AASequenceCollection
@@ -111,13 +113,43 @@ def subprocessT (args):
     p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = p.communicate()
 
+def file_grep (pattern, file, mode='first'):
+    if mode not in ['first','multiple']:
+        raise NameError("Invalid option, "+mode)
+    result_list = []
+    with open(file,'r') as f:
+        for line in f.readlines():
+            if re.search(pattern,line) is not None:
+                if mode == 'first':
+                    return line.strip()
+                elif mode == 'multiple':
+                    result_list.append(line.strip())
+    return result_list
+
+def random_color():
+    r = random.randrange(0,255)
+    g = random.randrange(0,255)
+    b = random.randrange(0,255)
+    return [r,g,b]
+
+def random_colors(n):
+    pal = []
+    while len(pal) < n:
+        newcolor = random_color()
+        if any([abs(newcolor[0]-x[0])<40 for x in pal]) and any([abs(newcolor[1]-x[1])<40 for x in pal]) and any([abs(newcolor[2]-x[2])<40 for x in pal]):
+            continue
+        else:
+            pal.append(newcolor)
+    return pal
+
+'''
 def pickle_loader (pklFile):
     try:
         while True:
             yield pickle.load(pklFile)
     except EOFError:
             pass
-#%%
+
 def pkl_fasta_in_out (org_fname, seq_type = "nucl", spades = False):
     #pkl_fname = org_fname.split("/")[-1]+'.pkl'
     pkl_fname = "{}.pkl".format(org_fname)
@@ -148,17 +180,4 @@ def pkl_fasta_in_out (org_fname, seq_type = "nucl", spades = False):
             for seq in objlist.odict.items():
                 pickle.dump(seq, output, pickle.HIGHEST_PROTOCOL)
     return objlist
-
-
-def file_grep (pattern, file, mode='first'):
-    if mode not in ['first','multiple']:
-        raise NameError("Invalid option, "+mode)
-    result_list = []
-    with open(file,'r') as f:
-        for line in f.readlines():
-            if re.search(pattern,line) is not None:
-                if mode == 'first':
-                    return line.strip()
-                elif mode == 'multiple':
-                    result_list.append(line.strip())
-    return result_list
+'''
