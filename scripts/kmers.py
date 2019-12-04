@@ -36,7 +36,6 @@ else:
     from scripts.parsers import PathAction
     from scripts.dependencies import CaseDependency
     from scripts.reuse import ReusableOutput, nucleotide_blast
-    from scripts.output import Output, OutputManager
     from scripts.parsers import BlastoutParser
     from scripts.sequence import DNASequenceCollection
 
@@ -64,21 +63,21 @@ else:
             if len(sys.argv) < 3:
                 print (esom_help)
                 return 1
-            
+
             elif sys.argv[2].startswith("-"):
                 print (esom_help)
                 return 1
-            
+
             else:
                 if sys.argv[2] == "train":
                     Train().run()
-                
+
                 elif sys.argv[2] == "annotate":
                     Annotate().run()
 
                 elif sys.argv[2] == "extract":
                     Extract().run()
-                
+
                 else:
                     print(esom_help)
                     sys.exit(2)
@@ -93,7 +92,7 @@ else:
                 self.argparser = self.generate_argparser()
                 self.parsed_args = self.argparser.parse_args()
                 self.config.load_cmdline( self.parsed_args) # Copy command line args defined by self.argparser to self.config
-                
+
                 # Probably better to implement this as a class, but let's wait and see how much it comes up before pouring time into it
                 self.case_args = {
                     "mode": {
@@ -108,7 +107,7 @@ else:
                     }
                 }
                 self.config.check_case_args(self.case_args)
-            
+
             self.config.dependencies.populate(
                 CaseDependency("somoclu", "mode", "s"),
                 CaseDependency(self.config.get("mpicmd"), "mode", "s"),
@@ -119,10 +118,11 @@ else:
                 p = subprocess.Popen( ["which", "esomtrn"], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
                 path, _ = p.communicate()
                 if p.returncode != 0:
-                    self.logger.critical("Unable to find ESOM bin directory in PATH or config.yaml. Correct by adding it to PATH or config.yaml.")
+                    print ("Unable to find ESOM bin directory in PATH or config.yaml. Correct by adding it to PATH or config.yaml.") #self.logger.critical
+                    sys.exit(1)
                 path = os.path.dirname(path).decode("utf-8")
                 setattr(self.config, "esom_path", path)
-        
+
         def generate_argparser(self):
             parser = argparse.ArgumentParser()
             parser.add_argument("mod", nargs="*")
@@ -164,9 +164,9 @@ else:
 
         def call_print_tetramer_freqs(self, annotation_file = None):
             self.logger.info("Calculating 4-mer frequencies across scaffolds and generating ESOM input files.")
-            
+
             nucl_path = self.config.get("nucl")
-            
+
             # Copy assembly to ESOM working directory since perl script will place outputs whereever it is, and we want them here
             cmd = ['cp', nucl_path, os.path.basename(nucl_path)]
             subprocessC(cmd)
@@ -203,7 +203,7 @@ else:
             cols = self.config.get("cols")
             start_radius = self.config.get("start_radius")
             epochs = self.config.get("epochs")
-            
+
             nucl_basename = os.path.basename(self.config.get("nucl"))
             wts = f"{nucl_basename}.{rows}x{cols}e{epochs}.wts"
             bm = f"{nucl_basename}.{rows}x{cols}e{epochs}.bm"
@@ -245,9 +245,9 @@ else:
 
             if not os.path.isfile(wts) or not os.path.isfile(bm):
                 self.logger.critical("Unable to locate *.wts or *.bm files associated with successful training. Check logfile for error output - Java OutOfMemory error the likely culprit.")
-            
+
             return 0
-        
+
         def train_somoclu(self):
             cpus = self.config.get("cpus")
             rows = self.config.get("rows")
@@ -300,17 +300,17 @@ else:
                 self.train_det()
 
             elif self.config.get("mode") == "somoclu":
-                
+
                 self.train_somoclu()
-            
+
             # Literally cannot happen because of argparser choices, but just for the principle of the matter
             else:
-    
+
                 pass
 
             self.migrate_temp_dir()
             self.resetwd()
-    
+
     class Annotate(Kmers, LoggingEntity, Head):
         def __init__(self, argdict = None):
             super().__init__(self.__class__)
@@ -339,7 +339,7 @@ else:
             self.config.dependencies.populate(
                 CaseDependency("blastn", "blastout", None)
             )
-        
+
         def generate_argparser(self):
             parser = argparse.ArgumentParser()
 
@@ -366,7 +366,7 @@ else:
             scheme = self.config.get("annotation_scheme")
             spl = [x.split('^') for x in scheme.split('/')]
             TEPair = namedtuple("TEPair", ["cid", "target", "exceptions"])
-            
+
             scheme = []
             i = 1
             for pair in spl:
@@ -375,7 +375,7 @@ else:
                 else:
                     scheme.append(TEPair(i, pair[0], pair[1].split(',')))
                 i+=1
-            
+
             classed = lineages.apply(lineage_to_class, args=(scheme,), axis=1)
             return classed
 
@@ -385,7 +385,7 @@ else:
             colors = random_colors(len(spl))
             for i,pair in enumerate(spl):
                 class_defs += f"%{i+1}\t{pair}({i+1})\t{colors[i][0]}\t{colors[i][1]}\t{colors[i][2]}\n"
-            
+
             cls_file = f"{os.path.basename(self.config.get('nucl'))}.cls"
             with open(cls_file, 'r') as f:
                 head = f.readline()
@@ -394,7 +394,7 @@ else:
                 f.write(head)
                 f.write(class_defs)
                 f.write(data)
-            
+
             return None
 
         def run(self):
@@ -410,7 +410,7 @@ else:
             p = BlastoutParser()
             p.load_from_file(self.config.get("blastout"))
             p.get_best_hits()
-                
+
             # Pull taxids from blastout
             taxids = p.taxids()
 
@@ -419,19 +419,19 @@ else:
 
             # Split contigs into classes for ESOM map based on lineages and annotation scheme and write
             classed = self.classify(lineages)
-            
-            # Account for each of two scheme problems - either... 
-            # OVER-inclusive (CRITICAL) 
-            # or 
+
+            # Account for each of two scheme problems - either...
+            # OVER-inclusive (CRITICAL)
+            # or
             # UNDER-invlusive (WARNING)
-            if any( [c == 0 for c in classed.cid] ): 
+            if any( [c == 0 for c in classed.cid] ):
                 self.logger.warning(f"Nonexhuastive Scheme `{self.config.get('annotation_scheme')}`... Contigs (shown below) are being marker `unclassified` despite having a BLAST hit...")
                 with pd.option_context('display.max_rows', None, 'display.max_columns', 5, 'display.width', None):
                     self.simplelogger.warning(classed.loc[classed.cid == 0][["query","superkingdom","phylum","family","species"]])
-            
+
             if any( ['/' in cid for cid in classed.cid] ):
                 self.logger.critical(f"Overlapping groups in scheme `{self.config.get('annotation_scheme')}`... Contigs have been placed into multiple classes. Make sure your groups are exclusive and rerun.")
-            
+
             # Write annotation file
             annot_path = f"{os.path.basename(self.config.get('nucl'))}.annotation"
             classed["cid"].to_csv(annot_path, sep="\t", header=False)
@@ -443,7 +443,7 @@ else:
             self.color_classes()
 
             self.logger.info(f"Annotated class file written to {os.path.basename(self.config.get('nucl'))}'.cls)")
-            
+
             self.migrate_temp_dir()
             self.resetwd()
 
@@ -476,14 +476,14 @@ else:
             parser.add_argument('-f','--prefix', metavar = 'prefix_for_output', required=False, default='scgid', help="The prefix that you would like to be used for all output files. DEFAULT = scgid")
             parser.add_argument('-l','--loyal', metavar = 'loyalty_threshold', required=False, default='51', help="The loyalty threshold for keeping a contig based on where its various windows end-up in ESOM. DEFAULT = 51")
             return parser
-        
+
         def map_cls_to_nucl(self):
             cls_refs = pd.read_csv(self.config.get("cls"), sep='\t', comment='%', header=None)
             cls_refs.columns = ["idx", "cid"]
 
             names_refs = pd.read_csv(self.config.get("names"), sep='\t', comment='%', header=None)
             names_refs.columns = ["idx", "windows", "contigs"]
-            
+
             map_frame = (pd.merge(cls_refs, names_refs, on="idx"))
 
             cls_to_pull = map_frame.loc[ map_frame.cid.isin(self.config.get("classnum").split(",")) ]
@@ -508,7 +508,7 @@ else:
             filtered_ncontigs = len(final_assembly.seqs())
 
             self.logger.info(f"Filtered assembly contains {filtered_ncontigs:,} contigs with a cumulative size of {filtered_size:,} bp ({filtered_size/1e6:.2f} Mbp).")
-            
+
             # Print final filtered assembly to FASTA
             final_fname = f"{self.config.get('prefix')}.kmers.filtered.assembly.fasta"
             final_assembly.write_fasta( final_fname )
@@ -524,7 +524,7 @@ else:
 
 def lineage_to_class(row, pair_list):
     for pair in pair_list:
-        if pair.target in row.values: 
+        if pair.target in row.values:
             if pair.exceptions is None:
                 if "cid" in row:
                     row["cid"] += f"/{pair.cid}"
@@ -536,18 +536,18 @@ def lineage_to_class(row, pair_list):
                         row["cid"] += f"/{pair.cid}"
                     else:
                         row["cid"] = f"{pair.cid}"
-                else: 
+                else:
                     continue
     # One of more matches found
     if "cid" in row:
         return row
 
-    # No matches 
+    # No matches
     else:
         row["cid"] = "0"
         return row
 
-        
+
 
     '''
     ## Make sure that esom path is set correctly in the esomstart and esomtrn ##
