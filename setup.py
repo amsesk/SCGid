@@ -12,10 +12,15 @@ setup(
     url = "http://www.github.com/amsesk/SCGid",
     packages=["scgid","scgid.tests"],
     package_data={
-        '':['*.ini', '*.yaml']
+        'scgid':['*.ini', 'scgid/config.yaml', 'scgid/config.yaml.local']
     },
     #py_modules=['scgid.scgid', 'scgid.gct', 'scgid.codons', 'scgid.kmers', 'logging'],
-    scripts=['bin/scgid'],
+    #scripts=['bin/scgid'],
+    entry_points={
+        'console_scripts': [
+            'scgid = scgid.scgid'
+        ]
+    },
     install_requires=[
         'numpy>=1.15.0',
         'pandas>=0.23.4',

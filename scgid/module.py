@@ -5,6 +5,7 @@ import inspect
 import shutil
 import logging
 import subprocess
+import pkg_resources
 from scgid.dependencies import Dependencies
 from scgid.reuse import ReusableOutputManager
 from scgid.modcomm import logger_name_gen, LoggingEntity, ErrorHandler
@@ -118,7 +119,8 @@ class Config(LoggingEntity, ErrorHandler):
         self.__dict__.update(argdict)
 
     def load_yaml(self, HOME):
-        loc = os.path.join(HOME, "config.yaml")
+        #loc = os.path.join(pkg_resources.resource_string(__name__, "config.yaml"))
+        loc = os.path.join(self.SCGID, "config.yaml")
         if os.path.isfile( "{}.local".format(loc) ):
             loc = "{}.local".format(loc)
         try:

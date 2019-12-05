@@ -9,6 +9,60 @@ from io import StringIO
 from collections import OrderedDict
 from scgid.sequence import DNASequence, DNASequenceCollection, AASequence, AASequenceCollection
 
+SPDB_OS_REGEXP_PATTERN = "OS=(.+?)(?:OX=.+|GN=.+|PE=.+|SV=.+|$)"
+ERASE_LINE = '\x1b[2K'
+CURSOR_UP_ONE = '\x1b[1A'
+output_cols = {
+        'GREEN':'\033[0;32m',
+        'RED':'\033[0;31m',
+        'RESET':'\033[0m'
+        }
+'''
+class spinner():
+    def __init__(self):
+        self.sequence = ['|','/','-','\\','|','/','-','\\']
+        self.current = 0
+        self.end = 7
+    def __iter__(self):
+        return self
+    def next(self):
+        if self.current == self.end:
+            self.current = 0
+            ow_last_stdout(self.sequence[self.end])
+            return str()
+        else:
+            self.current += 1
+            ow_last_stdout(self.sequence[self.current-1])
+            return str()
+'''
+
+def ow_last_stdout(string):
+    sys.stdout.write(CURSOR_UP_ONE)
+    sys.stdout.write(ERASE_LINE)
+    sys.stdout.write(string)
+
+
+def report_outcome(msg, color, outcome):
+    ow_last_stdout('\r'+msg + output_cols[color] + outcome + output_cols['RESET'] + '\n')
+
+
+
+def ftp_retr_progress (block, lfile, tsize):
+    ret = open(lfile,'ab').write(block)
+    csize = os.path.getsize(lfile)
+    prog = (csize*50)/(tsize)
+    sys.stdout.write(CURSOR_UP_ONE)
+    sys.stdout.write(ERASE_LINE)
+    sys.stdout.write("["+"#"*(prog)+" "*(50-prog)+"] "+str(prog*2)+"%\n")
+    return(ret)
+
+
+def ftp_retr_and_report (ftp_inst, sname, rfile, lfile):
+    tsize = ftp_inst.size(rfile)
+    print (f"> Retrieving {rfile} from {sname} ...\n[ {' '*50} ] 0%")
+    ftp_inst.retrbinary("RETR %s" % (rfile), lambda block: ftp_retr_progress(block, lfile, tsize))
+
+
 def is_fasta(f, strict=False, verbose = False):
     lines = [l.strip() for l in open(f).readlines()]
 
