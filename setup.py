@@ -10,16 +10,19 @@ setup(
     license = "GNU General Public License v3.0",
     keywords = "",
     url = "http://www.github.com/amsesk/SCGid",
-    packages=["scgid","tests"],
+    packages=["scgid","scgid.tests"],
     package_data={
         '':['*.ini', '*.yaml']
     },
     #py_modules=['scripts.scgid', 'scripts.gct', 'scripts.codons', 'scripts.kmers', 'logging'],
     scripts=['bin/scgid'],
     install_requires=[
-        'pyyaml',
-        'numpy',
-        'pandas',
-        'ete3'
+        'numpy>=1.15.0',
+        'pandas>=0.23.4',
+        'ete3>=3.1.1',
+        'plotly',
+        'pyyaml'
     ]
 )
+
+# Import config script after above
