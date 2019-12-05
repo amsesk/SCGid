@@ -33,10 +33,9 @@ else:
     from scripts.module import Module
     from scripts.library import file_grep, subprocessP, subprocessC, random_colors
     from scripts.modcomm import LoggingEntity, Head, logger_name_gen, get_head, get_callstack
-    from scripts.parsers import PathAction
+    from scripts.parsers import PathAction,BlastoutParser
     from scripts.dependencies import CaseDependency
     from scripts.reuse import ReusableOutput, nucleotide_blast
-    from scripts.parsers import BlastoutParser
     from scripts.sequence import DNASequenceCollection
 
     class Kmers(Module, LoggingEntity, Head):
@@ -113,15 +112,7 @@ else:
                 CaseDependency(self.config.get("mpicmd"), "mode", "s"),
             )
 
-            # Set self.config.esom_path with path to esomtrn in the case that esom_path is not set in config.yaml, although this would be abnormal
-            if not os.path.isdir(self.config.get("esom_path")):
-                p = subprocess.Popen( ["which", "esomtrn"], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
-                path, _ = p.communicate()
-                if p.returncode != 0:
-                    print ("Unable to find ESOM bin directory in PATH or config.yaml. Correct by adding it to PATH or config.yaml.") #self.logger.critical
-                    sys.exit(1)
-                path = os.path.dirname(path).decode("utf-8")
-                setattr(self.config, "esom_path", path)
+            
 
         def generate_argparser(self):
             parser = argparse.ArgumentParser()
@@ -144,6 +135,25 @@ else:
             parser.add_argument('--Xmx', metavar = "available_memory", action="store",required=False, default = "512m", help = "Set memoray available to train the ESOM. Specicy as such: X megabytes = Xm, X gigabytes = Xg")
 
             return parser
+        
+        # Called in mode `det` because `esomtrn` will be used and should be provided by `esom_path` config option
+        def check_esom_path (self):
+            # Check to see if esomtrn exists in configured `esom_path`
+            if not os.path.isfile(
+                os.path.join(
+                    self.config.get("esom_path"),
+                    "esomtrn"
+                )):
+                # If not, try to find it in environment and update config
+                p = subprocess.Popen( ["which", "esomtrn"], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+                path, _ = p.communicate()
+                if p.returncode != 0:
+                    print ("Unable to find ESOM bin directory in PATH or config.yaml. Correct by adding it to PATH or config.yaml.") #self.logger.critical
+                    sys.exit(1)
+                path = os.path.dirname(path).decode("utf-8")
+                
+                # Updating config here
+                setattr(self.config, "esom_path", path)
 
         def specify_Xmx_esom(self, path_to_esomstart, mem):
 

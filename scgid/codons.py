@@ -5,7 +5,7 @@ import re
 import pandas as pd
 import numpy as np
 from collections import namedtuple
-from ete3 import Tree, TreeStyle, NodeStyle, NCBITaxa
+from ete3 import Tree, NCBITaxa
 from scripts.module import Module
 from scripts.modcomm import LoggingEntity, Head, get_head
 from scripts.reuse import ReusableOutput, ReusableOutputManager, augustus_predict, nucleotide_blast, protein_blast
@@ -661,5 +661,3 @@ class Codons(Module, LoggingEntity, Head):
 
         # Return final filtered assembly to SCGid root
         return final_assembly
-
-

@@ -20,6 +20,7 @@ class MalformedConfigError(Error):
         return False
     def __str__(self):
         return self.message
+
 class MissingConfigError(Error):
     def __init__(self, message):
         super(MissingConfigError, self).__init__()
@@ -39,7 +40,6 @@ class MissingDependencyError(Error):
         self.fatal = True
     def __str__(self):
         return f"[{self.__name__}] Required dependency missing from environment: {self.unavail}"
-
 
 class InternalError(Error):
     def __init__(self):
