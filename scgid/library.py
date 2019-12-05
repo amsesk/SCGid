@@ -7,7 +7,7 @@ import random
 import itertools as it
 from io import StringIO
 from collections import OrderedDict
-from scripts.sequence import DNASequence, DNASequenceCollection, AASequence, AASequenceCollection
+from scgid.sequence import DNASequence, DNASequenceCollection, AASequence, AASequenceCollection
 
 def is_fasta(f, strict=False, verbose = False):
     lines = [l.strip() for l in open(f).readlines()]

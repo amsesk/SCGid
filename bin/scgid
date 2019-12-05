@@ -8,4 +8,4 @@ Created on Tue Nov 14 16:18:10 2017
 ### SOME PACKAGE-WIDE VARIABLES ###
 esom_path = "/Applications/ESOM/bin/"
 
-import scripts.scgid
+import scgid.scgid

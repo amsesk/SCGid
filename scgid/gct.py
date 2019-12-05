@@ -8,14 +8,14 @@ else:
     import os
     import argparse
     import shutil
-    from scripts.dependencies import CaseDependency, ConstDependency
-    from scripts.module import Module, Config
-    from scripts.reuse import ReusableOutputManager, ReusableOutput, augustus_predict, protein_blast
-    from scripts.modcomm import LoggingEntity, Head
-    from scripts.parsers import BlastoutParser, PathAction, SPDBTaxonomy
-    from scripts.infotable import InfoTable, it_get_taxonomy_level
-    from scripts.sequence import DNASequenceCollection, AASequenceCollection
-    from scripts.flexwindow import generate_windows
+    from scgid.dependencies import CaseDependency, ConstDependency
+    from scgid.module import Module, Config
+    from scgid.reuse import ReusableOutputManager, ReusableOutput, augustus_predict, protein_blast
+    from scgid.modcomm import LoggingEntity, Head
+    from scgid.parsers import BlastoutParser, PathAction, SPDBTaxonomy
+    from scgid.infotable import InfoTable, it_get_taxonomy_level
+    from scgid.sequence import DNASequenceCollection, AASequenceCollection
+    from scgid.flexwindow import generate_windows
 
     class Gct (Module, LoggingEntity, Head):
         def __init__(self, argdict = None):

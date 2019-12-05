@@ -6,14 +6,14 @@ import pandas as pd
 import numpy as np
 from collections import namedtuple
 from ete3 import Tree, NCBITaxa
-from scripts.module import Module
-from scripts.modcomm import LoggingEntity, Head, get_head
-from scripts.reuse import ReusableOutput, ReusableOutputManager, augustus_predict, nucleotide_blast, protein_blast
-from scripts.dependencies import CaseDependency
-from scripts.parsers import PathAction
-from scripts.sequence import DNASequenceCollection, DNASequence, revcomp, complement
-from scripts.library import subprocessP
-from scripts.infotable import InfoTable, get_by_idx, count_unique
+from scgid.module import Module
+from scgid.modcomm import LoggingEntity, Head, get_head
+from scgid.reuse import ReusableOutput, ReusableOutputManager, augustus_predict, nucleotide_blast, protein_blast
+from scgid.dependencies import CaseDependency
+from scgid.parsers import PathAction
+from scgid.sequence import DNASequenceCollection, DNASequence, revcomp, complement
+from scgid.library import subprocessP
+from scgid.infotable import InfoTable, get_by_idx, count_unique
 
 SYNONYMOUS_CODONS = {
     'Phe': ['UUU','UUC'],

@@ -4,9 +4,9 @@ import os
 import inspect
 import logging
 import shutil
-from scripts.modcomm import LoggingEntity, logger_name_gen, get_head
-from scripts.library import subprocessP, gff3_to_fasta, is_fasta
-import scripts.pkg_settings as pkg_settings
+from scgid.modcomm import LoggingEntity, logger_name_gen, get_head
+from scgid.library import subprocessP, gff3_to_fasta, is_fasta
+import scgid.pkg_settings as pkg_settings
 
 class ReusableOutput:
     def __init__(self, arg, pattern, genfunc = None, genfunc_args = None):

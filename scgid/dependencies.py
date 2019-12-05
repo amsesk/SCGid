@@ -3,8 +3,8 @@ import logging
 import inspect
 import itertools
 import os
-from scripts.error import MissingDependencyError
-from scripts.modcomm import logger_name_gen, LoggingEntity
+from scgid.error import MissingDependencyError
+from scgid.modcomm import logger_name_gen, LoggingEntity, ErrorHandler
 
 CaseDependencyCouplet = namedtuple("CaseDependencyCouplet", ["argid", "value"])
 class Dependency(object):
@@ -28,10 +28,10 @@ class CaseDependency(Dependency):
         self.couplet = CaseDependencyCouplet(argid, value)
 
 
-class Dependencies(LoggingEntity):
+class Dependencies(LoggingEntity, ErrorHandler):
     def __init__(self):
         self.deps = ()
-        self.log = logging.getLogger(
+        self.logger = logging.getLogger(
             logger_name_gen()
             )
 
@@ -51,8 +51,9 @@ class Dependencies(LoggingEntity):
             d.available = d.is_available(avail)
 
         missing = [x.cmd for x in self.deps if isinstance(x, ConstDependency) and not x.available] + [x.cmd for x in self.deps if isinstance(x, CaseDependency) and parsed_args.__dict__[x.couplet.argid] == x.couplet.value and not x.available]
+        print(missing)
         if len(missing) > 0:
-            self.log.critical(MissingDependencyError(missing))
+            return MissingDependencyError(f"Required dependency missing from environment: {','.join(missing)}")
         else:
             return 0
         

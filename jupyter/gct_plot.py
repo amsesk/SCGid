@@ -1,7 +1,7 @@
 import plotly.express as px
 import plotly.offline as po
 import numpy as np
-from scgid.scripts.infotable import InfoTable
+from scgid.scgid.infotable import InfoTable
 it = InfoTable()
 it.load("/home/aimzez/development/scgid/test_data/stylopage_41_scgid_output/gct/stylopage_41.infotable.tsv")
 it.df = it.df.assign(scaled_evalue = np.log(it.df.evalue))

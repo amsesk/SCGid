@@ -10,11 +10,11 @@ else:
     import argparse
     import pandas as pd
     import os
-    from scripts.modcomm import (LoggingEntity, Head)
-    from scripts.module import Module
-    from scripts.reuse import ReusableOutput, ReusableOutputManager
-    from scripts.parsers import PathAction
-    from scripts.sequence import DNASequenceCollection
+    from scgid.modcomm import (LoggingEntity, Head)
+    from scgid.module import Module
+    from scgid.reuse import ReusableOutput, ReusableOutputManager
+    from scgid.parsers import PathAction
+    from scgid.sequence import DNASequenceCollection
 
     class Consensus (Module, LoggingEntity, Head):
         def __init__(self, argdict = None):
@@ -103,8 +103,10 @@ else:
 
             self.logger.info(f"Final filtered assembly written in FASTA format to `{final_fname}`")
 
-            self.logger.info("Consensus filtering complete. Returning to SCGid.")
-
             # Migrate and then remove temp dir, cd back to starting dir
             self.migrate_temp_dir()
             self.resetwd()
+
+            self.logger.info("Consensus filtering complete. Returning to SCGid.")
+
+            return final_assembly

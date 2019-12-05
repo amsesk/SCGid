@@ -27,11 +27,11 @@ else:
     import argparse
     import subprocess
     import numpy as np
-    from scripts.module import Module
-    from scripts.library import file_grep, subprocessP, subprocessC
-    from scripts.modcomm import LoggingEntity, Head, logger_name_gen
-    from scripts.parsers import PathAction
-    from scripts.dependencies import CaseDependency
+    from scgid.module import Module
+    from scgid.library import file_grep, subprocessP, subprocessC
+    from scgid.modcomm import LoggingEntity, Head, logger_name_gen
+    from scgid.parsers import PathAction
+    from scgid.dependencies import CaseDependency
 
     class Kmers(Module, LoggingEntity, Head):
         def __init__(self,  argdict = None):

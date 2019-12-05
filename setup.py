@@ -14,7 +14,7 @@ setup(
     package_data={
         '':['*.ini', '*.yaml']
     },
-    #py_modules=['scripts.scgid', 'scripts.gct', 'scripts.codons', 'scripts.kmers', 'logging'],
+    #py_modules=['scgid.scgid', 'scgid.gct', 'scgid.codons', 'scgid.kmers', 'logging'],
     scripts=['bin/scgid'],
     install_requires=[
         'numpy>=1.15.0',

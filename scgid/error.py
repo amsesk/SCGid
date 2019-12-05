@@ -1,53 +1,39 @@
 import sys
 import traceback
+from scgid.modcomm import get_error_handler
 
-class Error(Exception):
-    def __init__(self):
-        self.fatal = False
+class FatalError(Exception):
+    def __init__(self, msg):
         self.__name__ = type(self).__name__
-    def is_fatal(self):
-        return self.fatal
-    def recover(self):
-        return None
+        self.errno = 1
+        self.handler = get_error_handler()
+    
+    def catch(self):
+        self.handler.logger.critical((f"[{self.__name__}] {self}"))
+        sys.exit(self.errno)
 
-class MalformedConfigError(Error):
-    def __init__(self, message):
-        super(MalformedConfigError, self).__init__()
-        self.message = message
-        self.exitcode = 3
-        self.fatal = False
-    def recover(self):
-        return False
-    def __str__(self):
-        return self.message
+class ConfigError(FatalError):
+    def __init__(self, msg):
+        super().__init__(msg)
+        self.errno = 2
+        self.catch()
 
-class MissingConfigError(Error):
-    def __init__(self, message):
-        super(MissingConfigError, self).__init__()
-        self.message = message
-        self.exitcode = 2
-        self.fatal = False
-    def recover(self):
-        return False
-    def __str__(self):
-        return self.message
+class MissingDependencyError(FatalError):
+    def __init__(self, msg):
+        super().__init__(msg)
+        self.errno = 3
+        self.catch()
 
-class MissingDependencyError(Error):
-    def __init__(self, unavail):
-        super(MissingDependencyError, self).__init__()
-        self.unavail = ", ".join(unavail)
-        self.exitcode = 7
-        self.fatal = True
-    def __str__(self):
-        return f"[{self.__name__}] Required dependency missing from environment: {self.unavail}"
+class ModuleError(FatalError):
+    def __init__(self, msg):
+        super().__init__(msg)
+        self.errno = 4
+        self.catch()
 
-class InternalError(Error):
-    def __init__(self):
-        self.exitcode = 1
-    def __str__(self):
-        return ""
+class InternalError(FatalError):
+    def __init__(self, msg):
+        super().__init__(msg)
+        self.errno = 99
+        self.catch()
 
-def iserror(res):
-    if isinstance(res, Error):
-        return True
         

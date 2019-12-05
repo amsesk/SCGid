@@ -40,51 +40,42 @@ import os
 import inspect
 import logging
 import logging.config
-from scripts.modcomm import LoggingEntity, logger_name_gen, ExitOnExceptionHandler
-from scripts.gct import Gct 
-from scripts.codons import Codons
-from scripts.kmers import Kmers
-from scripts.consensus import Consensus
+from scgid.modcomm import LoggingEntity, logger_name_gen, ExitOnExceptionHandler
+from scgid.gct import Gct 
+from scgid.codons import Codons
+from scgid.kmers import Kmers
+from scgid.consensus import Consensus
 
 bin_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 pkg_home = os.path.dirname(bin_dir)
 
 logging.config.fileConfig(os.path.join(bin_dir, "logging_config.ini"))
-log = logging.getLogger("SCGid")
 
 class SCGid(LoggingEntity, object):
     def __init__(self, call):
+        self.logger = logging.getLogger("SCGid")
+        self.logger.info(f"Calling {call}")
+        
         if call == "gct":
-            self.gct_filtered = Gct().run()
+            result = Gct().run()
+
         elif call == "codons":
-            self.codon_filtered = Codons().run()
+            result = Codons().run()
+
         elif call == "kmers":
-            self.kmes_filtered = Kmers().run()
+            result = Kmers().run()
+            
         elif call == "consensus":
-            self.consensus_filtered = Consensus().run()
+            result = Consensus().run()
+        
+        self.logger.info("Final message from root.")
 
 if len(sys.argv) == 1 or sys.argv[1] in ['-h','--help','-help']:
     print (help_msg)
+    sys.exit(0)
 
-elif sys.argv[1] == "gct":
-    log.info("Calling Gct")
-    result = SCGid(sys.argv[1])
-    log.info("Final message from root.")
-
-elif sys.argv[1] == "codons":
-    log.info("Calling Codons")
-    result = SCGid(sys.argv[1])
-    log.info("Final message from root.")
-
-elif sys.argv[1] == "kmers":
-    log.info("Calling Esom")
-    result = SCGid(sys.argv[1])
-    log.info("Final message from root.")
-
-elif sys.argv[1] == "consensus":
-    log.info("Calling Consensus")
-    result = SCGid(sys.argv[1])
-    log.info("Final message from root")
+if sys.argv[1] in ['gct', 'codons', 'kmers', 'consensus']:
+    SCGid(sys.argv[1])
 
 elif sys.argv[1] == "init":
     arguments = sys.argv[2:]

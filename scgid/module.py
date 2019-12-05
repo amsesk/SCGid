@@ -4,10 +4,11 @@ import yaml
 import inspect
 import shutil
 import logging
-from scripts.dependencies import Dependencies
-from scripts.reuse import ReusableOutputManager
-from scripts.modcomm import logger_name_gen, LoggingEntity
-from scripts.error import MissingConfigError, MalformedConfigError
+import subprocess
+from scgid.dependencies import Dependencies
+from scgid.reuse import ReusableOutputManager
+from scgid.modcomm import logger_name_gen, LoggingEntity, ErrorHandler
+from scgid.error import ConfigError
 
 class Module (object):
     def __init__(self, call, name = None, parent=None):
@@ -81,8 +82,9 @@ class Module (object):
                 sys.exit(Err.exitcode)
     '''
 
-class Config(LoggingEntity):
+class Config(LoggingEntity, ErrorHandler):
     def __init__(self):
+        self.logger = logging.getLogger( logger_name_gen() )
         self.SCGID_SCRIPTS = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
         self.SCGID = os.path.dirname(self.SCGID_SCRIPTS)
         self.OUTPUTSUFFIX = "_scgid_output"
@@ -90,7 +92,6 @@ class Config(LoggingEntity):
         self.reusable = ReusableOutputManager()
         self.__dict__.update(self.load_yaml(self.SCGID))
         self.rundir = None
-        self.logger = logging.getLogger( logger_name_gen() )
 
     def __repr__(self):
         return "\n".join(["{}: {}".format(key, setting) for key,setting in self.__dict__.items()])
@@ -124,14 +125,33 @@ class Config(LoggingEntity):
             with open(loc, 'r') as cfg:
                 return yaml.load(cfg, Loader=yaml.BaseLoader)
         except IOError:
-            raise MissingConfigError("Unable to locate config.yaml")
+            return ConfigError("Unable to locate configuration file")
         except:
-            raise MalformedConfigError("Malformed config.yaml")
+            return ConfigError("Malformed configuration file")
     
     def check_case_args (self, mapper_dict):
         for option_arg, options in mapper_dict.items():
             choice = options[self.get(option_arg)]
             if not choice["bool"]:
                 self.logger.warning(choice["warning"])
+
+    def check_esom_path (self):
+        # Check to see if esomtrn exists in configured `esom_path`
+        if not os.path.isfile(
+            os.path.join(
+                self.get("esom_path"),
+                "esomtrn"
+            )):
+            # If not, try to find it in environment and update config
+            p = subprocess.Popen( ["which", "esomtrn"], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+            path, _ = p.communicate()
+            if p.returncode:
+                return ConfigError("ESOM path unset in $PATH or config.yaml")
+
+            else:
+                path = os.path.dirname(path).decode("utf-8")
+            
+                # Updating config here
+                setattr(self, "esom_path", path)
 
             

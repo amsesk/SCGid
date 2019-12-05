@@ -2,7 +2,7 @@ import unittest
 import shutil
 
 importlib = __import__("importlib")
-gct = importlib.import_module("scgid.scripts.gct")
+gct = importlib.import_module("scgid.scgid.gct")
 
 class TestGct(unittest.TestCase):
     def test_call(self):

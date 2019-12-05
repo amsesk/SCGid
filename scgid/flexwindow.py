@@ -5,8 +5,8 @@ import sys
 import os
 import logging
 from collections import namedtuple
-from scripts.modcomm import LoggingEntity, get_head, logger_name_gen
-from scripts.library import subprocessP
+from scgid.modcomm import LoggingEntity, get_head, logger_name_gen
+from scgid.library import subprocessP
 
 ### Definitions
 PltOut = namedtuple("PltOut", ["axis","mean","window","points"])

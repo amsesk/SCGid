@@ -30,13 +30,14 @@ else:
     import pandas as pd
     from collections import namedtuple
     from ete3 import NCBITaxa
-    from scripts.module import Module
-    from scripts.library import file_grep, subprocessP, subprocessC, random_colors
-    from scripts.modcomm import LoggingEntity, Head, logger_name_gen, get_head, get_callstack
-    from scripts.parsers import PathAction,BlastoutParser
-    from scripts.dependencies import CaseDependency
-    from scripts.reuse import ReusableOutput, nucleotide_blast
-    from scripts.sequence import DNASequenceCollection
+    from scgid.module import Module
+    from scgid.error import ModuleError
+    from scgid.library import file_grep, subprocessP, subprocessC, random_colors
+    from scgid.modcomm import LoggingEntity, Head, ErrorHandler, logger_name_gen
+    from scgid.parsers import PathAction,BlastoutParser
+    from scgid.dependencies import CaseDependency
+    from scgid.reuse import ReusableOutput, nucleotide_blast
+    from scgid.sequence import DNASequenceCollection
 
     class Kmers(Module, LoggingEntity, Head):
         def __init__(self,  argdict = None):
@@ -82,7 +83,7 @@ else:
                     sys.exit(2)
 
 
-    class Train(Kmers, LoggingEntity, Head):
+    class Train(Kmers, LoggingEntity, Head, ErrorHandler):
         def __init__(self, argdict = None):
             super().__init__(self.__class__)
             if argdict is not None:
@@ -108,11 +109,11 @@ else:
                 self.config.check_case_args(self.case_args)
 
             self.config.dependencies.populate(
-                CaseDependency("somoclu", "mode", "s"),
-                CaseDependency(self.config.get("mpicmd"), "mode", "s"),
+                CaseDependency("somoclu", "mode", "somoclu"),
+                CaseDependency(self.config.get("mpicmd"), "mode", "somoclu"),
             )
-
             
+            self.config.check_esom_path()
 
         def generate_argparser(self):
             parser = argparse.ArgumentParser()
@@ -137,24 +138,6 @@ else:
             return parser
         
         # Called in mode `det` because `esomtrn` will be used and should be provided by `esom_path` config option
-        def check_esom_path (self):
-            # Check to see if esomtrn exists in configured `esom_path`
-            if not os.path.isfile(
-                os.path.join(
-                    self.config.get("esom_path"),
-                    "esomtrn"
-                )):
-                # If not, try to find it in environment and update config
-                p = subprocess.Popen( ["which", "esomtrn"], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
-                path, _ = p.communicate()
-                if p.returncode != 0:
-                    print ("Unable to find ESOM bin directory in PATH or config.yaml. Correct by adding it to PATH or config.yaml.") #self.logger.critical
-                    sys.exit(1)
-                path = os.path.dirname(path).decode("utf-8")
-                
-                # Updating config here
-                setattr(self.config, "esom_path", path)
-
         def specify_Xmx_esom(self, path_to_esomstart, mem):
 
             with open(path_to_esomstart,'r') as f:
@@ -254,7 +237,7 @@ else:
             self.logger.warning("SCGid is unable to catch Java OutOutMemory (OOM) handlers. Check logfile to verify successful training completion.")
 
             if not os.path.isfile(wts) or not os.path.isfile(bm):
-                self.logger.critical("Unable to locate *.wts or *.bm files associated with successful training. Check logfile for error output - Java OutOfMemory error the likely culprit.")
+                return ModuleError("Unable to locate *.wts or *.bm files associated with successful training. Check logfile for error output - Java OutOfMemory error the likely culprit.")
 
             return 0
 
@@ -440,7 +423,7 @@ else:
                     self.simplelogger.warning(classed.loc[classed.cid == 0][["query","superkingdom","phylum","family","species"]])
 
             if any( ['/' in cid for cid in classed.cid] ):
-                self.logger.critical(f"Overlapping groups in scheme `{self.config.get('annotation_scheme')}`... Contigs have been placed into multiple classes. Make sure your groups are exclusive and rerun.")
+                return ModuleError(f"Overlapping groups in scheme `{self.config.get('annotation_scheme')}`... Contigs have been placed into multiple classes. Make sure your groups are exclusive and rerun.")
 
             # Write annotation file
             annot_path = f"{os.path.basename(self.config.get('nucl'))}.annotation"

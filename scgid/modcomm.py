@@ -1,14 +1,16 @@
 import inspect
 import logging
+import sys
 
 # Log naming via callstack
 class LoggingEntity(object):
-    def __init__(self):
-        pass
+    pass
 
 class Head:
-    def __init__(self):
-        pass
+    pass
+
+class ErrorHandler:
+    pass
 
 def get_caller ():
     for f in inspect.stack():
@@ -65,8 +67,22 @@ def get_head():
 
     return [x for x in cls_stack_dedup if isinstance(x, Head)][0]
 
+def get_error_handler():
+    callstack = callstack_clsfilt( 
+            get_callstack()
+        )
+    cls_stack = [x.f_locals["self"] for x in callstack]
+    cls_stack_dedup = []
+
+    # Dedepulicate list
+    for i in cls_stack:
+        if i not in cls_stack_dedup:
+            cls_stack_dedup.append(i)
+
+    return [x for x in cls_stack_dedup if isinstance(x, ErrorHandler)][0]
+
 # Handlers
 class ExitOnExceptionHandler(logging.StreamHandler):
     def emit(self, record):
         if record.levelno == logging.CRITICAL:
-            raise SystemExit(-1)
+            pass

@@ -6,10 +6,10 @@ import re
 import ast
 from collections import namedtuple
 from ete3 import NCBITaxa
-from scripts.error import Error
-import scripts.pkg_settings as pkg_settings
-from scripts.modcomm import get_head, logger_name_gen, LoggingEntity
-from scripts.sequence import AASequenceCollection
+from scgid.error import ModuleError
+import scgid.pkg_settings as pkg_settings
+from scgid.modcomm import get_head, logger_name_gen, LoggingEntity, ErrorHandler
+from scgid.sequence import AASequenceCollection
 
 class PathAction(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
@@ -20,14 +20,10 @@ class SPDBTaxonomy(LoggingEntity):
         self.logger = logging.getLogger ( logger_name_gen() )
         self.taxdb = {}
         with open(path_to_taxdb,'r') as f:
-            '''
-            for line in f:
-                try:
-                    ast.literal_eval(line)
-                except:
-                    self.logger.critical (f"Taxonomy database formatting error. Offending line: {line}")
-            '''
-            self.taxdb = ast.literal_eval( f.read() )
+            try:
+                self.taxdb = ast.literal_eval( f.read() )
+            except SyntaxError:
+                ModuleError("Taxonomy database improperly formatted.")
 
     def __repr__(self):
         return '\n'.join([f"{k}: {v}" for k,v in self.taxdb.items()])
@@ -48,7 +44,7 @@ class SPDBTaxonomy(LoggingEntity):
             p["lineage"] = lineage
         return parser
 
-class BlastoutParser(LoggingEntity):
+class BlastoutParser(LoggingEntity, ErrorHandler):
     def __init__(self):
         self.path = None
         self.headers = pkg_settings.BLAST_HEADERS
@@ -104,12 +100,14 @@ class BlastoutParser(LoggingEntity):
             try:
                 desc = spdb.loc[acc].description
 
-            except:
-                self.logger.critical(MissingAccessionError(accession = acc, db_path = self.head.config.get("spdb")))
+            except KeyError:
+                return ModuleError(f" Accession `{acc}` missing from database at `{self.head.config.get('spdb')}")
 
             s = re.search(search_pattern, desc)
+            
             if s is None:
-                self.logger.critical(f"Unable to pull SPDB species information from line: \"{hit}\"")
+                return ModuleError(f"Unable to pull SPDB species information from line: \"{hit}\"")
+
             sp_os = s.group(1).strip()
 
             self.parsed_hits.append ({
@@ -160,13 +158,3 @@ class BlastoutParser(LoggingEntity):
             contig_lineages = pd.DataFrame(ldict)[["query","superkingdom","kingdom","phylum","class","order","family","genus","species"]]
             contig_lineages.set_index("query")
             return contig_lineages
-
-class MissingAccessionError (Error):
-    def __init__(self, accession, db_path):
-        super().__init__(db_path)
-        self.accession = accession
-        self.db_path = db_path
-        self.exitcode = 4
-        self.fatal = True
-    def __str__(self):
-        return f"[{self.__name__}] Accession `{self.accession}` missing from database at `{self.db_path}"
