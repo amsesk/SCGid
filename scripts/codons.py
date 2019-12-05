@@ -85,7 +85,7 @@ class CDSConcatenate(DNASequence):
     def split_codons(self):
         self.transcomp = complement(self.transcribe())
         return [ self.transcomp[i:i+3] for i in range(0, self.length, 3) ]
-    
+
     def count_codons(self):
         for codon in self.split_codons():
             if 'N' in codon:
@@ -93,7 +93,7 @@ class CDSConcatenate(DNASequence):
             self.codon_counts[codon] += 1
         logrow = "[{:<10}] ".format(self.header) + " ".join(["{:<5}".format(x) for x in self.codon_counts.to_list()])
         return logrow
-    
+
     def calculate_rscu(self):
         for _, codons in SYNONYMOUS_CODONS.items():
             synonymous_codon_counts = self.codon_counts[codons]
@@ -103,7 +103,7 @@ class CDSConcatenate(DNASequence):
                     rscu = 0.00
                 else:
                     rscu = self.codon_counts[c] / (amino_acid_occurences * (1/len(self.codon_counts[codons])))
-                
+
                 self.rscu_table[c] = rscu
 
 class RSCUTree(object):
@@ -122,14 +122,14 @@ class RSCUTree(object):
             self.infotable.load(self.head.config.get("infotable"))
             self.infotable.parse_lineage()
             '''
-            
+
             '''
 
     def annotate(self):
         self.infotable.decide_inclusion()
         if self.mode == "blastp":
             self._protannot()
-        
+
         elif self.mode == "blastn":
             raise NotImplementedError("Annotation with NCBI nt blast results not yet implemented.")
 
@@ -232,7 +232,7 @@ class RSCUTree(object):
                 #tree.show(tree_style=circ)
         else:
             final_tree = best_trees[0]
-    
+
         self.best_clade = final_tree
 
     def write_tree_annotation(self, trainset, outpath):
@@ -258,16 +258,16 @@ class RSCUTree(object):
                     taxon = taxlvl_decisions.loc[ leaf.name ].values[0]
                 except KeyError:
                     taxon = "unclassified"
-                
+
                 if leaf.name in trainset.index.keys():
                     in_trainset = "trainset"
                 else:
                     in_trainset = "not_selected"
-                
+
 
                 f.write(f"{leaf.name},{taxon},{leaf.annotation},{in_trainset}\n")
 
-    
+
 class Codons(Module, LoggingEntity, Head):
     def __init__(self, argdict = None):
         super().__init__(self.__class__)
@@ -277,7 +277,7 @@ class Codons(Module, LoggingEntity, Head):
             self.argparser = self.generate_argparser()
             self.parsed_args = self.argparser.parse_args()
             self.config.load_cmdline( self.parsed_args ) # Copy command line args defined by self.argparser to self.config
-        
+
         self.config.reusable.populate(
                 ReusableOutput(
                     arg = "gff3",
@@ -294,7 +294,7 @@ class Codons(Module, LoggingEntity, Head):
         self.config.dependencies.populate(
                 CaseDependency("augustus", "gff3", None),
             )
-        
+
         if self.config.get("mode") == "blastp":
             self.config.reusable.add(
                 ReusableOutput(
@@ -337,14 +337,14 @@ class Codons(Module, LoggingEntity, Head):
             if self.config.get("mode") == "blastp" and self.config.get("infotable") is None:
                 print ("-i|--infotable required for --mode == `blastp`")
                 sys.exit(1)
-        
+
         else:
             print("Bad mode selection.")
             sys.exit(1)
-        
+
         self.keep = {}
-            
-    
+
+
     def generate_argparser(self):
         parser = argparse.ArgumentParser()
         parser.add_argument("mod", nargs="*")
@@ -379,7 +379,7 @@ class Codons(Module, LoggingEntity, Head):
                 # Skip comment lines
                 if line[0] == "#":
                     continue
-                
+
                 spl = line.split('\t')
 
                 # Ignore all but CDS lines in gff3
@@ -387,7 +387,7 @@ class Codons(Module, LoggingEntity, Head):
 
                     shortname = '_'.join( spl[0].split('_')[0:2] )
 
-                    # Capture pid     
+                    # Capture pid
                     s = re.search("[.](g[0-9]+)[.]",spl[8])
                     pid = s.group(1)
 
@@ -411,17 +411,17 @@ class Codons(Module, LoggingEntity, Head):
         for shortname, pids in contig_chunks.items():
 
             contig_cds_cat = str()
-            
+
             for _, chunks in pids.items():
 
                 gene_cds = str()
 
                 for chunk in chunks:
-                    
+
                     # Ignore zero-length CDS chunks
                     if chunk.start == chunk.end:
                         continue
-                    
+
                     # Fetch CDS sequence from contig by start/stop indices listed in gff3 and revcomp if on reverse strand
                     if chunk.strand == '-':
                         chunk_string = revcomp(nucl.index[shortname].string[
@@ -439,11 +439,11 @@ class Codons(Module, LoggingEntity, Head):
                 # Combine gene_cds into contig_cds_cat beacuse they occur on the same contig
                 if len(gene_cds) % 3 == 0:
                     contig_cds_cat += gene_cds
-            
+
             # Store contig_cds_cat in DNASequence object and add to dict
             if len(contig_cds_cat) != 0:
                 cds_concatenates[shortname] = CDSConcatenate(shortname, contig_cds_cat)
-        
+
         # Return all contig-level CDS concatenates as a DNASequenceCollection object
         return DNASequenceCollection().from_dict(cds_concatenates)
 
@@ -453,18 +453,18 @@ class Codons(Module, LoggingEntity, Head):
         for p in cds_concatenates.seqs():
             row = {}
             for r in cds_concatenates.seqs():
-                row[r.header] = (1/59)*sum( abs( p.rscu_table.to_numpy() - r.rscu_table.to_numpy() ) ) 
+                row[r.header] = (1/59)*sum( abs( p.rscu_table.to_numpy() - r.rscu_table.to_numpy() ) )
             matrix.loc[p.header] = row
-        
+
         matrix = np.tril(matrix)
-        
+
         matrix_frame = pd.DataFrame(matrix, columns = headers, index = headers)
         #matrix_frame.iloc[np.triu_indices(n = len(headers), k=0)] = np.nan
 
         return matrix_frame
 
     def write_nexus(self, distance_matrix, outpath):
-    
+
         header = f"#NEXUS\nbegin distances;\ndimensions\nntax={distance_matrix.shape[0]};\nmatrix\n"
         trailer = ";\nEND"
 
@@ -485,7 +485,7 @@ class Codons(Module, LoggingEntity, Head):
             outpath
             ]
         self.logger.info(' '.join(cmd))
-        subprocessP(cmd, self.logger)    
+        subprocessP(cmd, self.logger)
 
     def draw_annotated_tree(self, treefile, annotfile):
         cmd = [
@@ -512,7 +512,7 @@ class Codons(Module, LoggingEntity, Head):
             f"-Xmx{self.config.get('Xmx')}",
             "-jar", os.path.join(self.config.get("clams_path")),
             os.path.join(f"{prefix}.clams.trainset.tsv"),
-            self.config.get("nucl"), 
+            self.config.get("nucl"),
             f"{prefix}.clams.out",
             "DBC", "2",
             "0.01217181"
@@ -529,7 +529,7 @@ class Codons(Module, LoggingEntity, Head):
             spl = [x.strip() for x in line.split("\t")]
             if spl[1] == "rscu_derived_ts1":
                 count += 1
-                to_keep.append(spl[0])
+                to_keep.append("_".join(spl[0].split("_")[0:2]))
         self.logger.info("ClaMs finished, {len(to_keep.index)} matches to trainset detected.")
         return to_keep
 
@@ -566,7 +566,7 @@ class Codons(Module, LoggingEntity, Head):
             cds_coords,
             nucl
         )
-        
+
         # Remove CDS concatenates shorter than supplied minlin
         self.logger.info(f"Removing CDS concatenates <{self.config.get('minlen')} bp in length")
         cds_concatenates.remove_small_sequences( int(self.config.get("minlen")) )
@@ -582,7 +582,7 @@ class Codons(Module, LoggingEntity, Head):
         cds_concatenates = DNASequenceCollection().from_dict(
             { header: seqobj for header, seqobj in cds_concatenates.index.items() if sum( seqobj.codon_counts[ SYNONYMOUS_CODONS["STOP"] ] ) == 0 }
         )
-        
+
         # Calculate RSCU for each codon on each concatenate
         self.logger.info(f"Calculating contig RSCU profiles")
         for c in cds_concatenates.seqs():
@@ -591,7 +591,7 @@ class Codons(Module, LoggingEntity, Head):
         # Compute RSCU distance matrix
         self.logger.info(f"Constructing RSCU distance matrix")
         distance_matrix = self.rscu_distances(cds_concatenates)
-        
+
         # Write RSCU distance matrix to NEXUS format and CSV format (for R)
         self.write_nexus(distance_matrix, f"{self.config.get('prefix')}.rscu.distance.matrix.nex")
         distance_matrix.to_csv(f"{self.config.get('prefix')}.rscu.distance.matrix.csv", sep=',', index = True, header = False, mode = 'w')
@@ -607,19 +607,19 @@ class Codons(Module, LoggingEntity, Head):
 
         # Instantiate RSCUTree object and pass it NJ tree generated by R
         nj_tree = RSCUTree(treefile)
-        
+
         # Annotate tips of the dendrogram. Mode is handled inside function body.
         nj_tree.annotate()
 
         # Pick the best clade for ClaMS training by iteratively binning and comparing clades' target:nontarget ratios
-        nj_tree.pick_clade() 
+        nj_tree.pick_clade()
 
         # Return filtered DNASequenceCollection with non-trainset contigs excluded
         trainset = nucl.header_list_filter(nj_tree.best_clade.get_leaf_names())
 
         # Write trainset to FASTA
         trainset.write_fasta(f"{self.config.get('prefix')}.trainset.fasta")
-        
+
         # Write tree annotation file for plotting with phytools in R
         nj_tree.write_tree_annotation(
             trainset,
@@ -627,10 +627,12 @@ class Codons(Module, LoggingEntity, Head):
             )
 
         # Draw annotated tree with phytools in R
+        '''
         self.draw_annotated_tree(
             treefile,
             f"{self.config.get('prefix')}_njtree_annotations.csv"
         )
+        '''
 
         self.run_clams()
         to_keep = self.parse_clams_out()
@@ -644,7 +646,7 @@ class Codons(Module, LoggingEntity, Head):
         filtered_ncontigs = len(final_assembly.seqs())
 
         self.logger.info(f"Filtered assembly contains {filtered_ncontigs:,} contigs with a cumulative size of {filtered_size:,} bp ({filtered_size/1e6:.2f} Mbp).")
-        
+
         # Print final filtered assembly to FASTA
         final_fname = f"{self.config.get('prefix')}.codons.filtered.assembly.fasta"
         final_assembly.write_fasta( final_fname )
@@ -660,4 +662,4 @@ class Codons(Module, LoggingEntity, Head):
         # Return final filtered assembly to SCGid root
         return final_assembly
 
-        
+
