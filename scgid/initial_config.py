@@ -20,8 +20,8 @@ import ftplib
 import urllib
 import threading
 import imp # to check for python-dependencies
-from library import report_outcome, is_fasta, file_grep, ftp_retr_and_report, ftp_retr_progress, output_cols, CURSOR_UP_ONE, ERASE_LINE, ow_last_stdout
-
+from scgid.library import report_outcome, is_fasta, file_grep, ftp_retr_and_report, ftp_retr_progress, output_cols, CURSOR_UP_ONE, ERASE_LINE, ow_last_stdout
+from scgid.db import retr_spdb
 #%% some variables
 SCGID_SCRIPTS = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 SCGID_HOME = os.path.dirname(SCGID_SCRIPTS)
@@ -48,7 +48,7 @@ if sys.version[0] != '3':
     sys.exit(1)
 
 # Check python dependencies (should have just been installed by setup.py)
-print ("> Scanning scgid python2.7 dependencies now...")
+print ("> Scanning python dependencies...")
 pydep = {
         'numpy': False,
         'pandas': False,
@@ -119,8 +119,6 @@ else:
     print ("\n> All python dependencies installed and good to go. Continuing...\n")
 
 sys.exit()
-
-'''
                 
 #%% settings.py ###
 settings = {} # variable: value

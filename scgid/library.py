@@ -15,7 +15,8 @@ CURSOR_UP_ONE = '\x1b[1A'
 output_cols = {
         'GREEN':'\033[0;32m',
         'RED':'\033[0;31m',
-        'RESET':'\033[0m'
+        'RESET':'\033[0m',
+        'YELLOW':'\033[93m'
         }
 '''
 class spinner():
@@ -44,24 +45,6 @@ def ow_last_stdout(string):
 
 def report_outcome(msg, color, outcome):
     ow_last_stdout('\r'+msg + output_cols[color] + outcome + output_cols['RESET'] + '\n')
-
-
-
-def ftp_retr_progress (block, lfile, tsize):
-    ret = open(lfile,'ab').write(block)
-    csize = os.path.getsize(lfile)
-    prog = (csize*50)/(tsize)
-    sys.stdout.write(CURSOR_UP_ONE)
-    sys.stdout.write(ERASE_LINE)
-    sys.stdout.write("["+"#"*(prog)+" "*(50-prog)+"] "+str(prog*2)+"%\n")
-    return(ret)
-
-
-def ftp_retr_and_report (ftp_inst, sname, rfile, lfile):
-    tsize = ftp_inst.size(rfile)
-    print (f"> Retrieving {rfile} from {sname} ...\n[ {' '*50} ] 0%")
-    ftp_inst.retrbinary("RETR %s" % (rfile), lambda block: ftp_retr_progress(block, lfile, tsize))
-
 
 def is_fasta(f, strict=False, verbose = False):
     lines = [l.strip() for l in open(f).readlines()]
@@ -195,6 +178,29 @@ def random_colors(n):
         else:
             pal.append(newcolor)
     return pal
+
+def alltaxtab2dict (alltaxtab): ## takes a per_line generator as arg (like file_yield_lines)
+    db = {}
+    for line in open(alltaxtab, 'r'):
+        line = line.replace("'","")
+        spl = [x.strip() for x in line.split('\t')]
+        if len(spl[2]) == 0 or len(spl[8]) == 0:
+            continue
+        db[spl[2]] = spl[8]
+    return db
+
+def spdb_grab_os(spdb): ## takes a per_line generator as arg (like file_yield_lines)
+    pattern = re.compile("^>.+{}".format(SPDB_OS_REGEXP_PATTERN))
+    all_sp_os = []
+    for line in open(spdb, 'r'):
+        sp_os = None
+        s = re.search(pattern, line)
+        if s is not None:
+            sp_os = s.group(1).strip()
+            sp_os = sp_os.replace("'","")
+            sp_os = sp_os.replace("#","")
+            all_sp_os.append(sp_os)
+    return list(set(all_sp_os))
 
 '''
 def pickle_loader (pklFile):

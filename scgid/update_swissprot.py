@@ -1,13 +1,22 @@
-import sys
 import os
-import re
-import inspect
-from ftplib import FTP
-import datetime
-import settings
-import subprocess
-from initlib import replace_line_by_pattern, ftp_retr_progress, ftp_retr_and_report
+from scgid.modcomm import pkgloc
+from scgid.db import UniprotFTP
 
+HOME, _ = pkgloc()
+uniprot = UniprotFTP()
+
+uniprot.login()
+
+if uniprot.needs_retr (
+    os.path.join(HOME, "config.yaml"),
+    uniprot.get_remote_reldate()
+    ):
+
+    print ("Needs to be retrieved")
+else:
+    print ("Up to date")
+
+'''
 bin_dir =os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 
 if len(settings.path_to_spdb) == 0:
@@ -90,3 +99,5 @@ if changes_needed:
         with open(os.path.join(bin_dir, "settings.py"),'a') as s:
             s.write("path_to_spdb=\""+db_path+"\"")
             s.write("\n")
+
+'''

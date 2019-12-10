@@ -1,6 +1,7 @@
 import inspect
 import logging
 import sys
+import os
 
 # Log naming via callstack
 class LoggingEntity(object):
@@ -80,6 +81,11 @@ def get_error_handler():
             cls_stack_dedup.append(i)
 
     return [x for x in cls_stack_dedup if isinstance(x, ErrorHandler)][0]
+
+def pkgloc():
+    source = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+    home = os.path.dirname(source)
+    return home, source
 
 # Handlers
 class ExitOnExceptionHandler(logging.StreamHandler):

@@ -40,43 +40,51 @@ import os
 import inspect
 import logging
 import logging.config
+from scgid.config import InitialConfig
 from scgid.modcomm import LoggingEntity, logger_name_gen, ExitOnExceptionHandler
 from scgid.gct import Gct 
 from scgid.codons import Codons
 from scgid.kmers import Kmers
 from scgid.consensus import Consensus
 
-bin_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-pkg_home = os.path.dirname(bin_dir)
-
-logging.config.fileConfig(os.path.join(bin_dir, "logging_config.ini"))
-
 class SCGid(LoggingEntity, object):
     def __init__(self, call):
+        
+        self.SCGID_SCRIPTS = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+        self.SCGID = os.path.dirname(self.SCGID_SCRIPTS)
+
+        logging.config.fileConfig(os.path.join(self.SCGID_SCRIPTS, "logging_config.ini"))
+
+        self.modcall = {
+            'init': InitialConfig,
+            'gct': Gct,
+            'codons': Codons,
+            'kmers': Kmers,
+            'consensus': Consensus
+        }
+
         self.logger = logging.getLogger("SCGid")
         self.logger.info(f"Calling {call}")
-        
-        if call == "gct":
-            result = Gct().run()
 
-        elif call == "codons":
-            result = Codons().run()
-
-        elif call == "kmers":
-            result = Kmers().run()
+        if not os.path.isfile( os.path.join(self.SCGID, "config.yaml") ):
             
-        elif call == "consensus":
-            result = Consensus().run()
+            self.modcall['init']().run()
         
+        else:
+
+            self.modcall[call]().run()
+
         self.logger.info("Final message from root.")
 
-if len(sys.argv) == 1 or sys.argv[1] in ['-h','--help','-help']:
-    print (help_msg)
-    sys.exit(0)
+def main():
+    if len(sys.argv) == 1 or sys.argv[1] in ['-h','--help','-help']:
+        print (help_msg)
+        sys.exit(0)
 
-if sys.argv[1] in ['gct', 'codons', 'kmers', 'consensus']:
-    SCGid(sys.argv[1])
+    else:
+        SCGid(sys.argv[1])
 
+'''
 elif sys.argv[1] == "init":
     arguments = sys.argv[2:]
     call = os.path.join(pkg_home,'bin','init_setup.py')
@@ -160,3 +168,4 @@ elif sys.argv[1] == "qualcheck":
 else:
     print("\nERROR: Bad module selection. Printing help screen...\n")
     print(help_msg)
+'''

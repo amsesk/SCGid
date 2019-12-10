@@ -9,7 +9,7 @@ else:
     import argparse
     import shutil
     from scgid.dependencies import CaseDependency, ConstDependency
-    from scgid.module import Module, Config
+    from scgid.module import Module
     from scgid.reuse import ReusableOutputManager, ReusableOutput, augustus_predict, protein_blast
     from scgid.modcomm import LoggingEntity, Head
     from scgid.parsers import BlastoutParser, PathAction, SPDBTaxonomy
@@ -97,6 +97,8 @@ else:
 
             prot = AASequenceCollection().from_fasta(self.config.get("prot"))
             self.logger.info(f"Read protein fasta at `{self.config.get('prot')}`")
+
+            print(self.config)
 
             p = BlastoutParser()
             p.load_from_file(self.config.get("blastout"))

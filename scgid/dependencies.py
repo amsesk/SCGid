@@ -51,7 +51,6 @@ class Dependencies(LoggingEntity, ErrorHandler):
             d.available = d.is_available(avail)
 
         missing = [x.cmd for x in self.deps if isinstance(x, ConstDependency) and not x.available] + [x.cmd for x in self.deps if isinstance(x, CaseDependency) and parsed_args.__dict__[x.couplet.argid] == x.couplet.value and not x.available]
-        print(missing)
         if len(missing) > 0:
             return MissingDependencyError(f"Required dependency missing from environment: {','.join(missing)}")
         else:

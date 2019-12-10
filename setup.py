@@ -7,18 +7,19 @@ setup(
     description = (
         "A consensus approach to contig filtering and genome prediction from single-cell sequencing libraries"
         ),
-    license = "GNU General Public License v3.0",
+    license = "GPL-3.0",
     keywords = "",
     url = "http://www.github.com/amsesk/SCGid",
-    packages=["scgid","scgid.tests"],
-    package_data={
-        'scgid':['*.ini', 'scgid/config.yaml', 'scgid/config.yaml.local']
-    },
+    packages=["scgid", "tests"],
+    data_files=[
+        ('scgid', ['scgid/logging_config.ini']),
+    ],
+    include_package_data=True,
     #py_modules=['scgid.scgid', 'scgid.gct', 'scgid.codons', 'scgid.kmers', 'logging'],
     #scripts=['bin/scgid'],
     entry_points={
         'console_scripts': [
-            'scgid = scgid.scgid'
+            'scgid = scgid.main:main'
         ]
     },
     install_requires=[
@@ -26,7 +27,8 @@ setup(
         'pandas>=0.23.4',
         'ete3>=3.1.1',
         'plotly',
-        'pyyaml'
+        'pyyaml',
+        'urllib3'
     ]
 )
 

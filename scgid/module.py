@@ -6,6 +6,7 @@ import shutil
 import logging
 import subprocess
 import pkg_resources
+from scgid.config import Config
 from scgid.dependencies import Dependencies
 from scgid.reuse import ReusableOutputManager
 from scgid.modcomm import logger_name_gen, LoggingEntity, ErrorHandler
@@ -82,78 +83,5 @@ class Module (object):
                 print "[FATAL {}] {}".format(ErrType, Err)
                 sys.exit(Err.exitcode)
     '''
-
-class Config(LoggingEntity, ErrorHandler):
-    def __init__(self):
-        self.logger = logging.getLogger( logger_name_gen() )
-        self.SCGID_SCRIPTS = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-        self.SCGID = os.path.dirname(self.SCGID_SCRIPTS)
-        self.OUTPUTSUFFIX = "_scgid_output"
-        self.dependencies = Dependencies()
-        self.reusable = ReusableOutputManager()
-        self.__dict__.update(self.load_yaml(self.SCGID))
-        self.rundir = None
-
-    def __repr__(self):
-        return "\n".join(["{}: {}".format(key, setting) for key,setting in self.__dict__.items()])
-
-    def get(self, value):
-        try: 
-            attr = getattr(self, value)
-            return attr
-
-        except KeyError:
-            raise KeyError(f"Member `{value}` not in Config")
-        
-
-    def load_cmdline(self, parsed_args, case_args={}):
-        for unset in [x for x,p in parsed_args.__dict__.items() if p is None]:
-            try:
-                setattr(parsed_args, unset, getattr(self, unset))
-            except:
-                self.logger.debug(f"No loaded value from config.yaml to set None-type argument `{unset}`")
-        
-        self.__dict__.update( vars(parsed_args) )
-    
-    def load_argdict(self, argdict):
-        self.__dict__.update(argdict)
-
-    def load_yaml(self, HOME):
-        #loc = os.path.join(pkg_resources.resource_string(__name__, "config.yaml"))
-        loc = os.path.join(self.SCGID, "config.yaml")
-        if os.path.isfile( "{}.local".format(loc) ):
-            loc = "{}.local".format(loc)
-        try:
-            with open(loc, 'r') as cfg:
-                return yaml.load(cfg, Loader=yaml.BaseLoader)
-        except IOError:
-            return ConfigError("Unable to locate configuration file")
-        except:
-            return ConfigError("Malformed configuration file")
-    
-    def check_case_args (self, mapper_dict):
-        for option_arg, options in mapper_dict.items():
-            choice = options[self.get(option_arg)]
-            if not choice["bool"]:
-                self.logger.warning(choice["warning"])
-
-    def check_esom_path (self):
-        # Check to see if esomtrn exists in configured `esom_path`
-        if not os.path.isfile(
-            os.path.join(
-                self.get("esom_path"),
-                "esomtrn"
-            )):
-            # If not, try to find it in environment and update config
-            p = subprocess.Popen( ["which", "esomtrn"], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
-            path, _ = p.communicate()
-            if p.returncode:
-                return ConfigError("ESOM path unset in $PATH or config.yaml")
-
-            else:
-                path = os.path.dirname(path).decode("utf-8")
-            
-                # Updating config here
-                setattr(self, "esom_path", path)
 
             
