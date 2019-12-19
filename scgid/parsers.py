@@ -15,6 +15,10 @@ class PathAction(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         setattr(namespace, self.dest, os.path.abspath(values))
 
+class OutputPathStore(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        setattr(namespace, self.dest, os.path.abspath(values))
+
 class SPDBTaxonomy(LoggingEntity):
     def __init__ (self, path_to_taxdb):
         self.logger = logging.getLogger ( logger_name_gen() )

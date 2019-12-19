@@ -36,7 +36,11 @@ class Dependencies(LoggingEntity, ErrorHandler):
             )
 
     def __repr__(self):
-        return ", ".join([x.cmd for x in self.deps])
+        cmd_list = [x.cmd for x in self.deps]
+        if len(cmd_list) == 0:
+            return "no_dependencies"
+        else:
+            return ", ".join([x.cmd for x in self.deps])
 
     def populate (self, *deps):
         self.deps = list(deps)

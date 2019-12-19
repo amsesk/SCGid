@@ -28,7 +28,8 @@ setup(
         'ete3>=3.1.1',
         'plotly',
         'pyyaml',
-        'urllib3'
+        'urllib3',
+        'importlib-metadata'
     ]
 )
 

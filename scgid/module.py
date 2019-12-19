@@ -10,7 +10,8 @@ from scgid.config import Config
 from scgid.dependencies import Dependencies
 from scgid.reuse import ReusableOutputManager
 from scgid.modcomm import logger_name_gen, LoggingEntity, ErrorHandler
-from scgid.error import ConfigError
+from scgid.error import ConfigError, ArgumentError
+from scgid.parsers import PathAction
 
 class Module (object):
     def __init__(self, call, name = None, parent=None):
@@ -18,6 +19,8 @@ class Module (object):
         self.name = call
         self.caller = inspect.stack()[1][0].f_locals["self"]
         self.wd = None
+        self.argparser = None
+        self.parsed_args = None
         if name is not None:
             self.name = name
         self.logger = None
@@ -27,6 +30,15 @@ class Module (object):
     
     def generate_argparser(self):
         pass
+
+    def check_path_args(self):
+        for arg in [v for v in self.argparser.__dict__["_actions"] if isinstance(v, PathAction)]:
+            path = getattr(self.parsed_args, arg.dest)
+            if not os.path.isfile(path):
+                return ArgumentError(f"Value given for `{'|'.join(arg.option_strings)}` does not exist: {path}")
+            else:
+                pass
+        return None
     
     def start_logging(self):
         self.logger = logging.getLogger( logger_name_gen() )

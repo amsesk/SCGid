@@ -11,14 +11,14 @@ help_msg = """
 (___/ \___)\___/(____)(____/ 
 
 Author: Kevin Amses (amsesk@umich.edu)
-Version: 0.1b
+Version: 1.0.0
 
 Usage: scgid <module> [args...] --> try scgid <module> -h|--help to see module-specific arguments
 
 Specify a module to continue:
     
     Core Modules
-        gct      Generate a draft genome based on gc-coverage-taxonomy plots
+        gct         Generate a draft genome based on gc-coverage-taxonomy plots
         kmers       Generate a draft genome based on an ESOM map
         codons      Generate a draft genome based on relative synonymous codon usage
         consensus   Draw majority rule between three draft genomes into final consensus-derived draft genome
@@ -26,9 +26,9 @@ Specify a module to continue:
 
     Utilities
         init        Install and configure scgid 
-        update      Update scgid from GitHub repo
-        buildtaxdb  Build a scgid-compatible taxonomy database from tab-seperated uniprot taxonomy file
-        spdb-update    Check for new versions of the swissprot protein database and download if available
+        update      Update SCGid from GitHub repo
+        buildtaxdb  Build a SCGid-compatible taxonomy database from tab-seperated uniprot taxonomy file
+        spdb-update Check for new versions of the swissprot protein database and download if available
         spexpand    Expand your version of the swissprot database to include more proteins with lineage information 
 
 """
@@ -46,6 +46,7 @@ from scgid.gct import Gct
 from scgid.codons import Codons
 from scgid.kmers import Kmers
 from scgid.consensus import Consensus
+from scgid.update_swissprot import SPDBUpdater, SPDBExpander
 
 class SCGid(LoggingEntity, object):
     def __init__(self, call):
@@ -60,7 +61,9 @@ class SCGid(LoggingEntity, object):
             'gct': Gct,
             'codons': Codons,
             'kmers': Kmers,
-            'consensus': Consensus
+            'consensus': Consensus,
+            'spdbup': SPDBUpdater,
+            'spexpand': SPDBExpander
         }
 
         self.logger = logging.getLogger("SCGid")
@@ -71,8 +74,13 @@ class SCGid(LoggingEntity, object):
             self.modcall['init']().run()
         
         else:
+            if call in self.modcall:
+                self.modcall[call]().run()
+            
+            else:
+                self.logger.critical(f"Bad module selection `{call}`")
+                print(help_msg)
 
-            self.modcall[call]().run()
 
         self.logger.info("Final message from root.")
 
@@ -85,13 +93,6 @@ def main():
         SCGid(sys.argv[1])
 
 '''
-elif sys.argv[1] == "init":
-    arguments = sys.argv[2:]
-    call = os.path.join(pkg_home,'bin','init_setup.py')
-    arguments.insert(0,call)
-    py = sys.executable
-    arguments.insert(0,py)
-    subprocess.call(arguments)
 
 elif sys.argv[1] == "buildtaxdb":
     arguments = sys.argv[2:]
@@ -120,30 +121,6 @@ elif sys.argv[1] == "spdb-update":
 elif sys.argv[1] == "update":
     arguments = sys.argv[2:]
     call = os.path.join(pkg_home,'bin','update_scgid.py')
-    arguments.insert(0,call)
-    py = sys.executable
-    arguments.insert(0,py)
-    subprocess.call(arguments)
-
-elif sys.argv[1] == "kmers":
-    arguments = sys.argv[2:]
-    call = os.path.join(pkg_home,'bin','esom.py')
-    arguments.insert(0,call)
-    py = sys.executable
-    arguments.insert(0,py)
-    subprocess.call(arguments)
-
-elif sys.argv[1] == "gc-cov":
-    arguments = sys.argv[2:]
-    call = os.path.join(pkg_home,'bin','gc_cov.py')
-    arguments.insert(0,call)
-    py = sys.executable
-    arguments.insert(0,py)
-    subprocess.call(arguments)
-
-elif sys.argv[1] == "consensus":
-    arguments = sys.argv[2:]
-    call = os.path.join(bin_dir,'consensus.py')
     arguments.insert(0,call)
     py = sys.executable
     arguments.insert(0,py)

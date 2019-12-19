@@ -30,6 +30,12 @@ class ModuleError(FatalError):
         self.errno = 4
         self.catch()
 
+class ArgumentError(FatalError):
+    def __init__(self, msg):
+        super().__init__(msg)
+        self.errno = 5
+        self.catch()
+
 class InternalError(FatalError):
     def __init__(self, msg):
         super().__init__(msg)

@@ -111,19 +111,3 @@ if args.defaults:
     replace_line_by_pattern(os.path.join(bin_dir,"settings.py"), "path_to_taxdb=", "path_to_taxdb=\"%s\"" % (taxdb_end))
 
 logger.info("scgid spexpand DONE")
-
-#%%
-
-
-
-
-
-
-
-
-
-
-
-
-
-
