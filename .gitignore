@@ -5,3 +5,4 @@ database/*
 push_scgid_updates_to_github.sh
 bin/ncbi_get_lineage.py
 config.yaml.local
+scgidenv

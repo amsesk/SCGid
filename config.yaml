@@ -1,7 +1,8 @@
 clams_path: /Applications/ClaMS-CLI/ClaMS-CLI.jar
+default_spdb: /Users/aimzez/dev/SCGid/database/uniprot_sprot_13-Nov-2019.fasta
+default_taxdb: /Users/aimzez/dev/SCGid/database/uniprot_sprot_13-Nov-2019.fasta.taxdb
 esom_path: /Applications/ESOM
+mpicmd: mpirun
 path_to_Rscript: /usr/local/bin/Rscript
-path_to_spdb: /Users/aimzez/dev/SCGid/database/uniprot_sprot_13-Nov-2019.fasta
-path_to_taxdb: /Users/aimzez/dev/SCGid/database/uniprot_sprot_13-Nov-2019.fasta.taxdb
 spdb_version: 13-Nov-2019
-taxonomy_all_tab: /Users/aimzez/dev/SCGid/database/uniprot-taxonomy-all-120919.tab
+taxonomy_all_tab: /Users/aimzez/dev/SCGid/database/uniprot-taxonomy-all-121019.tab
