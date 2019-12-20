@@ -10,7 +10,7 @@ setup(
     license = "GPL-3.0",
     keywords = "",
     url = "http://www.github.com/amsesk/SCGid",
-    packages=["scgid", "tests"],
+    packages=["scgid"],
     data_files=[
         ('scgid', ['scgid/logging_config.ini']),
     ],
@@ -28,7 +28,8 @@ setup(
         'ete3>=3.1.1',
         'plotly',
         'pyyaml',
-        'urllib3'
+        'urllib3',
+        'importlib_metadata'
     ]
 )
 
