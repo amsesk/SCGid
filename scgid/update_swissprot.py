@@ -4,12 +4,15 @@ import yaml
 import sys
 import subprocess
 import argparse
+import ast
 from scgid.modcomm import pkgloc, Head, ErrorHandler, LoggingEntity, logger_name_gen
 from scgid.parsers import PathAction, OutputPathStore
 from scgid.module import Module
 from scgid.db import UniprotFTP
 from scgid.library import output_cols
 from scgid.error import ModuleError
+from scgid.parsers import SPDBTaxonomy
+from scgid.config import FileConfig
 
 class SPDBUpdater:
     def __init__(self):
@@ -73,6 +76,8 @@ class SPDBExpander(Module, Head, LoggingEntity, ErrorHandler):
         self.argparser = self.generate_argparser()
         self.parsed_args = self.argparser.parse_args()
         self.config.load_cmdline( self.parsed_args )
+
+        self.taxdb = SPDBTaxonomy(self.config.get("taxdb"))
     
     def generate_argparser(self):
         parser = argparse.ArgumentParser()
@@ -90,24 +95,43 @@ class SPDBExpander(Module, Head, LoggingEntity, ErrorHandler):
         self.start_logging()
         self.check_path_args()
 
-        # Write expanded SPDB
-        with open(self.config.get("output"), 'w') as f_out:
-            for f_in in [self.config.get("spdb"), self.config.get("proteins")]:
+        old_spdb = self.config.get('spdb')
+        old_taxdb  = self.config.get('taxdb')
+
+        new_spdb = self.config.get('output')
+        new_taxdb = f"{self.config.get('output')}.taxdb"
+
+        # Write expanded SPDB fasta
+        self.logger.info(f"Loading and expanding SPDB [{old_spdb}]")
+        with open(new_spdb, 'w') as f_out:
+            for f_in in [old_spdb, self.config.get("proteins")]:
                 for line in open(f_in, 'r'):
                     f_out.write(line)
-        
-        with open(self.config.get("lineages", 'r')) as supplied_lineages:
-            lines = supplied_lineages.readlines()
-            
-            # Split file into key and lineage for taxdb (hopefully)
-            spl = [l.split("\t") for l in lines]
 
-            # Check length of splits to ensure that there are TWO columns, one key with one tab-separated lineage
-            right_ncols = [len(s) != 2 for s in spl]
-            if not any(right_ncols):
-                return ModuleError(f"Supplied lineage file is not correctly formatted. Two-column tab-separated list expected, but found rows with ncols {','.join([i for i in right_ncols if i != 2])}")
+        # Write expanded SPDB taxonomy database
+        self.logger.info(f"Loading and expanding SP taxdb [{old_taxdb}]")
+        with open(new_taxdb, 'w') as f_out:
+            self.taxdb.expand( self.config.get("lineages") )
+            self.taxdb.write(f_out)
+
+        # Update config.yaml if -d|--defaults is True
+        if self.config.defaults:
+            config = FileConfig()
+            config.load_yaml()
+            config.settings["default_spdb"] = new_spdb
+            config.settings["default_taxdb"] = new_taxdb
             
-            else:
+            # Overwrite existing config.yaml (setting path == None overwrites same path read from)
+            config.write_yaml(path = None)
+
+            self.simplelogger.info(f"\nOverwrote defaults in `{config.path}`:\n{'-'*40}")
+            self.simplelogger.info(f"default_spdb\t{new_spdb}")
+            self.simplelogger.info(f"default_taxdb\t{new_taxdb}\n")
+
+        
+        
+
+
                 
 
 
