@@ -98,8 +98,6 @@ else:
             prot = AASequenceCollection().from_fasta(self.config.get("prot"))
             self.logger.info(f"Read protein fasta at `{self.config.get('prot')}`")
 
-            print(self.config)
-
             p = BlastoutParser()
             p.load_from_file(self.config.get("blastout"))
             p.get_best_hits()
