@@ -3,14 +3,37 @@ import os
 import inspect
 import sys
 from scgid.module import Module
-from scgid.modcomm import LoggingEntity, ErrorHandler, Head
+from scgid.modcomm import LoggingEntity, ErrorHandler, Head, pkgloc
+from scgid.library import subprocessP, subprocessC
 
 class SCGIDUpdate(Module, LoggingEntity, ErrorHandler, Head):
     def __init__(self):
+        self.HOME, self.SCRIPTS = pkgloc()
+        self.url = "https://www.github.com/amsesk/SCGid.git"
+        self.local_branch = "dev"
+        self.remote_branch = f"origin/{self.local_branch}"
+
+    def check(self):
         pass
 
     def run(self):
-        pass
+        self.start_logging()
+
+        self.logger.info(f"Entering SCGid package directory at `{self.HOME}`")
+        os.chdir(self.HOME)
+
+        p = subprocess.Popen(["git","remote","update"], shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        local_tag, _ = subprocess.Popen(["git", "rev-parse", self.local_branch], shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
+        remote_tag, _ = subprocess.Popen(["git", "rev-parse", self.remote_branch], shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
+
+        local_tag = local_tag.strip()
+        remote_tag = local_tag.strip()
+
+        if local_tag == remote_tag:
+            self.logger.info(f"SCGid is already up to date with {self.remote_branch}.")
+        else:
+            self.logger.info("SCGid can be updated.")
 
 '''
 ## some variables
