@@ -815,7 +815,7 @@ class WindowManager(object):
             lines.append( row.format(
                 "Pattern", 
                 "#target",
-                "total",
+                "#total",
                 "p(target)",
                 "#ntarget",
                 "total",
