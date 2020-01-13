@@ -46,6 +46,7 @@ from scgid.codons import Codons
 from scgid.kmers import Kmers
 from scgid.consensus import Consensus
 from scgid.update_swissprot import SPDBUpdater, SPDBExpander
+from scgid.update_scgid import SCGIDUpdate
 
 class SCGid(LoggingEntity, object):
     def __init__(self, call):
@@ -62,7 +63,8 @@ class SCGid(LoggingEntity, object):
             'kmers': Kmers,
             'consensus': Consensus,
             'spdbup': SPDBUpdater,
-            'spexpand': SPDBExpander
+            'spexpand': SPDBExpander,
+            'update': SCGIDUpdate
         }
 
         self.logger = logging.getLogger("SCGid")
