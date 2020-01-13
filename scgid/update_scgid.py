@@ -36,6 +36,7 @@ class SCGIDUpdate(Module, LoggingEntity, ErrorHandler, Head):
             self.logger.info("SCGid can be updated.")
 
         ## A change! ##
+        ## Another one ###
 '''
 ## some variables
 scgid_bin = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
