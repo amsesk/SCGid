@@ -27,8 +27,7 @@ Specify a module to continue:
     Utilities
         init        Install and configure scgid 
         update      Update SCGid from GitHub repo
-        buildtaxdb  Build a SCGid-compatible taxonomy database from tab-seperated uniprot taxonomy file
-        spdb-update Check for new versions of the swissprot protein database and download if available
+        spdbup      Check for new versions of the swissprot protein database and download if available
         spexpand    Expand your version of the swissprot database to include more proteins with lineage information 
 
 """
