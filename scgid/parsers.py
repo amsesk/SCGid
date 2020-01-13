@@ -19,7 +19,7 @@ class OutputPathStore(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         setattr(namespace, self.dest, os.path.abspath(values))
 
-class SPDBTaxonomy(LoggingEntity):
+class SPDBTaxonomy(LoggingEntity, ErrorHandler):
     def __init__ (self, path_to_taxdb):
         self.logger = logging.getLogger ( logger_name_gen() )
         self.taxdb = {}
@@ -32,6 +32,7 @@ class SPDBTaxonomy(LoggingEntity):
     def __repr__(self):
         return '\n'.join([f"{k}: {v}" for k,v in self.taxdb.items()])
 
+    # This is a bad name since it specifically applies to InfoTable
     def add_lineage_info (self, parser):
         for p in parser.parsed_hits:
             try:
@@ -47,6 +48,35 @@ class SPDBTaxonomy(LoggingEntity):
                     lineage = "Not_in_taxdb"
             p["lineage"] = lineage
         return parser
+
+    def expand(self, path_to_lineage) -> None:
+        with open(path_to_lineage) as f_in:
+            lines = f_in.readlines()
+        
+        # Split file into key,lineage for taxdb (hopefully)
+        spl = [ [i.strip() for i in l.split("\t")] for l in lines]
+
+        # Check length of splits to ensure that there are TWO columns, one key with one tab-separated lineage
+        right_ncols = [len(s) == 2 for s in spl]
+        
+        if not all(right_ncols):
+            return ModuleError("Supplied lineage file is not correctly formatted. Expected two-column tab-separated list.")
+        
+        else:
+            lines_parsed = {i[0]: i[1] for i in spl} 
+            self.taxdb.update(lines_parsed)
+
+        return None
+
+    # Takes open file object - use within with statment
+    # This should be done with most functions that read/write to files I think - makes tests with StringIO easy
+    def write(self, f_out) -> None:
+        f_out.write("{\n")
+        f_out.write(",\n".join([f"'{key}': '{lin}'" for key,lin in self.taxdb.items()]))
+        f_out.write("\n}")
+        return None
+
+
 
 class BlastoutParser(LoggingEntity, ErrorHandler):
     def __init__(self):
