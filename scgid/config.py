@@ -22,6 +22,38 @@ scgid_banner = """
 \__ \( (__( (_-. _)(_  )(_) )
 (___/ \___)\___/(____)(____/ 
         """
+class FileConfig(object):
+    def __init__(self, path = None):
+        self.SCGID_SCRIPTS = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+        self.SCGID = os.path.dirname(self.SCGID_SCRIPTS)
+        self.settings = None
+        
+        if path is None:
+            self.path = os.path.join(self.SCGID, "config.yaml")
+        else:
+            self.path = path
+
+    def load_yaml(self) -> None:
+        if os.path.isfile( f"{self.path}.local" ):
+            loc = f"{self.path}.local"
+        try:
+            with open(self.path, 'r') as cfg:
+
+                self.settings = yaml.load(cfg, Loader=yaml.BaseLoader)
+                return None
+
+        except IOError:
+            return ConfigError("Unable to locate configuration file")
+        except:
+            return ConfigError("Malformed configuration file")
+
+    def write_yaml(self, path = None) -> None:
+        if path is None:
+            path = self.path
+        with open(path, 'w') as cfg:
+            yaml.dump(self.settings, cfg)
+        return None
+
 
 class Config(LoggingEntity, ErrorHandler):
     def __init__(self):
@@ -31,7 +63,7 @@ class Config(LoggingEntity, ErrorHandler):
         self.OUTPUTSUFFIX = "_scgid_output"
         self.dependencies = Dependencies()
         self.reusable = ReusableOutputManager()
-        self.__dict__.update(self.load_yaml(self.SCGID))
+        self.__dict__.update( self.load_yaml() )
         self.rundir = None
 
     def __repr__(self):
@@ -58,7 +90,7 @@ class Config(LoggingEntity, ErrorHandler):
     def load_argdict(self, argdict):
         self.__dict__.update(argdict)
 
-    def load_yaml(self, HOME):
+    def load_yaml(self):
         #loc = os.path.join(pkg_resources.resource_string(__name__, "config.yaml"))
         loc = os.path.join(self.SCGID, "config.yaml")
         if os.path.isfile( "{}.local".format(loc) ):
