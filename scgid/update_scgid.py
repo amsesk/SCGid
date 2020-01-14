@@ -2,39 +2,113 @@ import subprocess
 import os
 import inspect
 import sys
+import signal
 from scgid.module import Module
 from scgid.modcomm import LoggingEntity, ErrorHandler, Head, pkgloc
-from scgid.library import subprocessP, subprocessC
+from scgid.library import subprocessP, subprocessC, output_cols
+from scgid.config import FileConfig
 
 class SCGIDUpdate(Module, LoggingEntity, ErrorHandler, Head):
-    def __init__(self):
+    def __init__(self, is_automated_update=False):
         self.HOME, self.SCRIPTS = pkgloc()
         self.url = "https://www.github.com/amsesk/SCGid.git"
         self.local_branch = "dev"
         self.remote_branch = f"origin/{self.local_branch}"
+        self.is_automated_update = is_automated_update
 
-    def check(self):
-        pass
-
-    def run(self):
-        self.start_logging()
-
-        self.logger.info(f"Entering SCGid package directory at `{self.HOME}`")
-        os.chdir(self.HOME)
-
-        p = subprocess.Popen(["git","remote","update"], shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
+    def is_updatable (self) -> bool:
         local_tag, _ = subprocess.Popen(["git", "rev-parse", self.local_branch], shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
         remote_tag, _ = subprocess.Popen(["git", "rev-parse", self.remote_branch], shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
 
         local_tag = local_tag.strip()
-        remote_tag = local_tag.strip()
+        remote_tag = remote_tag.strip()
 
         if local_tag == remote_tag:
-            self.logger.info(f"SCGid is already up to date with {self.remote_branch}.")
+            return False
         else:
-            self.logger.info("SCGid can be updated.")
+            return True
 
+    def ask_user_to_update(self):
+
+        # Wait 60 seconds for response below
+        TIMEOUT = 120
+
+        def timeout_handler():
+            pass
+            #self.logger.info(f"No response from user in {TIMEOUT} seconds. Continuing without update.")
+    
+        signal.signal(signal.SIGALRM, timeout_handler)
+
+        response = None
+        signal.alarm(TIMEOUT)
+        try:
+            response = input(f"{output_cols['GREEN']}Your version of SCGid is behind the official repository. Would you like to update SCGid now? {output_cols['RESET']}[y/n] ")
+
+            while True:
+                if response.lower() == 'y':
+
+                    # Cancel alarm
+                    signal.alarm(0)
+
+                    # We're going to update
+                    return True
+
+                elif response.lower() == 'n':
+
+                    # Cancel alarm
+                    signal.alarm(0)
+
+                    # We're not going to update
+                    return False
+
+                else:
+
+                    # Wait for an accepted response
+                    continue
+
+        except:
+
+            print("TIMEOUT")
+
+            # Return False (i.e., Do Not Update) if we don't receive input within 120 seconds - the user is probably not running this interactively
+            return False
+
+    def update_scgid(self):
+        
+        # Load current config.yaml to preserve configuration settings after update
+        config = FileConfig()
+        config.load_yaml()
+
+        ## Hard reset from origin
+        fetch = ['git','fetch','--all']
+        reset = ['git','reset','--hard','origin/dev]
+
+        subprocess.call(fetch)
+        subprocess.call(reset)
+
+        config.write_yaml()
+
+    def run(self):
+        self.start_logging()
+
+        os.chdir(self.HOME)
+
+        if not self.is_updatable():
+            pass
+            #self.logger.info(f"SCGid is already up to date with {self.remote_branch}.")
+        else:
+            if self.is_automated_update:
+                conduct_update = self.ask_user_to_update()
+                if conduct_update:
+                    self.update_scgid()
+            else:
+                print("You asked for this so no need to ask to update.")
+                self.update_scgid()
+
+            
+
+
+        ## A change! ##
 '''
 ## some variables
 scgid_bin = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
