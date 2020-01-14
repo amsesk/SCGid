@@ -73,6 +73,7 @@ class SCGid(LoggingEntity, object):
             SCGIDUpdate(is_automated_update=True).run()
 
         self.logger.info("AHHHHHHHHHHHHHHHHHHHHH!")
+        self.logger.info("BLAHHHHH!")
 
         self.logger.info(f"Calling {call}")
 
