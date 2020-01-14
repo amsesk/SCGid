@@ -81,7 +81,7 @@ class SCGIDUpdate(Module, LoggingEntity, ErrorHandler, Head):
 
         ## Hard reset from origin
         fetch = ['git','fetch','--all']
-        reset = ['git','reset','--hard','origin/dev]
+        reset = ['git','reset','--hard','origin/dev']
 
         subprocess.call(fetch)
         subprocess.call(reset)
