@@ -17,6 +17,11 @@ class SCGIDUpdate(Module, LoggingEntity, ErrorHandler, Head):
         self.is_automated_update = is_automated_update
 
     def is_updatable (self) -> bool:
+
+        # Fetch origin to confirm updated or not
+        fetch = ['git','fetch','--all']
+        subprocess.call(fetch)
+
         local_tag, _ = subprocess.Popen(["git", "rev-parse", self.local_branch], shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
         remote_tag, _ = subprocess.Popen(["git", "rev-parse", self.remote_branch], shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
 
