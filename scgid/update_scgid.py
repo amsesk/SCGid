@@ -84,10 +84,11 @@ class SCGIDUpdate(Module, LoggingEntity, ErrorHandler, Head):
         config = FileConfig()
         config.load_yaml()
 
+        os.chdir(os.getenv("HOME"))
+        clone = ['git', 'clone', url]
+        subprocess.call(clone)
 
-        pull = ['git', 'pull', 'origin']
-        subprocess.call(pull)
-
+        os.chdir("SCGid")
         install = ['python', 'setup.py', 'install']
         subprocess.call(install)
 
