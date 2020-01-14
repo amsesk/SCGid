@@ -72,9 +72,6 @@ class SCGid(LoggingEntity, object):
         if self.modcall != "update":
             SCGIDUpdate(is_automated_update=True).run()
 
-        self.logger.info("AHHHHHHHHHHHHHHHHHHHHH!")
-        self.logger.info("BLAHHHHH!")
-
         self.logger.info(f"Calling {call}")
 
         if not os.path.isfile( os.path.join(self.SCGID, "config.yaml") ):
