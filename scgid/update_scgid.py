@@ -79,10 +79,16 @@ class SCGIDUpdate(Module, LoggingEntity, ErrorHandler, Head):
         config = FileConfig()
         config.load_yaml()
 
+
+        pull = ['git', 'pull', 'origin']
+        subprocess.call(pull)
+
+        '''
         ## Hard reset from origin
         fetch = ['git','fetch','--all']
-        reset = ['git','reset','--hard','origin/dev']
-
+        reset = ['git','reset','--hard',self.remote_branch]
+        '''
+        
         subprocess.call(fetch)
         subprocess.call(reset)
 
