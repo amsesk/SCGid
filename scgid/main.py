@@ -69,7 +69,7 @@ class SCGid(LoggingEntity, object):
 
         self.logger = logging.getLogger("SCGid")
         
-        if modcall != "update":
+        if self.modcall != "update":
             SCGIDUpdate(is_automated_update=True).run()
 
         self.logger.info("SCGID IS EVEN DIFFERENTER NOW!")
