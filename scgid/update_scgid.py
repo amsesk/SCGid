@@ -106,6 +106,7 @@ class SCGIDUpdate(Module, LoggingEntity, ErrorHandler, Head):
     def run(self):
         self.start_logging()
 
+        here = os.getcwd()
         os.chdir(self.HOME)
 
         if not self.is_updatable():
@@ -119,6 +120,8 @@ class SCGIDUpdate(Module, LoggingEntity, ErrorHandler, Head):
             else:
                 print("You asked for this so no need to ask to update.")
                 self.update_scgid()
+
+        os.chdir(here)
 
             
 
