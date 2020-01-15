@@ -170,7 +170,7 @@ class InitialConfig(object):
                 if entry == "DEBUG_SKIP":
                     break
                 else:
-                    if stuff["target"](entry):
+                    if not stuff["target"](entry):
                         report_outcome (stuff['question'], "RED", "[NOT FOUND, TRY AGAIN]")
                     else:
                         report_outcome (stuff['question'], "GREEN", "[GOOD]")
@@ -212,7 +212,7 @@ class InitialConfig(object):
                         print(f"SPDB @ {path_to_spdb}")
 
                     self.initial_config['default_spdb'] = path_to_spdb
-                    self.initial_config['spdb_version'] = time.strftime("%d-%b-%Y", uniprot.reldate)
+                    self.initial_config['spdb_version'] = uniprot.remote_reldate
 
                     break
                 else: #entry.lower() is 'n'
