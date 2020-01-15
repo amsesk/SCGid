@@ -167,12 +167,15 @@ class InitialConfig(object):
         for var, stuff in tpdeps.items():
             while True:
                 entry = input(stuff['question'])
-                if not stuff["target"](entry):
-                    report_outcome (stuff['question'], "RED", "[NOT FOUND, TRY AGAIN]")
-                else:
-                    report_outcome (stuff['question'], "GREEN", "[GOOD]")
-                    tpdeps[var] = entry
+                if entry == "DEBUG_SKIP":
                     break
+                else:
+                    if stuff["target"](entry):
+                        report_outcome (stuff['question'], "RED", "[NOT FOUND, TRY AGAIN]")
+                    else:
+                        report_outcome (stuff['question'], "GREEN", "[GOOD]")
+                        tpdeps[var] = entry
+                        break
 
         self.initial_config.update(tpdeps)
     
@@ -202,13 +205,11 @@ class InitialConfig(object):
                     except FileExistsError:
                         pass
                     
-                    uniprot = UniprotFTP()
-                    uniprot.login()
-                    path = uniprot.retr_spdb(self.DB)
-                    uniprot.logout()
-
-                    path_to_spdb = uniprot.decompress(path)
-                    print(f"SPDB @ {path_to_spdb}")
+                    with UniprotFTP() as uniprot:
+                        path = uniprot.retr_spdb(self.DB)
+                        path_to_spdb = uniprot.decompress(path)
+                        
+                        print(f"SPDB @ {path_to_spdb}")
 
                     self.initial_config['default_spdb'] = path_to_spdb
                     self.initial_config['spdb_version'] = time.strftime("%d-%b-%Y", uniprot.reldate)
