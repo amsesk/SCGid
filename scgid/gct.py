@@ -12,7 +12,7 @@ else:
     from scgid.module import Module
     from scgid.reuse import ReusableOutputManager, ReusableOutput, augustus_predict, protein_blast
     from scgid.modcomm import LoggingEntity, Head
-    from scgid.parsers import BlastoutParser, PathAction, SPDBTaxonomy
+    from scgid.parsers import BlastoutParser, PathStore, SPDBTaxonomy
     from scgid.infotable import InfoTable, it_get_taxonomy_level
     from scgid.sequence import DNASequenceCollection, AASequenceCollection
     from scgid.flexwindow import generate_windows
@@ -66,7 +66,7 @@ else:
 
             parser = argparse.ArgumentParser()
             parser.add_argument("mod", nargs="*")
-            parser.add_argument('-n','--nucl', metavar = "contig_fasta", action=PathAction,required=True,help = "A FASTA file containing the genome assembly.")
+            parser.add_argument('-n','--nucl', metavar = "contig_fasta", action=PathStore,required=True,help = "A FASTA file containing the genome assembly.")
             parser.add_argument('-s', '--stringency', metavar = "stringency_threshold", required=False, default=0.05, help = "The proportion of annotated non-target points that are allowed to be included in the final selection window. IMPORTANT NOTE: The non-target-annotated points can still be throw-out of the final genome fasta by specifying the --toss_nontarget option.")
             parser.add_argument('-f','--prefix', metavar = 'prefix_for_output', required=False, default='scgid', help="The prefix that you would like to be used for all output files. DEFAULT = scgid")
             parser.add_argument('-g', '--targets', metavar = 'target_taxa', action='store', required=True, help="A comma-separated list with NO spaces of the taxonomic levels that the gc-coverage window should be chosen with respect to including. EXAMPLE: '-g Fungi,Eukaryota,Homo'")
@@ -74,13 +74,13 @@ else:
 
             parser.add_argument('-sp','--augustus_sp', metavar = "augustus_species", action="store",required=False, default=None, help = "Augustus species for gene predicition.")
             parser.add_argument('-e', '--evalue', metavar = 'e-value_cutoff', action = 'store', required = False, default = '1e-10', help = "The evalue cutoff for blast. Default: 1xe-10)")
-            parser.add_argument('-db', '--spdb', metavar = 'swissprot_fasta', action=PathAction, required=False, default=None,  help = "The path to your version of the swissprot database in FASTA format.")
-            parser.add_argument('-t','--taxdb', metavar = "taxonomy_db", action=PathAction, required=False, default=None, help = "The location of the taxonomy database, likely provided by an earlier script.")
+            parser.add_argument('-db', '--spdb', metavar = 'swissprot_fasta', action=PathStore, required=False, default=None,  help = "The path to your version of the swissprot database in FASTA format.")
+            parser.add_argument('-t','--taxdb', metavar = "taxonomy_db", action=PathStore, required=False, default=None, help = "The location of the taxonomy database, likely provided by an earlier script.")
             parser.add_argument('--cpus', metavar = 'cores', action = 'store', required = False, default = '1', help = "The number of cores available for blastp to use.")
 
             # MAYBE PROVIDED BY EARLIER PART OF SCRIPT
-            parser.add_argument('-b','--blastout', metavar = "blastout", action=PathAction,required=False, help = "The blast output file from a search of the swissprot database with your proteins as query. Defaults to outfmt=6 and max_target_seqs=1. Provided by earlier script.")
-            parser.add_argument('-p','--prot', metavar = "protein_fasta", action=PathAction, required=False, help = "A FASTA file containing the proteins called from the genome.")
+            parser.add_argument('-b','--blastout', metavar = "blastout", action=PathStore,required=False, help = "The blast output file from a search of the swissprot database with your proteins as query. Defaults to outfmt=6 and max_target_seqs=1. Provided by earlier script.")
+            parser.add_argument('-p','--prot', metavar = "protein_fasta", action=PathStore, required=False, help = "A FASTA file containing the proteins called from the genome.")
 
             return parser
 
