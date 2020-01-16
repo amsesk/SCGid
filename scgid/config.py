@@ -114,9 +114,11 @@ class Config(LoggingEntity, ErrorHandler):
         if not os.path.isfile(
             os.path.join(
                 self.get("esom_path"),
+                "bin",
                 "esomtrn"
             )):
-            # If not, try to find it in environment and update config
+
+            # If not, try to find it in environment and update module config
             p = subprocess.Popen( ["which", "esomtrn"], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
             path, _ = p.communicate()
             if p.returncode:
@@ -125,7 +127,7 @@ class Config(LoggingEntity, ErrorHandler):
             else:
                 path = os.path.dirname(path).decode("utf-8")
             
-                # Updating config here
+                # Updating moduleconfig here
                 setattr(self, "esom_path", path)
 
 class InitialConfig(object):
