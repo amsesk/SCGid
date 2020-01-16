@@ -275,9 +275,8 @@ class InitialConfig(object):
                             csize = os.path.getsize(dwnld_to)
                             print(CURSOR_UP_ONE,ERASE_LINE,csize)
                     break 
-                else: 
-                    entry = input("Path to taxonomy_all.tsv")
-                    self.initial_config['taxonomy_all_tab'] = entry
+                else:
+                    self.initial_config['taxonomy_all_tab'] = None
                     print ("> Okay, but you'll have to download and build the taxonomy database manually before using SCGid. See README for more information.")
                     break
 
