@@ -32,6 +32,7 @@ class Module (object):
         pass
 
     def check_path_args(self):
+        warnings.warn("Using PathStore (versus PathAction) in argparser nullifies that need for this function to be run at start of module.", DeprecationWarning)
         for arg in [v for v in self.argparser.__dict__["_actions"] if isinstance(v, PathAction)]:
             path = getattr(self.parsed_args, arg.dest)
             if not os.path.isfile(path):

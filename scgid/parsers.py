@@ -4,6 +4,7 @@ import argparse
 import os
 import re
 import ast
+import warnings
 from collections import namedtuple
 from ete3 import NCBITaxa
 from scgid.error import ModuleError
@@ -13,7 +14,20 @@ from scgid.sequence import AASequenceCollection
 
 class PathAction(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
+
+        # Deprecating for PathStore usage instead
+        warnings.warn("PathAction deprecated, use PathStore instead", DeprecationWarning)
+
         setattr(namespace, self.dest, os.path.abspath(values))
+
+# Check validity of Path before storing. Raises IO error if path is invalid, stores in argparser if valid.
+class PathStore(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        absolute_path = os.path.abspath(values)
+        if not os.path.exists(absolute_path):
+            ModuleError(f"Unable to access input file: {absolute_path}")
+            #raise IOError(f"Unable to access input file: {absolute_path}")
+        setattr(namespace, self.dest, absolute_path)
 
 class OutputPathStore(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):

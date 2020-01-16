@@ -114,9 +114,11 @@ class Config(LoggingEntity, ErrorHandler):
         if not os.path.isfile(
             os.path.join(
                 self.get("esom_path"),
+                "bin",
                 "esomtrn"
             )):
-            # If not, try to find it in environment and update config
+
+            # If not, try to find it in environment and update module config
             p = subprocess.Popen( ["which", "esomtrn"], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
             path, _ = p.communicate()
             if p.returncode:
@@ -125,7 +127,7 @@ class Config(LoggingEntity, ErrorHandler):
             else:
                 path = os.path.dirname(path).decode("utf-8")
             
-                # Updating config here
+                # Updating moduleconfig here
                 setattr(self, "esom_path", path)
 
 class InitialConfig(object):
@@ -167,12 +169,15 @@ class InitialConfig(object):
         for var, stuff in tpdeps.items():
             while True:
                 entry = input(stuff['question'])
-                if not stuff["target"](entry):
-                    report_outcome (stuff['question'], "RED", "[NOT FOUND, TRY AGAIN]")
-                else:
-                    report_outcome (stuff['question'], "GREEN", "[GOOD]")
-                    tpdeps[var] = entry
+                if entry == "DEBUG_SKIP":
                     break
+                else:
+                    if not stuff["target"](entry):
+                        report_outcome (stuff['question'], "RED", "[NOT FOUND, TRY AGAIN]")
+                    else:
+                        report_outcome (stuff['question'], "GREEN", "[GOOD]")
+                        tpdeps[var] = entry
+                        break
 
         self.initial_config.update(tpdeps)
     
@@ -202,16 +207,14 @@ class InitialConfig(object):
                     except FileExistsError:
                         pass
                     
-                    uniprot = UniprotFTP()
-                    uniprot.login()
-                    path = uniprot.retr_spdb(self.DB)
-                    uniprot.logout()
-
-                    path_to_spdb = uniprot.decompress(path)
-                    print(f"SPDB @ {path_to_spdb}")
+                    with UniprotFTP() as uniprot:
+                        path = uniprot.retr_spdb(self.DB)
+                        path_to_spdb = uniprot.decompress(path)
+                        
+                        print(f"SPDB @ {path_to_spdb}")
 
                     self.initial_config['default_spdb'] = path_to_spdb
-                    self.initial_config['spdb_version'] = time.strftime("%d-%b-%Y", uniprot.reldate)
+                    self.initial_config['spdb_version'] = uniprot.remote_reldate
 
                     break
                 else: #entry.lower() is 'n'
@@ -274,9 +277,8 @@ class InitialConfig(object):
                             csize = os.path.getsize(dwnld_to)
                             print(CURSOR_UP_ONE,ERASE_LINE,csize)
                     break 
-                else: 
-                    entry = input("Path to taxonomy_all.tsv")
-                    self.initial_config['taxonomy_all_tab'] = entry
+                else:
+                    self.initial_config['taxonomy_all_tab'] = None
                     print ("> Okay, but you'll have to download and build the taxonomy database manually before using SCGid. See README for more information.")
                     break
 
