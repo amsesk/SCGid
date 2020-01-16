@@ -39,6 +39,7 @@ import os
 import inspect
 import logging
 import logging.config
+import warnings
 from scgid.config import InitialConfig
 from scgid.modcomm import LoggingEntity, logger_name_gen, ExitOnExceptionHandler
 from scgid.gct import Gct 
@@ -50,6 +51,9 @@ from scgid.update_scgid import SCGIDUpdate
 
 class SCGid(LoggingEntity, object):
     def __init__(self, call):
+
+        # Show all warnings
+        warnings.simplefilter("default")
         
         self.SCGID_SCRIPTS = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
         self.SCGID = os.path.dirname(self.SCGID_SCRIPTS)
