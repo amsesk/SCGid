@@ -85,7 +85,7 @@ class SCGIDUpdate(Module, LoggingEntity, ErrorHandler, Head):
         config.load_yaml()
 
         os.chdir(os.getenv("HOME"))
-        clone = ['git', 'clone', url]
+        clone = ['git', 'clone', self.url, "--branch", self.local_branch]
         subprocess.call(clone)
 
         os.chdir("SCGid")
