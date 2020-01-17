@@ -85,7 +85,7 @@ class SCGIDUpdate(Module, LoggingEntity, ErrorHandler, Head):
         config = FileConfig()
         config.load_yaml()
 
-        temp_path = os.path.join((os.getenv("HOME"), "SCGid_temp")
+        temp_path = os.path.join(os.getenv("HOME"), "SCGid_temp")
         
         if os.path.isdir(temp_path):
             shutil.rmtree(temp_path)
