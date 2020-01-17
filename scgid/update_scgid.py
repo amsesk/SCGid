@@ -127,7 +127,7 @@ class SCGIDUpdate(Module, LoggingEntity, ErrorHandler, Head):
                 conduct_update = self.ask_user_to_update()
                 if conduct_update:
                     self.update_scgid()
-                    self.logger.info("SCGid successfully updated.")
+                    self.logger.info("SCGid successfully updated!!!!!!!!!!!!!!!!!!!!!")
             else:
                 print("You asked for this so no need to ask to update.")
                 self.update_scgid()
