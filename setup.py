@@ -12,7 +12,7 @@ setup(
     url = "http://www.github.com/amsesk/SCGid",
     packages=["scgid"],
     data_files=[
-        ('scgid', ['scgid/logging_config.ini', 'scgid/print_tetramer_freqs_deg_filter_esom_VD.pl']),
+        ('scgid', ['scgid/logging_config.ini', 'scgid/print_tetramer_freqs_deg_filter_esom_VD.pl', 'scgid/*.R']),
     ],
     include_package_data=True,
     #py_modules=['scgid.scgid', 'scgid.gct', 'scgid.codons', 'scgid.kmers', 'logging'],
