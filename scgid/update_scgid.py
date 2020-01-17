@@ -3,6 +3,7 @@ import os
 import inspect
 import sys
 import signal
+import shutil
 from scgid.module import Module
 from scgid.modcomm import LoggingEntity, ErrorHandler, Head, pkgloc
 from scgid.library import subprocessP, subprocessC, output_cols
@@ -90,7 +91,11 @@ class SCGIDUpdate(Module, LoggingEntity, ErrorHandler, Head):
 
         os.chdir("SCGid")
         install = ['python', 'setup.py', 'install']
-        subprocess.call(install)
+        p = subprocess.Popen(install, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, err = p.communitcate()
+        
+        # Remove the cloned repo following installation
+        shutil.rmtree(os.path.join(os.getenv("HOME"), "SCGid"))
 
         '''
         ## Hard reset from origin
