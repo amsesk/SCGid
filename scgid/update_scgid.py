@@ -86,16 +86,20 @@ class SCGIDUpdate(Module, LoggingEntity, ErrorHandler, Head):
         config.load_yaml()
 
         os.chdir(os.getenv("HOME"))
-        clone = ['git', 'clone', self.url, "--branch", self.local_branch]
+        
+        if os.path.isdir("SCGid_temp"):
+            shutil.rmtree("SCGid_temp")
+
+        clone = ['git', 'clone', self.url, "SCGid_temp", "--branch", self.local_branch]
         subprocess.call(clone)
 
-        os.chdir("SCGid")
+        os.chdir("SCGid_temp")
         install = ['python', 'setup.py', 'install']
         p = subprocess.Popen(install, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         out, err = p.communitcate()
         
         # Remove the cloned repo following installation
-        shutil.rmtree(os.path.join(os.getenv("HOME"), "SCGid"))
+        shutil.rmtree(os.path.join(os.getenv("HOME"), "SCGid_temp"))
 
         '''
         ## Hard reset from origin
