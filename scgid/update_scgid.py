@@ -100,7 +100,7 @@ class SCGIDUpdate(Module, LoggingEntity, ErrorHandler, Head):
         os.chdir(os.getenv("HOME"))
         
         # Remove the cloned repo following installation
-        shutil.rmtree(os.path.join(temp_path)
+        shutil.rmtree(os.path.join(temp_path))
 
         '''
         ## Hard reset from origin
