@@ -67,8 +67,8 @@ class SCGid(LoggingEntity, object):
             'kmers': Kmers,
             'consensus': Consensus,
             'spdbup': SPDBUpdater,
-            'spexpand': SPDBExpander,
-            'update': SCGIDUpdate
+            'spexpand': SPDBExpander
+            #'update': SCGIDUpdate
         }
 
         self.logger = logging.getLogger("SCGid")
