@@ -73,7 +73,8 @@ class SCGid(LoggingEntity, object):
 
         self.logger = logging.getLogger("SCGid")
         
-        if self.modcall != "update":
+        # Try to update SCGid from repo in other module calls only if being run in interactive shell
+        if self.modcall != "update" and sys.stdout.isatty():
             SCGIDUpdate(is_automated_update=True).run()
         
         self.logger.info(f"Calling {call}")
