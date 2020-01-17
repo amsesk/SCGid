@@ -26,7 +26,6 @@ Specify a module to continue:
 
     Utilities
         init        Install and configure scgid 
-        update      Update SCGid from GitHub repo
         spdbup      Check for new versions of the swissprot protein database and download if available
         spexpand    Expand your version of the swissprot database to include more proteins with lineage information 
 
@@ -47,7 +46,7 @@ from scgid.codons import Codons
 from scgid.kmers import Kmers
 from scgid.consensus import Consensus
 from scgid.update_swissprot import SPDBUpdater, SPDBExpander
-from scgid.update_scgid import SCGIDUpdate
+#from scgid.update_scgid import SCGIDUpdate
 
 class SCGid(LoggingEntity, object):
     def __init__(self, call):
