@@ -365,6 +365,9 @@ class Codons(Module, LoggingEntity, Head):
         parser.add_argument("--noplot", action="store_true", default=False, required=False, help="Turns of plotting of annotated trees to PDF.")
         parser.add_argument('--Xmx', metavar = "available_memory", action="store",required=False, default = "2g", help = "Set memoray available to run ClaMs. Specicy as such: X megabytes = Xm, X gigabytes = Xg")
 
+        parser.add_argument('-db', '--spdb', metavar = 'swissprot_fasta', action=PathStore, required=False, default=None,  help = "The path to your version of the swissprot database in FASTA format.")
+        parser.add_argument('-t','--taxdb', metavar = "taxonomy_db", action=PathStore, required=False, default=None, help = "The location of the taxonomy database, likely provided by an earlier script.")
+
         return parser
 
     def locate_cds_gff3 (self, gff3_path):
