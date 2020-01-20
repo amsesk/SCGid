@@ -7,10 +7,34 @@ import ast
 import warnings
 from collections import namedtuple
 from ete3 import NCBITaxa
-from scgid.error import ModuleError
+from scgid.error import ModuleError, ErrorClassNotImplemented
 import scgid.pkg_settings as pkg_settings
 from scgid.modcomm import get_head, logger_name_gen, LoggingEntity, ErrorHandler
 from scgid.sequence import AASequenceCollection
+
+class MalformedTaxonomyDatabaseError(ModuleError):
+    def __init__(self, taxdbpath):
+        super().__init__()
+        self.msg = f"Taxonomy database at `{taxdbpath}` improperly formatted. Run `build_taxdb.py` to generate a new one."
+        self.catch()
+
+class MalformedLineageFileError(ModuleError):
+    def __init__(self):
+        super().__init__()
+        self.msg = "Malformed lineage file supplied as argument to `-l|--lineages`."
+        self.catch()
+
+class MalformedDatabaseHeaderError(ModuleError):
+    def __init__(self, hit):
+        super().__init__()
+        self.msg = f"Unable to pull SPDB species information from line: \"{hit}\"."
+        self.catch()
+
+class MissingAccessionError(ModuleError):
+    def __init__(self, accession, spdbpath):
+        super().__init__()
+        self.msg = f"Accession `{accession}` is missing from the SPDB at `{spdbpath}`. This occurs when a different SPDB is specified from that which BLASTed against."
+        self.catch()
 
 class PathAction(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
@@ -25,8 +49,9 @@ class PathStore(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         absolute_path = os.path.abspath(values)
         if not os.path.exists(absolute_path):
-            ModuleError(f"Unable to access input file: {absolute_path}")
-            #raise IOError(f"Unable to access input file: {absolute_path}")
+            print(self.option_strings)
+            #ModuleError(f"Unable to access input file: {absolute_path}")
+            raise IOError(f"Error parsing arugment `{'|'.join(self.option_strings)}`. Input file does not exist: {absolute_path}")
         setattr(namespace, self.dest, absolute_path)
 
 class OutputPathStore(argparse.Action):
@@ -40,8 +65,12 @@ class SPDBTaxonomy(LoggingEntity, ErrorHandler):
         with open(path_to_taxdb,'r') as f:
             try:
                 self.taxdb = ast.literal_eval( f.read() )
+
             except SyntaxError:
-                ModuleError("Taxonomy database improperly formatted.")
+                return MalformedTaxonomyDatabaseError(taxdbpath = self.head.config.get("taxdb"))
+
+            except:
+                return ErrorClassNotImplemented()
 
     def __repr__(self):
         return '\n'.join([f"{k}: {v}" for k,v in self.taxdb.items()])
@@ -74,7 +103,7 @@ class SPDBTaxonomy(LoggingEntity, ErrorHandler):
         right_ncols = [len(s) == 2 for s in spl]
         
         if not all(right_ncols):
-            return ModuleError("Supplied lineage file is not correctly formatted. Expected two-column tab-separated list.")
+            return MalformedLineageFileError()
         
         else:
             lines_parsed = {i[0]: i[1] for i in spl} 
@@ -149,12 +178,15 @@ class BlastoutParser(LoggingEntity, ErrorHandler):
                 desc = spdb.loc[acc].description
 
             except KeyError:
-                return ModuleError(f" Accession `{acc}` missing from database at `{self.head.config.get('spdb')}")
+                return MissingAccessionError( accession=acc, spdbpath=self.head.config.get('spdb') )
+
+            except:
+                return ErrorClassNotImplemented()
 
             s = re.search(search_pattern, desc)
             
             if s is None:
-                return ModuleError(f"Unable to pull SPDB species information from line: \"{hit}\"")
+                return MalformedDatabaseHeaderError(hit = hit)
 
             sp_os = s.group(1).strip()
 

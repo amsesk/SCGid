@@ -47,47 +47,48 @@ def report_outcome(msg, color, outcome):
     ow_last_stdout('\r'+msg + output_cols[color] + outcome + output_cols['RESET'] + '\n')
 
 def is_fasta(f, strict=False, verbose = False):
-    lines = [l.strip() for l in open(f).readlines()]
+    with open(f, 'r') as openf:
+        lines = [l.strip() for l in openf.readlines()]
 
-    fail = False
-    has_headers = True
-    made_up_of_seqs = True
-    just_had_header = False
-    idx = 0
+        fail = False
+        has_headers = True
+        made_up_of_seqs = True
+        just_had_header = False
+        idx = 0
 
-    #lines = go_through_list(lines)
-    for line in lines:
-        if not just_had_header:
-            if re.match('^>.+',line) is not None:
-                has_headers = True
-                just_had_header = True
-            else:
-                has_headers = False
-        elif just_had_header:
-            if strict:
-                if re.match('^[-atcguATCGUgalmfwkqespvicyhrndtbzxuGALMFWKQESPVICYHRNDTBZXU*]+$',line) is not None:
-                    made_up_of_seqs = True
+        #lines = go_through_list(lines)
+        for line in lines:
+            if not just_had_header:
+                if re.match('^>.+',line) is not None:
+                    has_headers = True
+                    just_had_header = True
                 else:
-                    made_up_of_seqs = False
-            else:
-                if re.match('^[-A-Za-z*]+$',line) is not None:
-                    made_up_of_seqs = True
+                    has_headers = False
+            elif just_had_header:
+                if strict:
+                    if re.match('^[-atcguATCGUgalmfwkqespvicyhrndtbzxuGALMFWKQESPVICYHRNDTBZXU*]+$',line) is not None:
+                        made_up_of_seqs = True
+                    else:
+                        made_up_of_seqs = False
                 else:
-                    made_up_of_seqs = False
-            try:
-                if re.match('^>.+',lines[idx+1]) is not None:
-                    just_had_header = False
-            except:
-                break
-        if not has_headers or not made_up_of_seqs:
-            fail = True
-            if verbose:
-                print( f"Deviation from fasta format on line #{idx+1}" )
-        idx+=1
-    if not fail:
-        return True
-    else:
-        return False
+                    if re.match('^[-A-Za-z*]+$',line) is not None:
+                        made_up_of_seqs = True
+                    else:
+                        made_up_of_seqs = False
+                try:
+                    if re.match('^>.+',lines[idx+1]) is not None:
+                        just_had_header = False
+                except:
+                    break
+            if not has_headers or not made_up_of_seqs:
+                fail = True
+                if verbose:
+                    print( f"Deviation from fasta format on line #{idx+1}" )
+            idx+=1
+        if not fail:
+            return True
+        else:
+            return False
 
 def gff3_to_fasta(gff3, outname):
     prots = []

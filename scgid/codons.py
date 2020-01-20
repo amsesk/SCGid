@@ -7,13 +7,14 @@ import numpy as np
 from collections import namedtuple
 from ete3 import Tree, NCBITaxa
 from scgid.module import Module
-from scgid.modcomm import LoggingEntity, Head, get_head
+from scgid.modcomm import LoggingEntity, Head, get_head, ErrorHandler
 from scgid.reuse import ReusableOutput, ReusableOutputManager, augustus_predict, nucleotide_blast, protein_blast
 from scgid.dependencies import CaseDependency
 from scgid.parsers import PathStore
 from scgid.sequence import DNASequenceCollection, DNASequence, revcomp, complement
 from scgid.library import subprocessP
 from scgid.infotable import InfoTable, get_by_idx, count_unique
+from scgid.error import ModuleError
 
 SYNONYMOUS_CODONS = {
     'Phe': ['UUU','UUC'],
@@ -106,12 +107,28 @@ class CDSConcatenate(DNASequence):
 
                 self.rscu_table[c] = rscu
 
+class SmallTreeError(ModuleError):
+    def __init__(self, ntips, mincladesize):
+        super().__init__()
+        self.msg = f"The RSCU tree is small ({ntips} tips) because there were CDS concatenates that were longer than value supplied for -c|--mincladesize ({mincladesize} tips)."
+        self.catch()
+
+class NoGoodCladesError(ModuleError):
+    def __init__(self):
+        super().__init__()
+        self.msg = f"All clades of sufficient size contain more nontarget-annotated tips than target-annotated tips. Consider expanding the SPDB with `scgid spexpand` or changing the target designation supplied to `-g|--target`."
+        self.catch()
+
+
 class RSCUTree(object):
     def __init__(self, treepath):
         self.dendrogram = Tree(treepath)
         self.head = get_head()
         self.mode = self.head.config.get("mode")
-        self.best_clade = None
+
+        self.ntips = len(self.dendrogram.get_leaves())
+        self.nnodes = len(self.dendrogram.get_descendants())
+        self.ninternalnodes = self.nnodes - self.ntips
 
         if self.mode == "blastp":
             self.infotable = InfoTable()
@@ -121,9 +138,8 @@ class RSCUTree(object):
             )
             self.infotable.load(self.head.config.get("infotable"))
             self.infotable.parse_lineage()
-            '''
-
-            '''
+            
+            self.best_clade = None
 
     def annotate(self):
         self.infotable.decide_inclusion()
@@ -155,34 +171,32 @@ class RSCUTree(object):
     def pick_clade(self):
         curr_best = 0.00
         best = [] #"best" here means worth looking into, although it is going to include some real shitty trees
-        for n in self.dendrogram.iter_descendants():
-            if n.is_leaf():
-                pass
-            if len(n.get_leaves()) > 30:
-                count_t = float(len([l for l in n if l.annotation == "target"]))
-                count_nt = float(len([l for l in n if l.annotation == "nontarget"]))
-                count_unclass = float(len([l for l in n if l.annotation == "unclassified"]))
-                total_classified = float(count_t + count_nt)
-                #print count_t, count_nt, count_unclass
-                if total_classified == 0:
-                    continue
-                measure = float( (count_t - count_nt) / total_classified )
-                #print measure
-                if measure > curr_best:
-                    n.add_feature("measure",measure)
-                    n.add_feature("leaves", len(n.get_leaves()))
-                    best.append(n)
-            else:
+
+        clades_of_sufficient_size = [c for c in self.dendrogram.get_descendants() if len(c.get_leaves()) >= int(self.head.config.get("mincladesize")) and not c.is_leaf()]
+        if len(clades_of_sufficient_size) == 0:
+            SmallTreeError(self.ntips, self.head.config.get("mincladesize"))
+
+        for n in clades_of_sufficient_size:
+            count_t = float(len([l for l in n if l.annotation == "target"]))
+            count_nt = float(len([l for l in n if l.annotation == "nontarget"]))
+            count_unclass = float(len([l for l in n if l.annotation == "unclassified"]))
+
+            total_classified = float(count_t + count_nt)
+
+            if total_classified == 0:
                 continue
+            measure = float( (count_t - count_nt) / total_classified )
+            if measure > curr_best:
+                n.add_feature("measure",measure)
+                n.add_feature("leaves", len(n.get_leaves()))
+                best.append(n)
+        if len(best) == 0:
+            return NoGoodCladesError()
+
 
         #order trees in order of best measure
         #best = [n for n in best if n.measure >= 0.90]
         best = sorted(best, key=lambda x: x.measure, reverse=True)
-
-        if len(best) ==  0:
-            pass
-            #self.head.logger.critical("Tree too small.")
-            #sys.exit(7)
 
         #Bin trees based on common edges, or in other words look for sets of trees that aren't just nested within eachother from the list of best trees
         #However, based on how it's written now, if a monophyletic clade is nested within another, some (likely) poorer quality clades will include both and lead to a node ending up in multiple bins, BUT hopefully selection of the best clade from each bin sorts this out
@@ -268,7 +282,7 @@ class RSCUTree(object):
                 f.write(f"{leaf.name},{taxon},{leaf.annotation},{in_trainset}\n")
 
 
-class Codons(Module, LoggingEntity, Head):
+class Codons(Module, LoggingEntity, Head, ErrorHandler):
     def __init__(self, argdict = None):
         super().__init__(self.__class__)
         if argdict is not None:
@@ -356,8 +370,9 @@ class Codons(Module, LoggingEntity, Head):
         parser.add_argument('-x', '--exceptions', metavar = 'exceptions_to_target_taxa', action='store', required=False, default=None, help="A comma-separated list with NO spaces of any exlusions to the taxonomic levels specified in -g|--targets. For instance if you included Fungi in targets but want to exclude ascomycetes use: '-x Ascomycota'")
         parser.add_argument('-f','--prefix', metavar = 'prefix_for_output', required=False, default='scgid', help="The prefix that you would like to be used for all output files. DEFAULT = scgid")
         parser.add_argument('--cpus', metavar = 'cores', action = 'store', required = False, default = "1", help = "The number of cores available for BLAST to use.")
-        parser.add_argument('--mode', metavar = "mode", action="store",required=False, default ='blastp', help = "The type of blast results that you would like to use to annotate the tips of the RSCU tree ('blastp' or 'blastn'). This module will automatically do a blastn search of the NCBI nt database for you. At this time, a blastp search can not be run directly from this script. INSTEAD, if using mode 'blastp' (DEFAULT, recommended) you must specify a scgid blob-derived _info_table.tsv file with -i|--infotable")
+        parser.add_argument('--mode', metavar = "mode", action="store",required=False, choices=["blastp", "blastn"], default ='blastp', help = "The type of blast results that you would like to use to annotate the tips of the RSCU tree ('blastp' or 'blastn'). This module will automatically do a blastn search of the NCBI nt database for you. At this time, a blastp search can not be run directly from this script. INSTEAD, if using mode 'blastp' (DEFAULT, recommended) you must specify a scgid blob-derived _info_table.tsv file with -i|--infotable")
         parser.add_argument('--minlen', metavar = 'minlen', action = 'store', required = False, default = '3000', help = 'Minimum length of CDS concatenate to be kept and used to build RSCU tree. Highly fragmented assemblies will need this to be reduced. Reduce in response to `Tree too small.` error.')
+        parser.add_argument('-c', '--mincladesize', metavar = 'mincladesize', action = 'store', required = False, default = '30', help = 'Minimum size of clade to serve as training set for ClaMS.')
         parser.add_argument('-sp','--augustus_sp', metavar = "augustus_species", action="store",required=False, default=None, help = "Augustus species for gene predicition. Type `augustus --species=help` for list of available species designations.")
         parser.add_argument('-e', '--evalue', metavar = 'e-value_cutoff', action = 'store', required = False, default = '1e-5', help = "The evalue cutoff for blast. Default: 1xe-5)")
         parser.add_argument('-b','--blastout', metavar = "blastout", action=PathStore, required=False, help = "The blast output file from a blastn search of the NCBI nt database with your contigs as query. If you have not done this yet, this script will do it for you.")
@@ -525,14 +540,15 @@ class Codons(Module, LoggingEntity, Head):
 
         return None
 
-    def parse_clams_out(self):
+    def parse_clams_out(self) -> list:
         to_keep = []
         count = 0
-        for line in open(f"{self.config.get('prefix')}.clams.out").readlines():
-            spl = [x.strip() for x in line.split("\t")]
-            if spl[1] == "rscu_derived_ts1":
-                count += 1
-                to_keep.append("_".join(spl[0].split("_")[0:2]))
+        with open(f"{self.config.get('prefix')}.clams.out") as clams_out:
+            for line in clams_out.readlines():
+                spl = [x.strip() for x in line.split("\t")]
+                if spl[1] == "rscu_derived_ts1":
+                    count += 1
+                    to_keep.append("_".join(spl[0].split("_")[0:2]))
         self.logger.info("ClaMs finished, {len(to_keep.index)} matches to trainset detected.")
         return to_keep
 
@@ -551,17 +567,13 @@ class Codons(Module, LoggingEntity, Head):
         # Rekey nucl by shortname
         nucl.rekey_by_shortname()
 
+        ####################################
+        #'''
         # Get coordinates and strand of CDS chunks
         self.logger.info(f"Pulling locations of CDS chunks from gff3 at `{self.config.get('gff3')}`")
         cds_coords = self.locate_cds_gff3(
             self.config.get("gff3")
         )
-
-        '''
-        for k,v in cds_coords.items():
-            if "1986" in k:
-                print(k,v)
-        '''
 
         # Concatenate all CDS sequences on each contig
         self.logger.info(f"Concatenating CDS chunks from each contig")
@@ -594,6 +606,12 @@ class Codons(Module, LoggingEntity, Head):
         # Compute RSCU distance matrix
         self.logger.info(f"Constructing RSCU distance matrix")
         distance_matrix = self.rscu_distances(cds_concatenates)
+
+        distance_matrix.to_csv("../distmat.csv", sep=",")
+        #'''
+        ###########################
+        distance_matrix = pd.read_csv("../distmat.csv", sep=",", index_col=0)
+        #print (distance_matrix.head)
 
         # Write RSCU distance matrix to NEXUS format and CSV format (for R)
         self.write_nexus(distance_matrix, f"{self.config.get('prefix')}.rscu.distance.matrix.nex")
