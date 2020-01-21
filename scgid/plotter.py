@@ -15,6 +15,8 @@ if len(sys.argv) > 1:
 else:
     it_path = "/home/aimzez/work/allomyces/Burma1F_EDFdb_scgid_output/gct/Burma1F_EDFdb.infotable.tsv"
 
+prefix = os.path.split(it_path).split(".")[0]
+
 it = InfoTable()
 it.load(it_path)
 it.df = it.df.assign(scaled_evalue = np.log(it.df.evalue))
@@ -87,4 +89,4 @@ fig.update_xaxes(row=2, col=2, showticklabels = False)
 fig.update_yaxes(row=1, col=1, showticklabels = False)
 
 #fig.show()
-plotly.offline.plot(fig, filename='name.html')
+plotly.offline.plot(fig, filename=f"{prefix}.gctplt.html", autoopen=False)
