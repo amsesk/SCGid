@@ -170,11 +170,11 @@ def random_color():
     b = random.randrange(0,255)
     return [r,g,b]
 
-def random_colors(n):
+def random_colors(n, minimum_distance=40):
     pal = []
     while len(pal) < n:
         newcolor = random_color()
-        if any([abs(newcolor[0]-x[0])<40 for x in pal]) and any([abs(newcolor[1]-x[1])<40 for x in pal]) and any([abs(newcolor[2]-x[2])<40 for x in pal]):
+        if any([abs(newcolor[0]-x[0])<minimum_distance for x in pal]) and any([abs(newcolor[1]-x[1])<minimum_distance for x in pal]) and any([abs(newcolor[2]-x[2])<minimum_distance for x in pal]):
             continue
         else:
             pal.append(newcolor)
