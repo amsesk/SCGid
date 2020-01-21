@@ -296,6 +296,9 @@ class InitialConfig(object):
 
             self.initial_config['default_taxdb'] = f"{self.initial_config['default_spdb']}.taxdb"
 
+        else:
+            self.initial_config['default_taxdb'] = None
+
     def write_config(self):
         cfg_path = os.path.join(self.HOME, "config.yaml")
         print (f"\n> Writing your settings to {cfg_path}")

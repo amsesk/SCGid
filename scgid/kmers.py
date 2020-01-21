@@ -39,6 +39,18 @@ else:
     from scgid.reuse import ReusableOutput, nucleotide_blast
     from scgid.sequence import DNASequenceCollection
 
+    class TrainingIncompleteError(ModuleError):
+        def __init__(self):
+            super().__init__()
+            self.msg = "Unable to locate *.wts or *.bm files associated with successful training. Check logfile for error output - Java OutOfMemory error the likely culprit."
+            self.catch()
+
+    class NonmutuallyExclusiveSchemeError(ModuleError):
+        def __init__(self, annotation_scheme):
+            super().__init__()
+            self.msg = f"Overlapping groups in scheme `{annotation_scheme}`... Contigs have been placed into multiple classes. Make sure your groups are exclusive and rerun."
+            self.catch()
+
     class Kmers(Module, LoggingEntity, Head):
         def __init__(self,  argdict = None):
             super().__init__(self.__class__)
@@ -237,7 +249,7 @@ else:
             self.logger.warning("SCGid is unable to catch Java OutOutMemory (OOM) handlers. Check logfile to verify successful training completion.")
 
             if not os.path.isfile(wts) or not os.path.isfile(bm):
-                return ModuleError("Unable to locate *.wts or *.bm files associated with successful training. Check logfile for error output - Java OutOfMemory error the likely culprit.")
+                return TrainingIncompleteError()
 
             return 0
 
@@ -423,7 +435,7 @@ else:
                     self.simplelogger.warning(classed.loc[classed.cid == 0][["query","superkingdom","phylum","family","species"]])
 
             if any( ['/' in cid for cid in classed.cid] ):
-                return ModuleError(f"Overlapping groups in scheme `{self.config.get('annotation_scheme')}`... Contigs have been placed into multiple classes. Make sure your groups are exclusive and rerun.")
+                return NonmutuallyExclusiveSchemeError(self.config.get('annotation_scheme'))
 
             # Write annotation file
             annot_path = f"{os.path.basename(self.config.get('nucl'))}.annotation"

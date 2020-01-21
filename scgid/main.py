@@ -26,7 +26,6 @@ Specify a module to continue:
 
     Utilities
         init        Install and configure scgid 
-        update      Update SCGid from GitHub repo
         spdbup      Check for new versions of the swissprot protein database and download if available
         spexpand    Expand your version of the swissprot database to include more proteins with lineage information 
 
@@ -47,7 +46,7 @@ from scgid.codons import Codons
 from scgid.kmers import Kmers
 from scgid.consensus import Consensus
 from scgid.update_swissprot import SPDBUpdater, SPDBExpander
-from scgid.update_scgid import SCGIDUpdate
+#from scgid.update_scgid import SCGIDUpdate
 
 class SCGid(LoggingEntity, object):
     def __init__(self, call):
@@ -67,14 +66,17 @@ class SCGid(LoggingEntity, object):
             'kmers': Kmers,
             'consensus': Consensus,
             'spdbup': SPDBUpdater,
-            'spexpand': SPDBExpander,
-            'update': SCGIDUpdate
+            'spexpand': SPDBExpander
+            #'update': SCGIDUpdate
         }
 
         self.logger = logging.getLogger("SCGid")
         
-        if self.modcall != "update":
+        ''' suspend autoupdate for now - installed SCGid HOME is not a git repo
+        # Try to update SCGid from repo in other module calls only if being run in interactive shell
+        if self.modcall != "update" and sys.stdout.isatty():
             SCGIDUpdate(is_automated_update=True).run()
+        '''
         
         self.logger.info(f"Calling {call}")
 

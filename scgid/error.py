@@ -3,13 +3,20 @@ import traceback
 from scgid.modcomm import get_error_handler
 
 class FatalError(Exception):
-    def __init__(self, msg):
+    def __init__(self):
         self.__name__ = type(self).__name__
-        self.errno = 1
+
+        # Get call stack reference to the entity that typically inherits scgid.module.Module that will be printing errors
         self.handler = get_error_handler()
+
+        # Exit status (self.errno) set to 1 generally, but should be reset in child superclasses
+        self.errno = 1
+
+        # Message text is set to something useful in terminal child class
+        self.msg = "Fatal error occurred. If you are seeing this, there is an unset self.msg in called child class that needs to be set. Please report this."
     
     def catch(self):
-        self.handler.logger.critical((f"[{self.__name__}] {self}"))
+        self.handler.logger.critical((f"[{self.__name__}] {self.msg}"))
         sys.exit(self.errno)
 
 class ConfigError(FatalError):
@@ -24,11 +31,18 @@ class MissingDependencyError(FatalError):
         self.errno = 3
         self.catch()
 
+class ErrorClassNotImplemented(FatalError):
+    def __init__(self):
+        super().__init__()
+        self.errno = 55
+        self.msg = "You are seeing this because a novel error has occured. Please report this as an issue at `https://www.github.com/amsesk/SCGid.git`"
+
 class ModuleError(FatalError):
-    def __init__(self, msg):
-        super().__init__(msg)
+    def __init__(self):
+        super().__init__()
         self.errno = 4
-        self.catch()
+        if type(self).__name__ == "ModuleError":
+            self.catch()
 
 class ArgumentError(FatalError):
     def __init__(self, msg):

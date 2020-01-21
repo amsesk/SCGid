@@ -3,6 +3,7 @@ import os
 import inspect
 import sys
 import signal
+import shutil
 from scgid.module import Module
 from scgid.modcomm import LoggingEntity, ErrorHandler, Head, pkgloc
 from scgid.library import subprocessP, subprocessC, output_cols
@@ -84,13 +85,22 @@ class SCGIDUpdate(Module, LoggingEntity, ErrorHandler, Head):
         config = FileConfig()
         config.load_yaml()
 
-        os.chdir(os.getenv("HOME"))
-        clone = ['git', 'clone', url]
+        temp_path = os.path.join(os.getenv("HOME"), "SCGid_temp")
+        
+        if os.path.isdir(temp_path):
+            shutil.rmtree(temp_path)
+
+        clone = ['git', 'clone', self.url, temp_path, "--branch", self.local_branch]
         subprocess.call(clone)
 
-        os.chdir("SCGid")
+        os.chdir(temp_path)
         install = ['python', 'setup.py', 'install']
-        subprocess.call(install)
+        p = subprocess.Popen(install, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, err = p.communitcate()
+        os.chdir(os.getenv("HOME"))
+        
+        # Remove the cloned repo following installation
+        shutil.rmtree(os.path.join(temp_path))
 
         '''
         ## Hard reset from origin
@@ -117,6 +127,7 @@ class SCGIDUpdate(Module, LoggingEntity, ErrorHandler, Head):
                 conduct_update = self.ask_user_to_update()
                 if conduct_update:
                     self.update_scgid()
+                    self.logger.info("SCGid successfully updated!!!!!!!!!!!!!!!!!!!!!")
             else:
                 print("You asked for this so no need to ask to update.")
                 self.update_scgid()
