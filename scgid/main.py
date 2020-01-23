@@ -46,7 +46,6 @@ from scgid.codons import Codons
 from scgid.kmers import Kmers
 from scgid.consensus import Consensus
 from scgid.update_swissprot import SPDBUpdater, SPDBExpander
-from scgid.library import generate_opts
 #from scgid.update_scgid import SCGIDUpdate
 
 class SCGid(LoggingEntity, object):
