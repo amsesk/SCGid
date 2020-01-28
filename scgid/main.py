@@ -147,10 +147,19 @@ class SuperConfig(object):
         return None
 
     def run(self):
-        self.root.logger.info ("Running SCGid in automated serial batch mode.")
-        self.root.logger.info (f"Order of module calls is: {bcolors.MAGENTA}SCGID GCT{bcolors.ENDC} > {bcolors.OKBLUE}SCGID CODONS{bcolors.ENDC} > {bcolors.FAIL}SCGID KMERS TRAIN{bcolors.ENDC} > {bcolors.OKGREEN}SCGID KMERS ANNOTATE{bcolors.ENDC}")
+        self.root.logger.info ("Starting SCGid in pipeline mode (serial). SCGid will run automatically as far as it can.")
+
+        self.root.logger.info (f"Order of module calls will be: {bcolors.MAGENTA}SCGID GCT{bcolors.ENDC} > {bcolors.OKBLUE}SCGID CODONS{bcolors.ENDC} > {bcolors.FAIL}SCGID KMERS TRAIN{bcolors.ENDC} > {bcolors.OKGREEN}SCGID KMERS ANNOTATE{bcolors.ENDC}")
+
         self.root.logger.info ("Following successful complettion, you need to visually evaluate and carve the ESOM topology. See README for more information.")
+
+        self.root.logger.info ("Fatal errors will halt the entire pipeline, but we'll keep track of where this run dies so you can restart after correcting errors.")
+
         self.read_options_file()
+
+        self.root.logger.info (f"Using options file at {self.opts_path}. Your options:")
+
+        self.root.simplelogger.info(f"{self.GLOBAL}\n{self.GCT}\n{self.CODONS}\n{self.KMERS}")
         
         # Run GCT with GCT and global options
         gct_opts = flatten_dict(self.GCT)
@@ -158,12 +167,12 @@ class SuperConfig(object):
         
         gct_opts.update(global_opts)
 
-        #Gct(argdict = gct_opts).run()
+        Gct(argdict = gct_opts).run()
 
         codons_opts = flatten_dict(self.CODONS)
         codons_opts.update(global_opts)
 
-        #Codons(argdict = codons_opts).run()
+        Codons(argdict = codons_opts).run()
 
         kmers_opts = flatten_dict(self.KMERS)
         kmers_opts.update(global_opts)
@@ -195,6 +204,7 @@ class SCGid(LoggingEntity, ErrorHandler, Root, object):
         }
 
         self.logger = logging.getLogger("SCGid")
+        self.simplelogger = logging.getLogger("SCGid.unfmt")
         
         ''' suspend autoupdate for now - installed SCGid HOME is not a git repo
         # Try to update SCGid from repo in other module calls only if being run in interactive shell
@@ -224,7 +234,7 @@ class SCGid(LoggingEntity, ErrorHandler, Root, object):
                     opts_path = SuperConfig(opts_path = opts_path).create_options_file()
                     self.logger.info(f"Wrote SCGid options file to `{opts_path}`. Fill it out and invoke by running `scgid run {opts_path}`.")
 
-                elif call == "run":
+                elif call == "pipeline":
                     SuperConfig(opts_path = sys.argv[2]).run()
 
                 else: 
@@ -242,57 +252,4 @@ def main():
     else:
         SCGid(sys.argv[1])
 
-'''
 
-elif sys.argv[1] == "buildtaxdb":
-    arguments = sys.argv[2:]
-    call = os.path.join(pkg_home,'bin','build_taxdb.py')
-    arguments.insert(0,call)
-    py = sys.executable
-    arguments.insert(0,py)
-    subprocess.call(arguments)
-    
-elif sys.argv[1] == "spexpand":
-    arguments = sys.argv[2:]
-    call = os.path.join(pkg_home,'bin','expand_spdb.py')
-    arguments.insert(0,call)
-    py = sys.executable
-    arguments.insert(0,py)
-    subprocess.call(arguments)
-
-elif sys.argv[1] == "spdb-update":
-    arguments = sys.argv[2:]
-    call = os.path.join(pkg_home,'bin','update_swissprot.py')
-    arguments.insert(0,call)
-    py = sys.executable
-    arguments.insert(0,py)
-    subprocess.call(arguments)
-
-elif sys.argv[1] == "update":
-    arguments = sys.argv[2:]
-    call = os.path.join(pkg_home,'bin','update_scgid.py')
-    arguments.insert(0,call)
-    py = sys.executable
-    arguments.insert(0,py)
-    subprocess.call(arguments)
-
-elif sys.argv[1] == "purify":
-    arguments = sys.argv[2:]
-    call = os.path.join(bin_dir,'purify.py')
-    arguments.insert(0,call)
-    py = sys.executable
-    arguments.insert(0,py)
-    subprocess.call(arguments)
-
-elif sys.argv[1] == "qualcheck":
-    arguments = sys.argv[2:]
-    call = os.path.join(bin_dir,'qc.py')
-    arguments.insert(0,call)
-    py = sys.executable
-    arguments.insert(0,py)
-    subprocess.call(arguments)
-
-else:
-    print("\nERROR: Bad module selection. Printing help screen...\n")
-    print(help_msg)
-'''

@@ -74,7 +74,7 @@ else:
 
             if self.argdict is not None:
 
-                #Train(argdict = self.argdict).run()
+                Train(argdict = self.argdict).run()
                 Annotate(argdict = self.argdict).run()
 
                 return None
