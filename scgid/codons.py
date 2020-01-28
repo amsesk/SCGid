@@ -16,6 +16,18 @@ from scgid.library import subprocessP
 from scgid.infotable import InfoTable, get_by_idx, count_unique
 from scgid.error import ModuleError
 
+class SmallTreeError(ModuleError):
+    def __init__(self, ntips, mincladesize):
+        super().__init__()
+        self.msg = f"The RSCU tree is small ({ntips} tips) because there were CDS concatenates that were longer than value supplied for -c|--mincladesize ({mincladesize} tips)."
+        self.catch()
+
+class NoGoodCladesError(ModuleError):
+    def __init__(self):
+        super().__init__()
+        self.msg = f"All clades of sufficient size contain more nontarget-annotated tips than target-annotated tips. Consider expanding the SPDB with `scgid spexpand` or changing the target designation supplied to `-g|--target`."
+        self.catch()
+
 SYNONYMOUS_CODONS = {
     'Phe': ['UUU','UUC'],
     'Leu': ['UUA','UUG','CUU','CUC','CUA','CUG'],
@@ -106,19 +118,6 @@ class CDSConcatenate(DNASequence):
                     rscu = self.codon_counts[c] / (amino_acid_occurences * (1/len(self.codon_counts[codons])))
 
                 self.rscu_table[c] = rscu
-
-class SmallTreeError(ModuleError):
-    def __init__(self, ntips, mincladesize):
-        super().__init__()
-        self.msg = f"The RSCU tree is small ({ntips} tips) because there were CDS concatenates that were longer than value supplied for -c|--mincladesize ({mincladesize} tips)."
-        self.catch()
-
-class NoGoodCladesError(ModuleError):
-    def __init__(self):
-        super().__init__()
-        self.msg = f"All clades of sufficient size contain more nontarget-annotated tips than target-annotated tips. Consider expanding the SPDB with `scgid spexpand` or changing the target designation supplied to `-g|--target`."
-        self.catch()
-
 
 class RSCUTree(object):
     def __init__(self, treepath):
