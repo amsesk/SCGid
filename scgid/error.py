@@ -21,13 +21,15 @@ class FatalError(Exception):
 
 class ConfigError(FatalError):
     def __init__(self, msg):
-        super().__init__(msg)
+        super().__init__()
+        self.msg = msg
         self.errno = 2
         self.catch()
 
 class MissingDependencyError(FatalError):
     def __init__(self, msg):
-        super().__init__(msg)
+        super().__init__()
+        self.msg = msg
         self.errno = 3
         self.catch()
 
@@ -43,17 +45,23 @@ class ModuleError(FatalError):
         self.errno = 4
         if type(self).__name__ == "ModuleError":
             self.catch()
+        
+        # Child error class should be catching itself
+        else:
+            pass
 
 class ArgumentError(FatalError):
     def __init__(self, msg):
-        super().__init__(msg)
+        super().__init__()
+        self.msg = msg
         self.errno = 5
         self.catch()
 
 class InternalError(FatalError):
     def __init__(self, msg):
-        super().__init__(msg)
+        super().__init__()
         self.errno = 99
+        self.msg = msg
         self.catch()
 
         

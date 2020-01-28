@@ -9,8 +9,8 @@ import pkg_resources
 from scgid.config import Config
 from scgid.dependencies import Dependencies
 from scgid.reuse import ReusableOutputManager
-from scgid.modcomm import logger_name_gen, LoggingEntity, ErrorHandler
-from scgid.error import ConfigError, ArgumentError
+from scgid.modcomm import logger_name_gen, LoggingEntity, ErrorHandler, get_head
+from scgid.error import ConfigError, ArgumentError, ModuleError
 from scgid.parsers import PathAction
 
 class Module (object):
@@ -78,6 +78,37 @@ class Module (object):
     
     def resetwd(self):
         os.chdir("../../")
+
+    def translate_argdict(self, argdict, parser):
+        modclass = (type(self).__name__)
+        #actions = eval(modclass).generate_argparser()._actions
+        actions = parser._actions
+        translated_argdict = {}
+        for a in actions:
+            if len(a.option_strings) == 0:
+                continue
+            elif len(a.option_strings) == 2:
+                key = a.option_strings[1]
+            else:
+                key = a.option_strings[0]
+            assert key.startswith("--"), "Bad argument key"
+            key = key.replace("-","")
+
+            if key in translated_argdict:
+                raise KeyError("Key duplication in options file.")
+                sys.exit(1)
+
+            else:
+                if a.metavar in argdict:
+                    value = argdict[a.metavar]
+                    if value.isspace() or len(value) == 0 or value == "None":
+                        value = None
+                    translated_argdict[key] = value
+
+                else:
+                    print(f"Problem translating key `{key}`. The key does not occur in argdict")
+        
+        return translated_argdict
 
     '''
     def try_catch_error(self, op):

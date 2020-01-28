@@ -36,8 +36,12 @@ class FileConfig(object):
     def load_yaml(self) -> None:
         if os.path.isfile( f"{self.path}.local" ):
             loc = f"{self.path}.local"
+
+        else:
+            loc = self.path
+
         try:
-            with open(self.path, 'r') as cfg:
+            with open(loc, 'r') as cfg:
 
                 self.settings = yaml.load(cfg, Loader=yaml.BaseLoader)
                 return None
