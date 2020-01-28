@@ -127,11 +127,11 @@ else:
             
             self.config.check_esom_path()
 
-        def generate_argparser(self):
+        def generate_argparser():
             parser = argparse.ArgumentParser()
             parser.add_argument("mod", nargs="*")
-            parser.add_argument('-n','--nucl', metavar = "contig_fasta", action=PathAction,required=True, help = "A FASTA file containing the nucleotide assembly. (MANDATORY)")
-            parser.add_argument('-f','--prefix', metavar = 'prefix_for_output', required=False, default='scgid', help="The prefix that you would like to be used for all output files. DEFAULT = scgid")
+            parser.add_argument('-n','--nucl', metavar = "assembly_fasta", action=PathAction,required=True, help = "A FASTA file containing the nucleotide assembly. (MANDATORY)")
+            parser.add_argument('-f','--prefix', metavar = 'output_prefix', required=False, default='scgid', help="The prefix that you would like to be used for all output files. DEFAULT = scgid")
 
             # print_tetramer_freqs options
             parser.add_argument('-m','--mintig', metavar = "minimum_contig_size", action="store",required=False, default="1000", help = "Contig size cutoff (in nucleotides) for inclusion in the ESOM training. Default = 1000 bp")
@@ -139,8 +139,8 @@ else:
             parser.add_argument('-k','--kmer', metavar = "kmer_size", action="store",required=False, default="4", help = "Kmer size for which frequencies will be calculated. Default = 4")
 
             # esomtrn options
-            parser.add_argument('--mode', metavar = "mode", action="store", required=False, choices=["det","somoclu"], default = "det", help = "Mode to train the ESOM. [det|s]")
-            parser.add_argument('--cpus', metavar = "mode", action="store", required=False, default=1, help = "Number of CPUs to use for training (Somoclu only)")
+            parser.add_argument('--mode', metavar = "training_mode", action="store", required=False, choices=["det","somoclu"], default = "det", help = "Mode to train the ESOM. [det|s]")
+            parser.add_argument('--cpus', metavar = "cpus", action="store", required=False, default=1, help = "Number of CPUs to use for training (Somoclu only)")
             parser.add_argument('-r','--rows', metavar = "rows_in_map", action="store",required=False, help = "The number of rows to be present in the output ESOM. Default = 5.5x the number of neurons")
             parser.add_argument('-c','--cols', metavar = "columns_in_map", action="store",required=False, help = "The number of columns to be present in the output ESOM. Default = 5.5x the number of neurons")
             parser.add_argument('-sr','--start_radius', metavar = "start_radius", action="store",required=False, default = '50', help = "Start radius for the ESOM. (MANDATORY)")
@@ -345,18 +345,18 @@ else:
                 CaseDependency("blastn", "blastout", None)
             )
 
-        def generate_argparser(self):
+        def generate_argparser():
             parser = argparse.ArgumentParser()
 
             parser.add_argument("mod", nargs="*")
-            parser.add_argument('-n','--nucl', metavar = "contig_fasta", action=PathAction,required=True, help = "A FASTA file containing the nucleotide assembly. (MANDATORY)")
-            parser.add_argument('-f','--prefix', metavar = 'prefix_for_output', required=False, default='scgid', help="The prefix that you would like to be used for all output files. DEFAULT = scgid")
-            parser.add_argument('-b','--blastout', metavar = "blastout", action=PathAction,required=False, help = "The blast output file from a blastn search of the NCBI nt database with your contigs as query. If you have not done this yet, this script will do it for you.")
+            parser.add_argument('-n','--nucl', metavar = "assembly_fasta", action=PathAction,required=True, help = "A FASTA file containing the nucleotide assembly. (MANDATORY)")
+            parser.add_argument('-f','--prefix', metavar = 'output_prefix', required=False, default='scgid', help="The prefix that you would like to be used for all output files. DEFAULT = scgid")
+            parser.add_argument('-b','--blastout', metavar = "nt_blast_output", action=PathAction,required=False, help = "The blast output file from a blastn search of the NCBI nt database with your contigs as query. If you have not done this yet, this script will do it for you.")
 
             parser.add_argument('-m','--mintig', metavar = "minimum_contig_size", action="store",required=False, default="1000", help = "Contig size cutoff (in nucleotides) for inclusion in the ESOM training. Default = 1000 bp")
             parser.add_argument('-w','--window', metavar = "window_size", action="store",required=False, default="1000", help = "Size of the window in which kmer frequencies are calculated. Default = 1000 bp")
 
-            parser.add_argument('--cpus', metavar = 'cores', action = 'store', required = False, default = "1", help = "The number of cores available for BLAST to use.")
+            parser.add_argument('--cpus', metavar = 'cpus', action = 'store', required = False, default = "1", help = "The number of cores available for BLAST to use.")
             parser.add_argument('-e', '--evalue', metavar = 'e-value_cutoff', action = 'store', required = False, default = '1e-5', help = "The evalue cutoff for blast. Default: 1xe-5)")
             parser.add_argument('-k','--kmer', metavar = "kmer_size", action="store",required=False, default="4", help = "Kmer size for which frequencies will be calculated. Default = 4")
             #parser.add_argument('-rm', '--rankmode', action = 'store_true', required = False, help = "Annotate contigs at the same single taxonomic rank across all contigs. (e.g. superkingdom)")

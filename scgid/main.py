@@ -39,14 +39,128 @@ import inspect
 import logging
 import logging.config
 import warnings
-from scgid.config import InitialConfig
+import itertools
+import yaml
+import scgid
+from scgid.config import InitialConfig, FileConfig
 from scgid.modcomm import LoggingEntity, logger_name_gen, ExitOnExceptionHandler
 from scgid.gct import Gct 
 from scgid.codons import Codons
 from scgid.kmers import Kmers
 from scgid.consensus import Consensus
 from scgid.update_swissprot import SPDBUpdater, SPDBExpander
+from scgid.error import ModuleError
 #from scgid.update_scgid import SCGIDUpdate
+
+def flatten_dict(nested_dict):
+    flattened_dict = {}
+    for _,d in nested_dict.items():
+        for k,v in d.items(): 
+            flattened_dict[k] = v
+    return flattened_dict
+
+class SuperConfig(object):
+    def __init__(self, opts_path):
+        self.opts_path = opts_path
+        self.GLOBAL = {}
+        self.GCT = {}
+        self.KMERS = {}
+        self.CODONS = {}
+
+    def create_options_file(self) -> str:
+        gct_args = Gct.generate_argparser()._actions
+        kmersT_args = scgid.kmers.Train.generate_argparser()._actions
+        kmersA_args = scgid.kmers.Train.generate_argparser()._actions
+        codons_args = Codons.generate_argparser()._actions
+
+        gct_vars = {o.metavar: o for o in gct_args if o.metavar is not None}
+        kmers_vars = {o.metavar: o for o in kmersT_args if o.metavar is not None}
+        kmers_vars.update({o.metavar: o for o in kmersA_args if o.metavar is not None})
+        codons_vars = {o.metavar: o for o in codons_args if o.metavar is not None}
+
+        #print(dir(gct_vars["assembly_fasta"]))
+
+        self.GCT.update(gct_vars)
+        self.KMERS.update(kmers_vars)
+        self.CODONS.update(codons_vars)
+
+        all_vars = dict(gct_vars, **kmers_vars)
+        all_vars.update(codons_vars)
+
+        for arg in iter( set(itertools.chain(gct_vars, kmers_vars, codons_vars)) ):
+            if ( 
+                (arg in gct_vars and arg in kmers_vars) or
+                (arg in kmers_vars and arg in codons_vars) or
+                (arg in gct_vars and arg in codons_vars)
+                ):
+
+                self.GLOBAL[arg] = all_vars[arg]
+
+            else:
+                pass
+
+        cfg = FileConfig()
+        cfg.load_yaml()
+        
+        for metavar, opt in all_vars.items():
+            try:
+                dest = opt.option_strings[1].replace("-","")
+            except IndexError:
+                continue
+
+            if opt.default is None and f"default_{dest}" in cfg.settings:
+                self.GLOBAL[metavar].default = cfg.settings[f"default_{dest}"]
+
+
+        for s, _ in self.GLOBAL.items():
+            for modopts in [self.GCT, self.KMERS, self.CODONS]:
+                modopts.pop(s, None)
+
+
+        opts_path = self.opts_path
+
+        with open(opts_path, 'w') as opts_file:
+            for mod in ["GLOBAL", "GCT", "KMERS", "CODONS"]:
+
+                opts = getattr(self, mod)
+
+                required = [ f"    {o.metavar}: {o.default}" for k,o in opts.items() if o.required ]
+                optional = [ f"    {o.metavar}: {o.default}" for k,o in opts.items() if not o.required ]
+
+                opts_file.write (f"{mod.upper()}:\n")
+                if len(required) > 0:
+                    opts_file.write ("  REQUIRED:\n")
+                    opts_file.write ("\n".join(required))
+                    opts_file.write ("\n")
+                if len(optional) > 0:
+                    opts_file.write ("  OPTIONAL:\n")
+                    opts_file.write ("\n".join(optional))
+                    opts_file.write ("\n")
+
+        return opts_path
+
+
+    def read_options_file(self):
+        super_config = FileConfig(path=self.opts_path)
+        super_config.load_yaml()
+
+        self.GLOBAL = super_config.settings["GLOBAL"]
+        self.GCT = super_config.settings["GCT"]
+        self.KMERS = super_config.settings["KMERS"]
+        self.CODONS = super_config.settings["CODONS"]
+
+        return None
+
+    def run(self):
+        self.read_options_file()
+        
+        # Run GCT with GCT and global options
+        gct_opts = flatten_dict(self.GCT)
+        global_opts = flatten_dict(self.GLOBAL)
+        
+        gct_opts.update(global_opts)
+
+        Gct(argdict = gct_opts).run()
 
 class SCGid(LoggingEntity, object):
     def __init__(self, call):
@@ -67,7 +181,6 @@ class SCGid(LoggingEntity, object):
             'consensus': Consensus,
             'spdbup': SPDBUpdater,
             'spexpand': SPDBExpander,
-            'genopts': generate_opts
             #'update': SCGIDUpdate
         }
 
@@ -90,8 +203,23 @@ class SCGid(LoggingEntity, object):
                 self.modcall[call]().run()
             
             else:
-                self.logger.critical(f"Bad module selection `{call}`")
-                print(help_msg)
+                if call == "genopts":
+                    try:
+                        opts_path = sys.argv[2]
+                    except IndexError:
+                        opts_path = "scgid.opts"
+                    except:
+                        return ModuleError()
+
+                    opts_path = SuperConfig(opts_path = opts_path).create_options_file()
+                    self.logger.info(f"Wrote SCGid options file to `{opts_path}`. Fill it out and invoke by running `scgid run {opts_path}`.")
+
+                elif call == "run":
+                    SuperConfig(opts_path = sys.argv[2]).run()
+
+                else: 
+                    self.logger.critical(f"Bad module selection `{call}`")
+                    print(help_msg)
 
 
         self.logger.info("Final message from root.")
