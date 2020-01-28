@@ -37,6 +37,17 @@ class spinner():
             return str()
 '''
 
+class bcolors:
+    MAGENTA = '\033[95m'
+    CYAN = '\033[96m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
 def ow_last_stdout(string):
     sys.stdout.write(CURSOR_UP_ONE)
     sys.stdout.write(ERASE_LINE)
@@ -203,42 +214,13 @@ def spdb_grab_os(spdb): ## takes a per_line generator as arg (like file_yield_li
             all_sp_os.append(sp_os)
     return list(set(all_sp_os))
 
-'''
-def pickle_loader (pklFile):
-    try:
-        while True:
-            yield pickle.load(pklFile)
-    except EOFError:
-            pass
 
-def pkl_fasta_in_out (org_fname, seq_type = "nucl", spades = False):
-    #pkl_fname = org_fname.split("/")[-1]+'.pkl'
-    pkl_fname = "{}.pkl".format(org_fname)
-    #if os.path.isfile(os.getcwd()+"/"+pkl_fname):
-    if os.path.isfile(pkl_fname) and os.stat(org_fname).st_ctime < os.stat(pkl_fname).st_ctime:
-        #print "LOADING FROM
-        objlist = OrderedDict()
-        with open(pkl_fname,'rb') as infile:
-            headers = []
-            obj = []
-            for header, sequence in pickle_loader(infile):
-                headers.append(header)
-                obj.append(sequence)
-            objlist = dict(zip(headers,obj))
-            if seq_type == "nucl":
-                return DNASequenceCollection().from_dict(objlist)
-            else:
-                return AASequenceCollection().from_dict(objlist)
-
-    else:
-        #print "MAKING NEW PKL"
-        if seq_type == "nucl":
-            objlist = DNASequenceCollection().from_fasta(org_fname, spades)
-        else:
-            objlist = AASequenceCollection().from_fasta(org_fname)
-
-        with open(pkl_fname,'wb') as output:
-            for seq in objlist.odict.items():
-                pickle.dump(seq, output, pickle.HIGHEST_PROTOCOL)
-    return objlist
-'''
+# This function takes a 2-nested dictionary and flattens it into a new dictionary
+# Primary keys are discarded
+# Duplicated secondary keys will overwrite eachother
+def flatten_dict(nested_dict):
+    flattened_dict = {}
+    for _,d in nested_dict.items():
+        for k,v in d.items(): 
+            flattened_dict[k] = v
+    return flattened_dict

@@ -43,25 +43,20 @@ import itertools
 import yaml
 import scgid
 from scgid.config import InitialConfig, FileConfig
-from scgid.modcomm import LoggingEntity, logger_name_gen, ExitOnExceptionHandler
+from scgid.modcomm import LoggingEntity, ErrorHandler, logger_name_gen, ExitOnExceptionHandler, get_root, Root
 from scgid.gct import Gct 
 from scgid.codons import Codons
 from scgid.kmers import Kmers
 from scgid.consensus import Consensus
 from scgid.update_swissprot import SPDBUpdater, SPDBExpander
 from scgid.error import ModuleError
+from scgid.library import flatten_dict, bcolors
 #from scgid.update_scgid import SCGIDUpdate
-
-def flatten_dict(nested_dict):
-    flattened_dict = {}
-    for _,d in nested_dict.items():
-        for k,v in d.items(): 
-            flattened_dict[k] = v
-    return flattened_dict
 
 class SuperConfig(object):
     def __init__(self, opts_path):
         self.opts_path = opts_path
+        self.root = get_root()
         self.GLOBAL = {}
         self.GCT = {}
         self.KMERS = {}
@@ -70,7 +65,7 @@ class SuperConfig(object):
     def create_options_file(self) -> str:
         gct_args = Gct.generate_argparser()._actions
         kmersT_args = scgid.kmers.Train.generate_argparser()._actions
-        kmersA_args = scgid.kmers.Train.generate_argparser()._actions
+        kmersA_args = scgid.kmers.Annotate.generate_argparser()._actions
         codons_args = Codons.generate_argparser()._actions
 
         gct_vars = {o.metavar: o for o in gct_args if o.metavar is not None}
@@ -152,6 +147,9 @@ class SuperConfig(object):
         return None
 
     def run(self):
+        self.root.logger.info ("Running SCGid in automated serial batch mode.")
+        self.root.logger.info (f"Order of module calls is: {bcolors.MAGENTA}SCGID GCT{bcolors.ENDC} > {bcolors.OKBLUE}SCGID CODONS{bcolors.ENDC} > {bcolors.FAIL}SCGID KMERS TRAIN{bcolors.ENDC} > {bcolors.OKGREEN}SCGID KMERS ANNOTATE{bcolors.ENDC}")
+        self.root.logger.info ("Following successful complettion, you need to visually evaluate and carve the ESOM topology. See README for more information.")
         self.read_options_file()
         
         # Run GCT with GCT and global options
@@ -160,9 +158,21 @@ class SuperConfig(object):
         
         gct_opts.update(global_opts)
 
-        Gct(argdict = gct_opts).run()
+        #Gct(argdict = gct_opts).run()
 
-class SCGid(LoggingEntity, object):
+        codons_opts = flatten_dict(self.CODONS)
+        codons_opts.update(global_opts)
+
+        #Codons(argdict = codons_opts).run()
+
+        kmers_opts = flatten_dict(self.KMERS)
+        kmers_opts.update(global_opts)
+
+        Kmers(argdict = kmers_opts).run()
+
+        return 0
+
+class SCGid(LoggingEntity, ErrorHandler, Root, object):
     def __init__(self, call):
 
         # Show all warnings

@@ -4,6 +4,9 @@ import sys
 import os
 
 # Log naming via callstack
+class Root:
+    pass
+    
 class LoggingEntity(object):
     pass
 
@@ -67,6 +70,20 @@ def get_head():
             cls_stack_dedup.append(i)
 
     return [x for x in cls_stack_dedup if isinstance(x, Head)][0]
+
+def get_root():
+    callstack = callstack_clsfilt( 
+            get_callstack()
+        )
+    cls_stack = [x.f_locals["self"] for x in callstack]
+    cls_stack_dedup = []
+
+    # Dedepulicate list
+    for i in cls_stack:
+        if i not in cls_stack_dedup:
+            cls_stack_dedup.append(i)
+
+    return [x for x in cls_stack_dedup if isinstance(x, Root)][0]
 
 def get_error_handler():
     callstack = callstack_clsfilt( 

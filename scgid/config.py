@@ -101,6 +101,7 @@ class Config(LoggingEntity, ErrorHandler):
             loc = "{}.local".format(loc)
         try:
             with open(loc, 'r') as cfg:
+                self.logger.info (f"Using package configuration file located at `{loc}`")
                 return yaml.load(cfg, Loader=yaml.BaseLoader)
         except IOError:
             return ConfigError("Unable to locate configuration file")
@@ -121,6 +122,7 @@ class Config(LoggingEntity, ErrorHandler):
                 "bin",
                 "esomtrn"
             )):
+            self.logger.warning(f"Invalid path to ESOM specified in config.yaml: `{self.get('esom_path')}`")
 
             # If not, try to find it in environment and update module config
             p = subprocess.Popen( ["which", "esomtrn"], stdout = subprocess.PIPE, stderr = subprocess.PIPE)

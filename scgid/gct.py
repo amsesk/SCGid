@@ -23,6 +23,7 @@ else:
             if argdict is not None:
                 translated_args = self.translate_argdict(argdict, Gct.generate_argparser())
                 self.config.load_argdict(translated_args)
+                self.parsed_args = self.config
             else:
                 self.argparser = Gct.generate_argparser()
                 self.parsed_args = self.argparser.parse_args()
@@ -74,7 +75,7 @@ else:
             parser.add_argument('-x', '--exceptions', metavar = 'exception_taxa', action='store', required=False, default=None, help="A comma-separated list with NO spaces of any exlusions to the taxonomic levels specified in -g|--targets. For instance if you included Fungi in targets but want to exclude ascomycetes use: '-x Ascomycota'")
 
             parser.add_argument('-sp','--augustus_sp', metavar = "augustus_species", action="store",required=False, default=None, help = "Augustus species for gene predicition.")
-            parser.add_argument('-e', '--evalue', metavar = 'evalue_cutoff', action = 'store', required = False, default = '1e-10', help = "The evalue cutoff for blast. Default: 1xe-10)")
+            parser.add_argument('-e', '--evalue', metavar = 'blast_evalue_cutoff', action = 'store', required = False, default = '1e-10', help = "The evalue cutoff for blast. Default: 1xe-10)")
             parser.add_argument('-db', '--spdb', metavar = 'swissprot_fasta', action=PathStore, required=False, default=None,  help = "The path to your version of the swissprot database in FASTA format.")
             parser.add_argument('-t','--taxdb', metavar = "swissprot_taxdb", action=PathStore, required=False, default=None, help = "The location of the taxonomy database, likely provided by an earlier script.")
             parser.add_argument('--cpus', metavar = 'cpus', action = 'store', required = False, default = '1', help = "The number of cores available for blastp to use.")

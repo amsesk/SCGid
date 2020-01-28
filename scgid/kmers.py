@@ -34,7 +34,7 @@ else:
     from scgid.error import ModuleError
     from scgid.library import file_grep, subprocessP, subprocessC, random_colors
     from scgid.modcomm import LoggingEntity, Head, ErrorHandler, logger_name_gen
-    from scgid.parsers import PathAction,BlastoutParser
+    from scgid.parsers import PathStore, BlastoutParser
     from scgid.dependencies import CaseDependency
     from scgid.reuse import ReusableOutput, nucleotide_blast
     from scgid.sequence import DNASequenceCollection
@@ -54,6 +54,7 @@ else:
     class Kmers(Module, LoggingEntity, Head):
         def __init__(self,  argdict = None):
             super().__init__(self.__class__)
+            self.argdict = argdict
 
         def update_ESOM_HOME(self, path_to_esomstart, new_home):
             with open(path_to_esomstart, 'r') as f:
@@ -71,35 +72,46 @@ else:
 
         def run(self):
 
-            # Print ESOM module help message if a task has not been selected - malformed argument string
-            if len(sys.argv) < 3:
-                print (esom_help)
-                return 1
+            if self.argdict is not None:
 
-            elif sys.argv[2].startswith("-"):
-                print (esom_help)
-                return 1
+                #Train(argdict = self.argdict).run()
+                Annotate(argdict = self.argdict).run()
+
+                return None
 
             else:
-                if sys.argv[2] == "train":
-                    Train().run()
+                # Print ESOM module help message if a task has not been selected - malformed argument string
+                if len(sys.argv) < 3:
+                    print (esom_help)
+                    return 1
 
-                elif sys.argv[2] == "annotate":
-                    Annotate().run()
-
-                elif sys.argv[2] == "extract":
-                    Extract().run()
+                elif sys.argv[2].startswith("-"):
+                    print (esom_help)
+                    return 1
 
                 else:
-                    print(esom_help)
-                    sys.exit(2)
+                    if sys.argv[2] == "train":
+                        Train().run()
+
+                    elif sys.argv[2] == "annotate":
+                        Annotate().run()
+
+                    elif sys.argv[2] == "extract":
+                        Extract().run()
+
+                    else:
+                        print(esom_help)
+                        sys.exit(2)
 
 
     class Train(Kmers, LoggingEntity, Head, ErrorHandler):
         def __init__(self, argdict = None):
             super().__init__(self.__class__)
             if argdict is not None:
-                self.config.load_argdict(argdict)
+                translated_args = self.translate_argdict(argdict, Train.generate_argparser())
+                print (translated_args)
+                self.config.load_argdict(translated_args)
+                self.parsed_args = self.config
             else:
                 self.argparser = self.generate_argparser()
                 self.parsed_args = self.argparser.parse_args()
@@ -130,7 +142,7 @@ else:
         def generate_argparser():
             parser = argparse.ArgumentParser()
             parser.add_argument("mod", nargs="*")
-            parser.add_argument('-n','--nucl', metavar = "assembly_fasta", action=PathAction,required=True, help = "A FASTA file containing the nucleotide assembly. (MANDATORY)")
+            parser.add_argument('-n','--nucl', metavar = "assembly_fasta", action=PathStore,required=True, help = "A FASTA file containing the nucleotide assembly. (MANDATORY)")
             parser.add_argument('-f','--prefix', metavar = 'output_prefix', required=False, default='scgid', help="The prefix that you would like to be used for all output files. DEFAULT = scgid")
 
             # print_tetramer_freqs options
@@ -219,12 +231,12 @@ else:
 
             #Alter hard-coded memory-availability in esomstart to match user-specified resources
             self.specify_Xmx_esom(
-                os.path.join( self.config.get("esom_path"), "esomstart"), self.config.get("Xmx")
+                os.path.join( self.config.get("esom_path"), "bin", "esomstart"), self.config.get("Xmx")
                 )
 
             self.logger.info(f"Training ESOM in mode `{self.config.get('mode')}`")
             cmd = [
-                os.path.join( self.config.get("esom_path"), "esomtrn"),
+                os.path.join( self.config.get("esom_path"), "bin", "esomtrn"),
                 "--permute",
                 "--out", wts,
                 "-b", bm,
@@ -320,7 +332,9 @@ else:
         def __init__(self, argdict = None):
             super().__init__(self.__class__)
             if argdict is not None:
-                self.config.load_argdict(argdict)
+                translated_args = self.translate_argdict(argdict, Annotate.generate_argparser())
+                self.config.load_argdict(translated_args)
+                self.parsed_args = self.config
             else:
                 self.argparser = self.generate_argparser()
                 self.parsed_args = self.argparser.parse_args()
@@ -349,19 +363,21 @@ else:
             parser = argparse.ArgumentParser()
 
             parser.add_argument("mod", nargs="*")
-            parser.add_argument('-n','--nucl', metavar = "assembly_fasta", action=PathAction,required=True, help = "A FASTA file containing the nucleotide assembly. (MANDATORY)")
+            parser.add_argument('-n','--nucl', metavar = "assembly_fasta", action=PathStore,required=True, help = "A FASTA file containing the nucleotide assembly. (MANDATORY)")
             parser.add_argument('-f','--prefix', metavar = 'output_prefix', required=False, default='scgid', help="The prefix that you would like to be used for all output files. DEFAULT = scgid")
-            parser.add_argument('-b','--blastout', metavar = "nt_blast_output", action=PathAction,required=False, help = "The blast output file from a blastn search of the NCBI nt database with your contigs as query. If you have not done this yet, this script will do it for you.")
+            parser.add_argument('-b','--blastout', metavar = "nt_blast_output", action=PathStore,required=False, help = "The blast output file from a blastn search of the NCBI nt database with your contigs as query. If you have not done this yet, this script will do it for you.")
 
             parser.add_argument('-m','--mintig', metavar = "minimum_contig_size", action="store",required=False, default="1000", help = "Contig size cutoff (in nucleotides) for inclusion in the ESOM training. Default = 1000 bp")
             parser.add_argument('-w','--window', metavar = "window_size", action="store",required=False, default="1000", help = "Size of the window in which kmer frequencies are calculated. Default = 1000 bp")
 
             parser.add_argument('--cpus', metavar = 'cpus', action = 'store', required = False, default = "1", help = "The number of cores available for BLAST to use.")
-            parser.add_argument('-e', '--evalue', metavar = 'e-value_cutoff', action = 'store', required = False, default = '1e-5', help = "The evalue cutoff for blast. Default: 1xe-5)")
+            parser.add_argument('-e', '--evalue', metavar = 'blast_evalue_cutoff', action = 'store', required = False, default = '1e-10', help = "The evalue cutoff for blast. Default: 1xe-5)")
             parser.add_argument('-k','--kmer', metavar = "kmer_size", action="store",required=False, default="4", help = "Kmer size for which frequencies will be calculated. Default = 4")
+            parser.add_argument('-s','--annotation_scheme', metavar = 'annotation_scheme', action = 'store', required = True, help = "The annotation scheme to use in target_except annotation mode (RECOMMENDED). Groups MUST be mutually exclusive to avoid overlap and unincluded groups will be arbitrarily marked as 'Unclassified'. You ABSOLUTELY MUST use this basic syntax: '-s|--annotation_schem target1^exception1,excetions2/target2^exception1/target3/etc...'. Example: '-s|--annotation_scheme Eukaryota^Fungi,Metazoa/Fungi/Metazoa/Bacteria^Proteobacteria/Proteobacteria'. See documention for detailed information and more examples.")
+            
             #parser.add_argument('-rm', '--rankmode', action = 'store_true', required = False, help = "Annotate contigs at the same single taxonomic rank across all contigs. (e.g. superkingdom)")
             #parser.add_argument('-te', '--targetexcept', action = 'store_true', required = False, help = "Annotate contigs at a varietry of taxonomic ranks across all contigs. (e.g. Eukaryota, except Fungi). Must be used in combination with -s|--annotation_scheme.")
-            parser.add_argument('-s','--annotation_scheme', metavar = 'annotation_scheme', action = 'store', required = True, help = "The annotation scheme to use in target_except annotation mode (RECOMMENDED). Groups MUST be mutually exclusive to avoid overlap and unincluded groups will be arbitrarily marked as 'Unclassified'. You ABSOLUTELY MUST use this basic syntax: '-s|--annotation_schem target1^exception1,excetions2/target2^exception1/target3/etc...'. Example: '-s|--annotation_scheme Eukaryota^Fungi,Metazoa/Fungi/Metazoa/Bacteria^Proteobacteria/Proteobacteria'. See documention for detailed information and more examples.")
+            
             #parser.add_argument('-i','--infotable', metavar = "infotable", action="store",required=False, help = "The scgid gc-cov-derived infotable generated by a blastp search of a swissprot-style protein database.")
             #parser.add_argument('--mode', metavar = "mode", action="store",required=False, default ='blastn', help = "The type of blast results that you would like to use to topology ('blastp' or 'blastn'). This module will automatically do a blastn search of the NCBI nt database for you. At this time, a blastp search can not be run directly from this script. INSTEAD, if using mode 'blastp' (DEFAULT, recommended) you must specify a scgid blob-derived <prefix>_info_table.tsv file with -i|--infotable")
 
@@ -411,6 +427,8 @@ else:
 
             bestfile = "{}.best".format(self.config.get("blastout"))
             taxidfile= "{}.best.taxids".format(self.config.get("blastout"))
+
+            sys.exit()
 
             p = BlastoutParser()
             p.load_from_file(self.config.get("blastout"))
@@ -474,9 +492,9 @@ else:
         def generate_argparser(self):
             parser = argparse.ArgumentParser()
             parser.add_argument("mod", nargs="*")
-            parser.add_argument('-n','--nucl', metavar = "contig_fasta", action= PathAction,required=True, help = "A FASTA file containing the nucleotide assembly. (MANDATORY)")
-            parser.add_argument('-c', '--cls', metavar = 'class_file', action = PathAction, required = True, help = 'The .cls output file from "esom train".')
-            parser.add_argument('-nf', '--names', metavar = 'names_file', action = PathAction, required = False, default = None, help = 'The .names output file from "esom train".')
+            parser.add_argument('-n','--nucl', metavar = "assembly_fasta", action= PathStore,required=True, help = "A FASTA file containing the nucleotide assembly. (MANDATORY)")
+            parser.add_argument('-c', '--cls', metavar = 'class_file', action = PathStore, required = True, help = 'The .cls output file from "esom train".')
+            parser.add_argument('-nf', '--names', metavar = 'names_file', action = PathStore, required = False, default = None, help = 'The .names output file from "esom train".')
             parser.add_argument('-cid', '--classnum', metavar = 'class_number', action = 'store', required = True, help = "The class number of interest. That is, the class that represents the selection of target contigs you made in esomana.")
             parser.add_argument('-f','--prefix', metavar = 'prefix_for_output', required=False, default='scgid', help="The prefix that you would like to be used for all output files. DEFAULT = scgid")
             parser.add_argument('-l','--loyal', metavar = 'loyalty_threshold', required=False, default='51', help="The loyalty threshold for keeping a contig based on where its various windows end-up in ESOM. DEFAULT = 51")

@@ -25,9 +25,9 @@ class MalformedLineageFileError(ModuleError):
         self.catch()
 
 class MalformedDatabaseHeaderError(ModuleError):
-    def __init__(self, hit):
+    def __init__(self, offender):
         super().__init__()
-        self.msg = f"Unable to pull SPDB species information from line: \"{hit}\"."
+        self.msg = f"Unable to pull SPDB species information from line: \"{offender}\"."
         self.catch()
 
 class MissingAccessionError(ModuleError):
@@ -49,7 +49,6 @@ class PathStore(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         absolute_path = os.path.abspath(values)
         if not os.path.exists(absolute_path):
-            print(self.option_strings)
             #ModuleError(f"Unable to access input file: {absolute_path}")
             raise IOError(f"Error parsing arugment `{'|'.join(self.option_strings)}`. Input file does not exist: {absolute_path}")
         setattr(namespace, self.dest, absolute_path)
@@ -157,6 +156,10 @@ class BlastoutParser(LoggingEntity, ErrorHandler):
         ldict = []
         for entry in sp_fasta.seqs():
             spl = entry.header.split(" ",1)
+
+            if len(spl) != 2:
+                return MalformedDatabaseHeaderError(offender = entry.header)
+
             newrow = {
                 'accession': spl[0],
                 'description': spl[1]
@@ -186,7 +189,7 @@ class BlastoutParser(LoggingEntity, ErrorHandler):
             s = re.search(search_pattern, desc)
             
             if s is None:
-                return MalformedDatabaseHeaderError(hit = hit)
+                return MalformedDatabaseHeaderError(offender = hit)
 
             sp_os = s.group(1).strip()
 
