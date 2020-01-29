@@ -7,6 +7,19 @@ import shutil
 from scgid.modcomm import LoggingEntity, logger_name_gen, get_head
 from scgid.library import subprocessP, gff3_to_fasta, is_fasta
 import scgid.pkg_settings as pkg_settings
+from scgid.error import ModuleError, FatalError
+
+class OutputGeneratorFunctionNotImplementedError(ModuleError):
+    def __init__(self, arg):
+        super().__init__()
+        self.msg = f"No implemented function to generate output for arg `{arg}`. Since it cannot be located, it must be specified from the CLI."
+        self.catch()
+
+class MultipleReusableOutputMatchesError(ModuleError):
+    def __init__(self, arg, matches):
+        super().__init__()
+        self.msg = f"Found multiple files matching pattern for argument `{arg}`. Specify preference in command line arugment. [{','.join(matches)}]"
+        self.catch()
 
 class ReusableOutput:
     def __init__(self, arg, pattern, genfunc = None, genfunc_args = None):
@@ -25,6 +38,8 @@ class ReusableOutput:
             if os.path.isdir(item):
                 matches = [x for x in os.listdir(item) if re.match(self.re_pattern, x)]
                 if len(matches) == 0:
+
+                    # reusable already set to False
                     continue
 
                 elif len(matches) == 1:
@@ -33,8 +48,7 @@ class ReusableOutput:
                     reusable = True
                     break
                 else:
-                    pass # Create error class for this and pass to ReusableOutputManager for logging
-                    #self.log.critical( f"Found multiple files matching pattern for argument `{self.arg}`. Specify preference in command line arugment." )
+                    MultipleReusableOutputMatchesError(self.arg, matches)
         return reusable
 
     def update_from_config(self):
@@ -63,9 +77,17 @@ class ReusableOutputManager(LoggingEntity):
             if self.head.config.get(r.arg) is None:
                 if not r.try_reuse():
                     self.log.info( f"No match found for required file specified by `{r.arg}`." )
+
+                    # Covers the case where instead of invoking a function to generate the output, we just want to return a FatalError
+                    if isinstance(r.genfunc, FatalError):
+                        return r.genfunc()
+                    
                     r.needs_doing = True
+
+                    #r.genfunc(**r.genfunc_args)
+
                     if r.genfunc is None:
-                        self.log.critical(f"No implemented function to generate output for arg `{r.arg}`. Since it cannot be located, it must be specified from the CLI.")
+                        return OutputGeneratorFunctionNotImplementedError(r.arg)
                 else:
                     self.log.info( f"Found matching file for missing argument `{r.arg}` at `{get_head().config.get(r.arg)}`" )
                     r.needs_doing = False

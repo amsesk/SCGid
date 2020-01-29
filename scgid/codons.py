@@ -17,9 +17,9 @@ from scgid.infotable import InfoTable, get_by_idx, count_unique
 from scgid.error import ModuleError, ArgumentError
 
 class SmallTreeError(ModuleError):
-    def __init__(self, ntips, mincladesize):
+    def __init__(self, ntips, mincladesize, minlen):
         super().__init__()
-        self.msg = f"The RSCU tree is small ({ntips} tips) because there were CDS concatenates that were longer than value supplied for -c|--mincladesize ({mincladesize} tips)."
+        self.msg = f"The RSCU tree is smaller ({ntips} tips) than -c|--mincladesize so a best clade cannot be chosen. You can try reducing -c|--mincladesize ({mincladesize} tips) or --minlen ({minlen} bp) to address."
         self.catch()
 
 class NoGoodCladesError(ModuleError):
@@ -173,7 +173,7 @@ class RSCUTree(object):
 
         clades_of_sufficient_size = [c for c in self.dendrogram.get_descendants() if len(c.get_leaves()) >= int(self.head.config.get("mincladesize")) and not c.is_leaf()]
         if len(clades_of_sufficient_size) == 0:
-            SmallTreeError(self.ntips, self.head.config.get("mincladesize"))
+            return SmallTreeError(self.ntips, self.head.config.get("mincladesize"), self.config.get("minlen"))
 
         for n in clades_of_sufficient_size:
             count_t = float(len([l for l in n if l.annotation == "target"]))
@@ -590,6 +590,8 @@ class Codons(Module, LoggingEntity, Head, ErrorHandler):
         # Remove CDS concatenates shorter than supplied minlin
         self.logger.info(f"Removing CDS concatenates <{self.config.get('minlen')} bp in length")
         cds_concatenates.remove_small_sequences( int(self.config.get("minlen")) )
+        if len(cds_concatenates.seqs()) < int(self.config.get("mincladesize")):
+            return SmallTreeError(len(cds_concatenates.seqs()), self.config.get("mincladesize"), self.config.get("minlen"))
         #cds_concatenates.write_fasta("large_concat.fasta")
 
         # Count codons on each CDS concatenate

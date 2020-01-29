@@ -53,7 +53,7 @@ from scgid.error import ModuleError
 from scgid.library import flatten_dict, bcolors
 #from scgid.update_scgid import SCGIDUpdate
 
-class SuperConfig(object):
+class SCGidPipeline(object):
     def __init__(self, opts_path):
         self.opts_path = opts_path
         self.root = get_root()
@@ -231,11 +231,11 @@ class SCGid(LoggingEntity, ErrorHandler, Root, object):
                     except:
                         return ModuleError()
 
-                    opts_path = SuperConfig(opts_path = opts_path).create_options_file()
+                    opts_path = SCGidPipeline(opts_path = opts_path).create_options_file()
                     self.logger.info(f"Wrote SCGid options file to `{opts_path}`. Fill it out and invoke by running `scgid run {opts_path}`.")
 
                 elif call == "pipeline":
-                    SuperConfig(opts_path = sys.argv[2]).run()
+                    SCGidPipeline(opts_path = sys.argv[2]).run()
 
                 else: 
                     self.logger.critical(f"Bad module selection `{call}`")
