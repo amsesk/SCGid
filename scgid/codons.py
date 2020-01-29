@@ -14,7 +14,7 @@ from scgid.parsers import PathStore
 from scgid.sequence import DNASequenceCollection, DNASequence, revcomp, complement
 from scgid.library import subprocessP
 from scgid.infotable import InfoTable, get_by_idx, count_unique
-from scgid.error import ModuleError
+from scgid.error import ModuleError, ArgumentError
 
 class SmallTreeError(ModuleError):
     def __init__(self, ntips, mincladesize):
@@ -324,7 +324,19 @@ class Codons(Module, LoggingEntity, Head, ErrorHandler):
                         "outpath": f"{self.config.get('prefix')}.spdb.blast.out"
                         }
                     )
-            )
+                )
+
+            self.config.reusable.add(
+                ReusableOutput(
+                    arg = "infotable",
+                    pattern = f"{self.config.get('prefix')}[.]infotable[.]tsv$",
+                    genfunc = ArgumentError,
+                    genfunc_args = {
+                        "msg": "Option -i|--infotable required to run in blastp mode. Run `scgid gct` to generate one or set `--mode blastn`."
+                    }
+                    )
+                )
+
             self.config.dependencies.add(
                 CaseDependency("blastp", "blastout", None)
             )
@@ -347,15 +359,6 @@ class Codons(Module, LoggingEntity, Head, ErrorHandler):
             self.config.dependencies.add(
                 CaseDependency("blastn", "blastout", None)
             )
-
-            # Make this cleaner
-            if self.config.get("mode") == "blastp" and self.config.get("infotable") is None:
-                print ("-i|--infotable required for --mode == `blastp`")
-                sys.exit(1)
-
-        else:
-            print("Bad mode selection.")
-            sys.exit(1)
 
         self.keep = {}
 
@@ -557,6 +560,7 @@ class Codons(Module, LoggingEntity, Head, ErrorHandler):
         self.start_logging()
         self.setwd( __name__, self.config.get("prefix") )
         self.config.reusable.check()
+        self.config.reusable.generate_outputs()
         self.config.dependencies.check(self.config)
 
         self.logger.info(f"Running in {self.config.get('mode')} mode.")
