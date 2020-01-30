@@ -9,14 +9,15 @@ import pkg_resources
 from scgid.config import Config
 from scgid.dependencies import Dependencies
 from scgid.reuse import ReusableOutputManager
-from scgid.modcomm import logger_name_gen, LoggingEntity, ErrorHandler, get_head
+from scgid.modcomm import logger_name_gen, LoggingEntity, ErrorHandler, get_head, get_root
 from scgid.error import ConfigError, ArgumentError, ModuleError
 from scgid.parsers import PathStore
+
 class Module (object):
-    def __init__(self, call, name = None, parent=None):
+    def __init__(self, call, name = None, parent=None, loglevel=logging.INFO):
         self.call = call
         self.name = call
-        self.caller = inspect.stack()[1][0].f_locals["self"]
+        self.root = get_root()
         self.wd = None
         self.argparser = None
         self.parsed_args = None
@@ -24,9 +25,14 @@ class Module (object):
             self.name = name
         self.logger = None
 
-        #Set by self.initialize()
+        self.start_logging()
+
         self.config = Config()
-    
+
+        self.set_module_logging_level(loglevel)
+
+        self.config.load_yaml()
+
     def generate_argparser(self):
         pass
 
@@ -43,6 +49,12 @@ class Module (object):
     def start_logging(self):
         self.logger = logging.getLogger( logger_name_gen() )
         self.simplelogger = logging.getLogger("SCGid.unfmt")
+
+    def set_module_logging_level(self, loglevel = logging.INFO):
+        ident = type(self).__name__
+        downstream_loggers = [logging.getLogger(name) for name in logging.root.manager.loggerDict if ident in name]
+        for dsl in downstream_loggers:
+            dsl.setLevel(loglevel)
 
     def setwd (self, name, prefix):
         name = name.split(".")[1]
@@ -137,9 +149,17 @@ class Module (object):
 
                     # This warning will print if a metavar in the argdict generated from argparse.ArgumentParser._actions is not present in argdict. 
                     # This happens with `--help`.
-                    print(f"Problem translating key `{key}`. The key does not occur in argdict")
+                    self.root.logger.debug(f"Problem translating key `{key}`. The key does not occur in argdict")
         
         return translated_argdict
+
+    def cli_invocation(self):
+        set_opts = {k:v for k,v in self.translated_args.items() if v is not None}
+        optstr = [f"--{k} {v}" for k,v in set_opts.items()]
+        optstr.insert(0, type(self).__name__.lower())
+        optstr.insert(0, "scgid")
+        return optstr
+        
 
     '''
     def try_catch_error(self, op):

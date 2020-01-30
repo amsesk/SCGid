@@ -2,6 +2,7 @@ import argparse
 import sys
 import os
 import re
+import logging
 import pandas as pd
 import numpy as np
 from collections import namedtuple
@@ -282,11 +283,11 @@ class RSCUTree(object):
 
 
 class Codons(Module, LoggingEntity, Head, ErrorHandler):
-    def __init__(self, argdict = None):
-        super().__init__(self.__class__)
+    def __init__(self, argdict = None, loglevel = logging.INFO):
+        super().__init__(self.__class__, loglevel=loglevel)
         if argdict is not None:
-            translated_args = self.translate_argdict(argdict, Codons.generate_argparser())
-            self.config.load_argdict(translated_args)
+            self.translated_args = self.translate_argdict(argdict, Codons.generate_argparser())
+            self.config.load_argdict(self.translated_args)
             self.parsed_args = self.config
         else:
             self.argparser = Codons.generate_argparser()
@@ -557,7 +558,7 @@ class Codons(Module, LoggingEntity, Head, ErrorHandler):
         return to_keep
 
     def run(self):
-        self.start_logging()
+        #self.start_logging()
         self.setwd( __name__, self.config.get("prefix") )
         self.config.reusable.check()
         self.config.reusable.generate_outputs()

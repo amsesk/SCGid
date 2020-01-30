@@ -62,6 +62,8 @@ class SCGidPipeline(object):
         self.KMERS = {}
         self.CODONS = {}
 
+        self.simplelogger = logging.getLogger("SCGid.unfmt")
+
     def create_options_file(self) -> str:
         gct_args = Gct.generate_argparser()._actions
         kmersT_args = scgid.kmers.Train.generate_argparser()._actions
@@ -145,6 +147,35 @@ class SCGidPipeline(object):
         self.CODONS = super_config.settings["CODONS"]
 
         return None
+
+    def show (self):
+        self.read_options_file()
+        gct_opts = flatten_dict(self.GCT)
+        global_opts = flatten_dict(self.GLOBAL)
+        
+        gct_opts.update(global_opts)
+
+        gct_cmd = Gct(argdict = gct_opts, loglevel=logging.CRITICAL).cli_invocation()
+
+        codons_opts = flatten_dict(self.CODONS)
+        codons_opts.update(global_opts)
+
+        codons_cmd = Codons(argdict = codons_opts, loglevel=logging.CRITICAL).cli_invocation()
+
+        kmers_opts = flatten_dict(self.KMERS)
+        kmers_opts.update(global_opts)
+
+        kmersT_cmd = scgid.kmers.Train(argdict = kmers_opts, loglevel=logging.CRITICAL).cli_invocation()
+        kmersA_cmd = scgid.kmers.Annotate(argdict = kmers_opts, loglevel=logging.CRITICAL).cli_invocation()
+
+        self.simplelogger.info("")
+        self.simplelogger.info(f"{' '.join(gct_cmd)}\n")
+        self.simplelogger.info(f"{' '.join(codons_cmd)}\n")
+        self.simplelogger.info(f"{' '.join(kmersT_cmd)}\n")
+        self.simplelogger.info(f"{' '.join(kmersA_cmd)}\n")
+
+        return None
+
 
     def run(self):
         self.root.logger.info ("Starting SCGid in pipeline mode (serial). SCGid will run automatically as far as it can.")
@@ -236,6 +267,9 @@ class SCGid(LoggingEntity, ErrorHandler, Root, object):
 
                 elif call == "pipeline":
                     SCGidPipeline(opts_path = sys.argv[2]).run()
+
+                elif call == "show_pipeline":
+                    SCGidPipeline(opts_path = sys.argv[2]).show()
 
                 else: 
                     self.logger.critical(f"Bad module selection `{call}`")

@@ -67,7 +67,6 @@ class Config(LoggingEntity, ErrorHandler):
         self.OUTPUTSUFFIX = "_scgid_output"
         self.dependencies = Dependencies()
         self.reusable = ReusableOutputManager()
-        self.__dict__.update( self.load_yaml() )
         self.rundir = None
 
     def __repr__(self):
@@ -102,7 +101,7 @@ class Config(LoggingEntity, ErrorHandler):
         try:
             with open(loc, 'r') as cfg:
                 self.logger.info (f"Using package configuration file located at `{loc}`")
-                return yaml.load(cfg, Loader=yaml.BaseLoader)
+                self.__dict__.update( yaml.load(cfg, Loader=yaml.BaseLoader) )
         except IOError:
             return ConfigError("Unable to locate configuration file")
         except:

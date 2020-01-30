@@ -26,6 +26,7 @@ else:
     import re
     import argparse
     import subprocess
+    import logging
     import numpy as np
     import pandas as pd
     from collections import namedtuple
@@ -52,8 +53,8 @@ else:
             self.catch()
 
     class Kmers(Module, LoggingEntity, Head):
-        def __init__(self,  argdict = None):
-            super().__init__(self.__class__)
+        def __init__(self,  argdict = None, loglevel = logging.INFO):
+            super().__init__(self.__class__, loglevel = loglevel)
             self.argdict = argdict
 
         def update_ESOM_HOME(self, path_to_esomstart, new_home):
@@ -74,8 +75,8 @@ else:
 
             if self.argdict is not None:
 
-                Train(argdict = self.argdict).run()
-                Annotate(argdict = self.argdict).run()
+                Train(argdict = self.argdict, loglevel=loglevel).run()
+                Annotate(argdict = self.argdict, loglevel=loglevel).run()
 
                 return None
 
@@ -105,15 +106,14 @@ else:
 
 
     class Train(Kmers, LoggingEntity, Head, ErrorHandler):
-        def __init__(self, argdict = None):
-            super().__init__(self.__class__)
+        def __init__(self, argdict = None, loglevel = logging.INFO):
+            super().__init__(self.__class__, loglevel=loglevel)
             if argdict is not None:
-                translated_args = self.translate_argdict(argdict, Train.generate_argparser())
-                print (translated_args)
-                self.config.load_argdict(translated_args)
+                self.translated_args = self.translate_argdict(argdict, Train.generate_argparser())
+                self.config.load_argdict(self.translated_args)
                 self.parsed_args = self.config
             else:
-                self.argparser = self.generate_argparser()
+                self.argparser = Train.generate_argparser()
                 self.parsed_args = self.argparser.parse_args()
                 self.config.load_cmdline( self.parsed_args) # Copy command line args defined by self.argparser to self.config
 
@@ -302,7 +302,7 @@ else:
             return 0
 
         def run(self):
-            self.start_logging()
+            #self.start_logging()
             self.setwd( __name__, self.config.get("prefix") )
             self.config.reusable.check()
             self.config.dependencies.check(self.config)
@@ -329,14 +329,14 @@ else:
             self.resetwd()
 
     class Annotate(Kmers, LoggingEntity, Head):
-        def __init__(self, argdict = None):
-            super().__init__(self.__class__)
+        def __init__(self, argdict = None, loglevel=logging.INFO):
+            super().__init__(self.__class__, loglevel=loglevel)
             if argdict is not None:
-                translated_args = self.translate_argdict(argdict, Annotate.generate_argparser())
-                self.config.load_argdict(translated_args)
+                self.translated_args = self.translate_argdict(argdict, Annotate.generate_argparser())
+                self.config.load_argdict(self.translated_args)
                 self.parsed_args = self.config
             else:
-                self.argparser = self.generate_argparser()
+                self.argparser = Annotate.generate_argparser()
                 self.parsed_args = self.argparser.parse_args()
                 self.config.load_cmdline( self.parsed_args) # Copy command line args defined by self.argparser to self.config
 
@@ -419,7 +419,7 @@ else:
             return None
 
         def run(self):
-            self.start_logging()
+            #self.start_logging()
             self.setwd( __name__, self.config.get("prefix") )
             self.config.reusable.check()
             self.config.dependencies.check(self.config)

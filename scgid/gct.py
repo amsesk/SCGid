@@ -18,11 +18,11 @@ else:
     from scgid.flexwindow import generate_windows
 
     class Gct (Module, LoggingEntity, Head):
-        def __init__(self, argdict = None, dont_initialize = False):
-            super().__init__(self.__class__)
+        def __init__(self, argdict = None, loglevel=logging.INFO):
+            super().__init__(self.__class__, loglevel=loglevel)
             if argdict is not None:
-                translated_args = self.translate_argdict(argdict, Gct.generate_argparser())
-                self.config.load_argdict(translated_args)
+                self.translated_args = self.translate_argdict(argdict, Gct.generate_argparser())
+                self.config.load_argdict(self.translated_args)
                 self.parsed_args = self.config
             else:
                 self.argparser = Gct.generate_argparser()
@@ -87,7 +87,7 @@ else:
             return parser
 
         def run(self):
-            self.start_logging()
+            #self.start_logging()
             self.setwd( __name__, self.config.get("prefix") )
             self.config.reusable.check()
             self.config.dependencies.check(self.config)
