@@ -30,8 +30,6 @@ class MalformedDatabaseFasta(ModuleError):
         if error_catch:
             self.catch()
 
-logger.critical("Malformed database FASTA at `{db_path}`")
-
 class ReusableOutput:
     def __init__(self, arg, pattern, genfunc = None, genfunc_args = None):
         self.arg = arg
