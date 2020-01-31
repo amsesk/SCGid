@@ -327,7 +327,7 @@ class Codons(Module, LoggingEntity, Head, ErrorHandler):
                     pattern = ".*[.]spdb[.]blast[.]out$",
                     genfunc = protein_blast,
                     genfunc_args = {
-                        "prot_path": self.config.get("prot"),
+                        "prot": self.config.get("prot"),
                         "db": self.config.get("spdb"),
                         "evalue": self.config.get("evalue"),
                         "cpus": self.config.get("cpus"),
