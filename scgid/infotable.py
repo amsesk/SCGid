@@ -142,7 +142,7 @@ class InfoTable(object):
         self.keep = None
         self.dump = None
 
-    def set_target(self, target, exceptions):
+    def set_target(self, target, exceptions = None):
         self.tar = target.split(',')
         if exceptions is None:
             self.ex = []
