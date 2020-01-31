@@ -50,6 +50,12 @@ class DNASequenceCollection(object):
     def pop(self, header):
         return self.index.pop(header)
 
+    def check_size(self, cutoff):
+        if len(self.seqs()) < cutoff:
+            return False
+        else:
+            return True
+
     def seqs(self):
         return self.index.values()
     

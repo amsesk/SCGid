@@ -92,8 +92,6 @@ class SPDBExpander(Module, Head, LoggingEntity, ErrorHandler):
         return parser
 
     def run(self):
-        self.start_logging()
-        self.check_path_args()
 
         old_spdb = self.config.get('spdb')
         old_taxdb  = self.config.get('taxdb')

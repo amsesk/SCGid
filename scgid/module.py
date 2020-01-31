@@ -6,6 +6,7 @@ import shutil
 import logging
 import subprocess
 import pkg_resources
+import warnings
 from scgid.config import Config
 from scgid.dependencies import Dependencies
 from scgid.reuse import ReusableOutputManager
@@ -110,21 +111,22 @@ class Module (object):
             # There should only be one key for each arugment in the argdict...
             # This should be impossible because of`iter( set(itertools.chain(gct_vars, kmers_vars, codons_vars)) )` in SCGidPipeline.create_options_file()
             if key in translated_argdict:
-                raise KeyError("Key duplication in options file.")
+                raise KeyError("Key duplication in argdict.")
                 sys.exit(1)
 
             else:
                 if a.metavar in argdict:
                     value = argdict[a.metavar]
                     
-                    # Set whitespace values, str(None) values, and values of zero length to python None
-                    if (
-                        value.isspace() or 
-                        len(value) == 0 or 
-                        value == "None"
-                        ):
+                    # Set whitespace values, str(None) values, and values of zero length to python None. Skip for integer arguments
+                    if not isinstance(value, int) and value is not None:
+                        if (
+                            value.isspace() or 
+                            len(value) == 0 or 
+                            value == "None"
+                            ):
 
-                        value = None
+                            value = None
 
                     # Assert that all required arguments are not None
                     if (
@@ -149,7 +151,8 @@ class Module (object):
 
                     # This warning will print if a metavar in the argdict generated from argparse.ArgumentParser._actions is not present in argdict. 
                     # This happens with `--help`.
-                    self.root.logger.debug(f"Problem translating key `{key}`. The key does not occur in argdict")
+                    if self.root is not None:
+                        self.root.logger.debug(f"Problem translating key `{key}`. The key does not occur in argdict")
         
         return translated_argdict
 

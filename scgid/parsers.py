@@ -44,6 +44,7 @@ class PathAction(argparse.Action):
 
         setattr(namespace, self.dest, os.path.abspath(values))
 
+
 # Check validity of Path before storing. Raises IO error if path is invalid, stores in argparser if valid.
 class PathStore(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
@@ -52,6 +53,17 @@ class PathStore(argparse.Action):
             #ModuleError(f"Unable to access input file: {absolute_path}")
             raise IOError(f"Error parsing arugment `{'|'.join(self.option_strings)}`. Input file does not exist: {absolute_path}")
         setattr(namespace, self.dest, absolute_path)
+
+class StoreInt(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        try:
+            setattr(namespace, self.dest, int(values))
+
+        except ValueError:
+            raise ValueError(f"Value `{values}` given for {'|'.join(option_strings)} cannot be coerced to int.")
+
+        except:
+            return ErrorClassNotImplemented()
 
 class OutputPathStore(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):

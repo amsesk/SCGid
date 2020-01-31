@@ -82,8 +82,13 @@ def get_root():
     for i in cls_stack:
         if i not in cls_stack_dedup:
             cls_stack_dedup.append(i)
-
-    return [x for x in cls_stack_dedup if isinstance(x, Root)][0]
+    
+    # try/except block to allow testing of individual module components
+    try:
+        return [x for x in cls_stack_dedup if isinstance(x, Root)][0]
+    
+    except IndexError:
+        return None
 
 def get_error_handler():
     callstack = callstack_clsfilt( 

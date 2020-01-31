@@ -2,6 +2,16 @@ import sys
 import traceback
 from scgid.modcomm import get_error_handler
 
+class Ok():
+    pass
+
+def is_ok(retval):
+    if isinstance(retval, Ok):
+        return True
+
+    else:
+        return False
+
 class FatalError(Exception):
     def __init__(self):
         self.__name__ = type(self).__name__
