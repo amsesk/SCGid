@@ -157,7 +157,7 @@ class Module (object):
         return translated_argdict
 
     def cli_invocation(self):
-        set_opts = {k:v for k,v in self.translated_args.items() if v is not None}
+        set_opts = {k.strip():v.strip() for k,v in self.translated_args.items() if v is not None}
         optstr = [f"--{k} {v}" for k,v in set_opts.items()]
         optstr.insert(0, type(self).__name__.lower())
         optstr.insert(0, "scgid")

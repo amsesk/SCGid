@@ -10,16 +10,27 @@ import scgid.pkg_settings as pkg_settings
 from scgid.error import ModuleError, FatalError
 
 class OutputGeneratorFunctionNotImplementedError(ModuleError):
-    def __init__(self, arg):
+    def __init__(self, arg, error_catch = True):
         super().__init__()
         self.msg = f"No implemented function to generate output for arg `{arg}`. Since it cannot be located, it must be specified from the CLI."
-        self.catch()
+        if error_catch:
+            self.catch()
 
 class MultipleReusableOutputMatchesError(ModuleError):
-    def __init__(self, arg, matches):
+    def __init__(self, arg, matches, error_catch = True):
         super().__init__()
         self.msg = f"Found multiple files matching pattern for argument `{arg}`. Specify preference in command line arugment. [{','.join(matches)}]"
-        self.catch()
+        if error_catch:
+            self.catch()
+
+class MalformedDatabaseFasta(ModuleError):
+    def __init__(self, db_path, error_catch = True):
+        super().__init__()
+        self.msg = f"Malformed database FASTA at `{db_path}`"
+        if error_catch:
+            self.catch()
+
+logger.critical("Malformed database FASTA at `{db_path}`")
 
 class ReusableOutput:
     def __init__(self, arg, pattern, genfunc = None, genfunc_args = None):
@@ -142,7 +153,7 @@ def verify_blastdb(db):
             logger.info(' '.join(cmd))
             subprocessP(cmd, logger)
         else:
-            logger.critical("Malformed database FASTA")
+            return MalformedDatabaseFasta(db)
 
     return 0
 

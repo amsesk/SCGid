@@ -25,10 +25,11 @@ class SmallTreeError(ModuleError):
             self.catch()
 
 class NoGoodCladesError(ModuleError):
-    def __init__(self):
+    def __init__(self, error_catch = True):
         super().__init__()
         self.msg = f"All clades of sufficient size contain more nontarget-annotated tips than target-annotated tips. Consider expanding the SPDB with `scgid spexpand` or changing the target designation supplied to `-g|--target`."
-        self.catch()
+        if error_catch:
+            self.catch()
 
 SYNONYMOUS_CODONS = {
     'Phe': ['UUU','UUC'],
@@ -122,9 +123,14 @@ class CDSConcatenate(DNASequence):
                 self.rscu_table[c] = rscu
 
 class RSCUTree(object):
-    def __init__(self, treepath):
+    def __init__(self, treepath, head = None):
         self.dendrogram = Tree(treepath)
-        self.head = get_head()
+        
+        if head is None:
+            self.head = get_head()
+        else:
+            self.head = head
+
         self.mode = self.head.config.get("mode")
 
         self.ntips = len(self.dendrogram.get_leaves())
@@ -169,13 +175,13 @@ class RSCUTree(object):
     def _nuclannot(self):
         pass
 
-    def pick_clade(self):
+    def pick_clade(self, error_catch = True):
         curr_best = 0.00
         best = [] #"best" here means worth looking into, although it is going to include some real shitty trees
 
         clades_of_sufficient_size = [c for c in self.dendrogram.get_descendants() if len(c.get_leaves()) >= int(self.head.config.get("mincladesize")) and not c.is_leaf()]
         if len(clades_of_sufficient_size) == 0:
-            return SmallTreeError(self.ntips, self.head.config.get("mincladesize"), self.head.config.get("minlen"))
+            return SmallTreeError(self.ntips, self.head.config.get("mincladesize"), self.head.config.get("minlen"), error_catch = error_catch)
 
         for n in clades_of_sufficient_size:
             count_t = float(len([l for l in n if l.annotation == "target"]))
@@ -192,7 +198,10 @@ class RSCUTree(object):
                 n.add_feature("leaves", len(n.get_leaves()))
                 best.append(n)
         if len(best) == 0:
-            return NoGoodCladesError()
+            return NoGoodCladesError(error_catch = error_catch)
+
+        else:
+            return Ok()
 
 
         #order trees in order of best measure

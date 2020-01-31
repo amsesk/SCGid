@@ -102,7 +102,11 @@ def get_error_handler():
         if i not in cls_stack_dedup:
             cls_stack_dedup.append(i)
 
-    return [x for x in cls_stack_dedup if isinstance(x, ErrorHandler)][0]
+    # try/except block to allow testing of individual module components
+    try:        
+        return [x for x in cls_stack_dedup if isinstance(x, ErrorHandler)][0]
+    except IndexError:
+        return None
 
 def pkgloc():
     source = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))

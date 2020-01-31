@@ -136,8 +136,6 @@ else:
                 CaseDependency("somoclu", "mode", "somoclu"),
                 CaseDependency(self.config.get("mpicmd"), "mode", "somoclu"),
             )
-            
-            self.config.check_esom_path()
 
         def generate_argparser():
             parser = argparse.ArgumentParser()
@@ -155,7 +153,7 @@ else:
             parser.add_argument('--cpus', metavar = "cpus", action="store", required=False, default=1, help = "Number of CPUs to use for training (Somoclu only)")
             parser.add_argument('-r','--rows', metavar = "rows_in_map", action="store",required=False, help = "The number of rows to be present in the output ESOM. Default = 5.5x the number of neurons")
             parser.add_argument('-c','--cols', metavar = "columns_in_map", action="store",required=False, help = "The number of columns to be present in the output ESOM. Default = 5.5x the number of neurons")
-            parser.add_argument('-sr','--start_radius', metavar = "start_radius", action="store",required=False, default = '50', help = "Start radius for the ESOM. (MANDATORY)")
+            parser.add_argument('-sr','--start_radius', metavar = "start_radius", action="store",required=False, default = '50', help = "Start radius for the ESOM.")
             parser.add_argument('-e','--epochs', metavar = "training_epochs", action="store",required=False, default = "20", help = "Number of epochs to train over. Default = 20")
             parser.add_argument('--Xmx', metavar = "available_memory", action="store",required=False, default = "512m", help = "Set memoray available to train the ESOM. Specicy as such: X megabytes = Xm, X gigabytes = Xg")
 
@@ -206,7 +204,11 @@ else:
 
         def determine_map_size(self):
             if self.config.get("rows") is None or self.config.get("cols") is None:
-                nodes = len(open(f"{os.path.basename(self.config.get('nucl'))}.lrn").readlines()) - 4 # number of lines in .lrn file minus 4 header lines
+
+                #nmber of lines in .lrn file minus 4 header lines
+                with open(f"{os.path.basename(self.config.get('nucl'))}.lrn") as lrn:
+                    nodes = len(lrn.readlines()) - 4
+
                 neurons = float(nodes*5.5)
                 dim = float(np.sqrt(neurons))
                 setattr( self.config, "rows", str(int(np.ceil(dim))) )
@@ -302,7 +304,7 @@ else:
             return 0
 
         def run(self):
-            #self.start_logging()
+
             self.setwd( __name__, self.config.get("prefix") )
             self.config.reusable.check()
             self.config.dependencies.check(self.config)
@@ -314,6 +316,7 @@ else:
             ##Train the ESOM
             if self.config.get("mode") == "det":
 
+                self.config.check_esom_path()
                 self.train_det()
 
             elif self.config.get("mode") == "somoclu":

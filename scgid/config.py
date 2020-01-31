@@ -127,7 +127,7 @@ class Config(LoggingEntity, ErrorHandler):
             p = subprocess.Popen( ["which", "esomtrn"], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
             path, _ = p.communicate()
             if p.returncode:
-                return ConfigError("ESOM path unset in $PATH or config.yaml")
+                return ConfigError("ESOM path either unset or invalide. Checked in $PATH and config.yaml")
 
             else:
                 path = os.path.dirname(path).decode("utf-8")

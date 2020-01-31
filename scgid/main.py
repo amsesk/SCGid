@@ -166,7 +166,10 @@ class SCGidPipeline(object):
         kmers_opts.update(global_opts)
 
         kmersT_cmd = scgid.kmers.Train(argdict = kmers_opts, loglevel=logging.CRITICAL).cli_invocation()
+        kmersT_cmd.insert(1, "kmers")
+
         kmersA_cmd = scgid.kmers.Annotate(argdict = kmers_opts, loglevel=logging.CRITICAL).cli_invocation()
+        kmersA_cmd.insert(1, "kmers")
 
         self.simplelogger.info("")
         self.simplelogger.info(f"{' '.join(gct_cmd)}\n")
