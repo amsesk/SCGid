@@ -1,9 +1,30 @@
 import sys
 import traceback
+import warnings
 from scgid.modcomm import get_error_handler
 
+def check_result(func):
+    def wrapper(*args, **kwargs):
+        ret = func(*args, **kwargs)
+        if is_ok(ret):
+            return ret.values
+
+        elif isinstance(ret, FatalError):
+            return ret
+
+        else:
+            warnings.warn(f"Value returned by `{func.__name__}` is not a result. This behavior is being deprecated.", DeprecationWarning)
+            return ret 
+
+    return wrapper
+
 class Ok():
-    pass
+    def __init__(self, values = None):
+        self.values = values
+
+    def unpack(self):
+        return self.values
+        
 
 def is_ok(retval):
     if isinstance(retval, Ok):
@@ -26,7 +47,7 @@ class FatalError(Exception):
         self.msg = "Fatal error occurred. If you are seeing this, there is an unset self.msg in called child class that needs to be set. Please report this."
     
     def catch(self):
-        self.handler.logger.critical((f"[{self.__name__}] {self.msg}"))
+        self.handler.logger.critical(f"[{self.__name__}] {self.msg}")
         sys.exit(self.errno)
 
 class ConfigError(FatalError):

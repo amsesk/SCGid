@@ -32,7 +32,7 @@ else:
     from collections import namedtuple
     from ete3 import NCBITaxa
     from scgid.module import Module
-    from scgid.error import ModuleError
+    from scgid.error import ModuleError, Ok
     from scgid.library import file_grep, subprocessP, subprocessC, random_colors
     from scgid.modcomm import LoggingEntity, Head, ErrorHandler, logger_name_gen
     from scgid.parsers import PathStore, BlastoutParser
@@ -78,7 +78,7 @@ else:
                 Train(argdict = self.argdict, loglevel=loglevel).run()
                 Annotate(argdict = self.argdict, loglevel=loglevel).run()
 
-                return None
+                return (Ok(), None)
 
             else:
                 # Print ESOM module help message if a task has not been selected - malformed argument string
@@ -103,6 +103,8 @@ else:
                     else:
                         print(esom_help)
                         sys.exit(2)
+
+                return (Ok(), None)
 
 
     class Train(Kmers, LoggingEntity, Head, ErrorHandler):

@@ -49,10 +49,9 @@ Please report any and all errors and issues that you run into while using *scgid
     * Rscript (included with most R distributions)
 * NCBI Blast+
 * Augustus (http://bioinf.uni-greifswald.de/augustus/)
-* ClaMS-CLI (http://clams.jgi-psf.org/)  
-    (i) Scroll to the bottom of the page a and click on "Download",  
-    (ii) Accept the license agreement,  
-    (iii) Download the "Command line verion" of ClaMS  
+* ClaMS-CLI  
+    (i) ClaMS-CLI is apparently no longer available vis the JGI website. I've uploaded the source in its original form with the original copyright notice and liscence to https://github.com/amsesk/ClaMS-CLI-fork.
+    (ii) Clone it with `git clone https://github.com/amsesk/ClaMS-CLI-fork.git` 
 * Java
 * Databionic ESOM (http://www.databionin-esom.sourceforge.net)  
     (i) Download the ESOM Installer .jar file and follow the instructions in the GUI installer.

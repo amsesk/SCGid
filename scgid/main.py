@@ -250,7 +250,7 @@ class SCGid(LoggingEntity, ErrorHandler, Root, object):
 
         if not os.path.isfile( os.path.join(self.SCGID, "config.yaml") ):
             
-            self.modcall['init']().run()
+            res, ret = self.modcall['init']().run()
         
         else:
             if call in self.modcall:

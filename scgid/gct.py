@@ -16,6 +16,7 @@ else:
     from scgid.infotable import InfoTable, it_get_taxonomy_level
     from scgid.sequence import DNASequenceCollection, AASequenceCollection
     from scgid.flexwindow import generate_windows
+    from scgid.error import Ok
 
     class Gct (Module, LoggingEntity, Head):
         def __init__(self, argdict = None, loglevel=logging.INFO):
@@ -185,4 +186,4 @@ else:
             self.resetwd()
 
             # Return final filtered assembly to SCGid root
-            return final_assembly
+            return (Ok(), final_assembly)

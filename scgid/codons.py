@@ -15,7 +15,7 @@ from scgid.parsers import PathStore, StoreInt
 from scgid.sequence import DNASequenceCollection, DNASequence, revcomp, complement
 from scgid.library import subprocessP
 from scgid.infotable import InfoTable, get_by_idx, count_unique
-from scgid.error import ModuleError, ArgumentError, Ok
+from scgid.error import ModuleError, ArgumentError, Ok, check_result
 
 class SmallTreeError(ModuleError):
     def __init__(self, ntips, mincladesize, minlen, error_catch = True):
@@ -181,7 +181,12 @@ class RSCUTree(object):
 
         clades_of_sufficient_size = [c for c in self.dendrogram.get_descendants() if len(c.get_leaves()) >= int(self.head.config.get("mincladesize")) and not c.is_leaf()]
         if len(clades_of_sufficient_size) == 0:
-            return SmallTreeError(self.ntips, self.head.config.get("mincladesize"), self.head.config.get("minlen"), error_catch = error_catch)
+
+            return SmallTreeError(
+                ntips = self.ntips,
+                mincladesize = self.head.config.get("mincladesize"),
+                minlen = self.head.config.get("minlen"),
+                error_catch = error_catch)
 
         for n in clades_of_sufficient_size:
             count_t = float(len([l for l in n if l.annotation == "target"]))
@@ -199,10 +204,6 @@ class RSCUTree(object):
                 best.append(n)
         if len(best) == 0:
             return NoGoodCladesError(error_catch = error_catch)
-
-        else:
-            return Ok()
-
 
         #order trees in order of best measure
         #best = [n for n in best if n.measure >= 0.90]
@@ -258,6 +259,8 @@ class RSCUTree(object):
             final_tree = best_trees[0]
 
         self.best_clade = final_tree
+
+        return Ok(None)
 
     def write_tree_annotation(self, trainset, outpath):
         taxlvl = self.infotable.taxon_level(level=1)
@@ -489,6 +492,7 @@ class Codons(Module, LoggingEntity, Head, ErrorHandler):
         return DNASequenceCollection().from_dict(cds_concatenates)
 
     # Function that confirms size of CDSConcatenate DNASequenceCollection is larger than minlen arg
+    @check_result
     def check_n_concatenates (self, seq_collection, error_catch = True):
         if not seq_collection.check_size(self.config.get("mincladesize")):
             
@@ -496,11 +500,11 @@ class Codons(Module, LoggingEntity, Head, ErrorHandler):
                 ntips = len(seq_collection.seqs()), 
                 mincladesize = self.config.get("mincladesize"),
                 minlen = self.config.get("minlen"),
-                error_catch = False
+                error_catch = error_catch
                 )
         
         else:
-            return Ok()
+            return Ok(None)
 
     def rscu_distances(self, cds_concatenates):
         headers = [s.header for s in cds_concatenates.seqs()]
@@ -586,15 +590,16 @@ class Codons(Module, LoggingEntity, Head, ErrorHandler):
                 if spl[1] == "rscu_derived_ts1":
                     count += 1
                     to_keep.append("_".join(spl[0].split("_")[0:2]))
-        self.logger.info("ClaMs finished, {len(to_keep.index)} matches to trainset detected.")
+        self.logger.info(f"ClaMs finished, {len(to_keep)} matches to trainset detected.")
         return to_keep
 
-    def run(self):
+    @check_result
+    def run(self) -> DNASequenceCollection:
         #self.start_logging()
         self.setwd( __name__, self.config.get("prefix") )
         self.config.reusable.check()
-        self.config.reusable.generate_outputs()
         self.config.dependencies.check(self.config)
+        self.config.reusable.generate_outputs()
 
         self.logger.info(f"Running in {self.config.get('mode')} mode.")
 
@@ -724,4 +729,4 @@ class Codons(Module, LoggingEntity, Head, ErrorHandler):
         self.resetwd()
 
         # Return final filtered assembly to SCGid root
-        return final_assembly
+        return Ok(final_assembly)

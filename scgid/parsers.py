@@ -60,7 +60,7 @@ class StoreInt(argparse.Action):
             setattr(namespace, self.dest, int(values))
 
         except ValueError:
-            raise ValueError(f"Value `{values}` given for {'|'.join(option_strings)} cannot be coerced to int.")
+            raise ValueError(f"Value `{values}` given for {'|'.join(self.option_strings)} cannot be coerced to int.")
 
         except:
             return ErrorClassNotImplemented()
