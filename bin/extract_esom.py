@@ -24,27 +24,29 @@ parser.add_argument('-f','--prefix', metavar = 'prefix_for_output', required=Fal
 parser.add_argument('-l','--loyal', metavar = 'loyalty_threshold', required=False, default='51', help="The loyalty threshold for keeping a contig based on where its various windows end-up in ESOM. DEFAULT = 51")
 args = parser.parse_args()
 
+output_dir = args.prefix+'_scgid_output'
+
 nucl = os.path.abspath(args.nucl)
 prefix = args.prefix
 cls_file = os.path.abspath(args.cls)
 
-#%% navigate to head of working directory
-try:
-    os.chdir(args.prefix+'_scgid_output')
-except:
-    os.mkdir(args.prefix+'_scgid_output')
-    os.chdir(args.prefix+'_scgid_output')
-
 #%% Look for files in default locations if nothing given for -nf|--names_file
 if args.names_file is None:
-    names_file = os.path.join(os.getcwd(),'esom',os.path.split(nucl)[1]+'.names')
+    names_file = os.path.join(output_dir,'esom',os.path.split(nucl)[1]+'.names')
     if not os.path.isfile(names_file):
-        IOError("Nothing given for -nf|--names_file and .names file not found in default location.")
+        raise IOError("Nothing given for -nf|--names_file and .names file not found in default location.")
 
 else:
     names_file = os.path.abspath(args.names_file)
     if not os.path.isfile(names_file):
-        IOError("No such .names file, "+names_file)
+        raise IOError("No such .names file, "+names_file)
+
+#%% navigate to head of working directory
+try:
+    os.chdir(output_dir)
+except:
+    os.mkdir(output_dir)
+    os.chdir(output_dir)
 
 #%% navigate to esom output directory
 try:
