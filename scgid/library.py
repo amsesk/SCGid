@@ -214,7 +214,6 @@ def spdb_grab_os(spdb): ## takes a per_line generator as arg (like file_yield_li
             all_sp_os.append(sp_os)
     return list(set(all_sp_os))
 
-
 # This function takes a 2-nested dictionary and flattens it into a new dictionary
 # Primary keys are discarded
 # Duplicated secondary keys will overwrite eachother
