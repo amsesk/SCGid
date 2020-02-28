@@ -5,7 +5,7 @@ import os
 import re
 import ast
 import warnings
-from collections import namedtuple
+from collections import namedtuple, OrderedDict
 from ete3 import NCBITaxa
 from scgid.error import ModuleError, ErrorClassNotImplemented
 import scgid.pkg_settings as pkg_settings
@@ -136,11 +136,16 @@ class BlastoutParser(LoggingEntity, ErrorHandler):
     def __init__(self):
         self.path = None
         self.headers = pkg_settings.BLAST_HEADERS
-        self.head = get_head()
         self.logger = logging.getLogger( logger_name_gen() )
         self.hits = []
         self.best_hits = {}
         self.parsed_hits = []
+
+        try:
+            self.head = get_head()
+
+        except:
+            self.head = None
 
     def load_from_file(self, path_to_blastout):
         self.path = path_to_blastout
