@@ -32,6 +32,7 @@ def get_callstack ():
             curr = curr.f_back
             callstack.append(curr)
     return callstack
+
 def callstack_clsfilt (callstack):
     cls_callstack = []
     for l in callstack:
@@ -41,6 +42,7 @@ def callstack_clsfilt (callstack):
         except:
             pass
     return cls_callstack
+
 def logger_name_gen():
     callstack = callstack_clsfilt( 
             get_callstack()
@@ -57,6 +59,7 @@ def logger_name_gen():
         #[type(x).__name__ for x in cls_stack_dedup][::-1]
         [type(x).__name__ for x in cls_stack_dedup if isinstance(x, LoggingEntity)][::-1]
     )
+
 def get_head():
     callstack = callstack_clsfilt( 
             get_callstack()
@@ -69,7 +72,13 @@ def get_head():
         if i not in cls_stack_dedup:
             cls_stack_dedup.append(i)
 
-    return [x for x in cls_stack_dedup if isinstance(x, Head)][0]
+    try:
+
+        return [x for x in cls_stack_dedup if isinstance(x, Head)][0]
+
+    except IndexError:
+        
+        return None
 
 def get_root():
     callstack = callstack_clsfilt( 
