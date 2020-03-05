@@ -305,7 +305,8 @@ colnames = ["contig","prot_len","coverage","gc","pid","sp_os","lineage","evalue"
 info_table.populate(ldict, colnames)
 
 info_table.df.contig = info_table.df.contig.apply(node_num_only)
-info_table.df.lineage = info_table.df.lineage.apply(str.replace,args=('; ','.'))
+info_table.df.lineage = info_table.df.lineage.apply(str.replace,args=(';','.'))
+info_table.df.lineage = info_table.df.lineage.apply(str.strip)
 
 ### Need to fix this crap and deal with this when building taxdb - too late to be doing this nonsense
 info_table.df.lineage = info_table.df.lineage.apply(str.replace,args=(", ",'_'))
