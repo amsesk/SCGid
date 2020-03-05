@@ -17,6 +17,7 @@ else:
     from scgid.sequence import DNASequenceCollection, AASequenceCollection
     from scgid.flexwindow import generate_windows
     from scgid.error import Ok
+    from scgid.plotter import PlotlyPlotter
 
     class Gct (Module, LoggingEntity, Head):
         def __init__(self, argdict = None, loglevel=logging.INFO):
@@ -88,7 +89,6 @@ else:
             return parser
 
         def run(self):
-            #self.start_logging()
             self.setwd( __name__, self.config.get("prefix") )
             self.config.reusable.check()
             self.config.dependencies.check(self.config)
@@ -135,10 +135,16 @@ else:
             windows = generate_windows(self.infotable)
             
             # Print PDFs of windows to pdf in directory `windows` and stats on all windows to tsv
+            '''
             if os.path.isdir('../windows'):
                 shutil.rmtree('../windows')
             os.mkdir('windows')
             #windows.print_all_pdf("windows")
+            '''
+            plotout = f"{self.config.get('prefix')}.gctplt.html"
+            plotter = PlotlyPlotter(infotable = self.infotable, n = 10)
+            plotter.plot(outpath = plotout)
+
             windows.print_all_tsv(f"{ self.config.get('prefix') }.windows.all.out")
 
             # Pick the best window and store in `best`
