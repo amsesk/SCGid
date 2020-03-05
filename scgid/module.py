@@ -51,6 +51,18 @@ class Module (object):
         self.logger = logging.getLogger( logger_name_gen() )
         self.simplelogger = logging.getLogger("SCGid.unfmt")
 
+        '''
+        logfiles_path = os.path.join(
+                os.getcwd(),
+                self.config.get("prefix"),
+                "logfiles"
+                )
+        '''
+        #if not os.path.isdir(logfiles_path):
+            
+
+
+
     def set_module_logging_level(self, loglevel = logging.INFO):
         ident = type(self).__name__
         downstream_loggers = [logging.getLogger(name) for name in logging.root.manager.loggerDict if ident in name]
