@@ -81,7 +81,8 @@ class InfoTable(object):
         return unclassifieds
 
     def tidy (self, taxlvl_idx):
-        self.df.lineage = self.df.lineage.apply(str.replace,args=('; ','.'))
+        self.df.lineage = self.df.lineage.apply(str.replace,args=(';','.'))
+        self.df.lineage = self.df.lineage.apply(str.strip)
 
         ### Need to fix this crap and deal with this when building taxdb - too late to be doing this nonsense
         self.df.lineage = self.df.lineage.apply(str.replace,args=(", ",'_'))
