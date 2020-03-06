@@ -38,6 +38,7 @@ parser.add_argument('-s', '--stringency', metavar = "stringency_threshold", requ
 parser.add_argument('-f','--prefix', metavar = 'prefix_for_output', required=False, default='scgid', help="The prefix that you would like to be used for all output files. DEFAULT = scgid")
 parser.add_argument('-g', '--targets', metavar = 'target_taxa', action='store', required=True, help="A comma-separated list with NO spaces of the taxonomic levels that the gc-coverage window should be chosen with respect to including. EXAMPLE: '-g Fungi,Eukaryota,Homo'")
 parser.add_argument('-x', '--exceptions', metavar = 'exceptions_to_target_taxa', action='store', required=False, default=None, help="A comma-separated list with NO spaces of any exlusions to the taxonomic levels specified in -g|--targets. For instance if you included Fungi in targets but want to exclude ascomycetes use: '-x Ascomycota'")
+parser.add_argument('--taxlvl', metavar = "taxlvl_to_plot", action="store",required=False, help = "A taxonomic level at which to generate GCT plots.")
 
 parser.add_argument('-sp','--augustus_sp', metavar = "augustus_species", action="store",required=False, default=None, help = "Augustus species for gene predicition.")
 parser.add_argument('-e', '--evalue', metavar = 'e-value_cutoff', action = 'store', required = False, default = '1e-10', help = "The evalue cutoff for blast. Default: 1xe-10)")
@@ -257,7 +258,7 @@ for p in proteins:
 pattern = re.compile(SPDB_OS_REGEXP_PATTERN)
 
 ## This should be set somewhere else
-taxlvl_idx = 1
+taxlvl_idx = args.taxlvl
 
 for line in open(blastout).readlines():
     spl = [x.strip() for x in line.split('\t')]

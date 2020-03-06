@@ -154,6 +154,8 @@ class infotable(object):
 
 
 def it_get_taxonomy_level(row, level):
+    level = parse_taxlvl(level)
+
     ret = row.loc[ ['contig','lineage','evalue'] ]
 
     if row['lineage'] == "Not_in_taxdb":
@@ -173,3 +175,11 @@ def it_parse_lin(row, tar, ex):
     else:
         row['parse_lineage'] = 'nontarget'
     return row
+
+def parse_taxlvl(level):
+    d = {
+        "domain": 0,
+        "kingdom": 1,
+        "phylum": 2
+    }
+    return d[level]
