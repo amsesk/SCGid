@@ -35,7 +35,7 @@ import settings
 import cPickle as pickle
 import shutil
 from sequence import *
-from ete3 import Tree, TreeStyle, NodeStyle, NCBITaxa
+from ete3 import Tree, NodeStyle, NCBITaxa
 from lib import *
 from infotable import infotable
 
@@ -417,13 +417,14 @@ with open("{}_rscuTree_annot.csv".format(prefix),'w') as f:
         l = [i.strip() for i in l]
         f.write("{}\n".format( ','.join(l) ))
 
+'''
 circ = TreeStyle()
 circ.scale=500
 circ.min_leaf_separation=1
 circ.mode="c"
 circ.force_topology=True
 circ.show_leaf_name = True
-
+'''
 #annotated_tree.show(tree_style=circ)
 #sys.exit()
 

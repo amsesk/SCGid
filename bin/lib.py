@@ -13,7 +13,7 @@ import cPickle as pickle
 import subprocess
 import settings
 from time import localtime, strftime, sleep
-from ete3 import Tree, TreeStyle, NodeStyle, NCBITaxa, TextFace ## to avoid seg fault on flux, change back once fixed
+from ete3 import Tree, NCBITaxa ## to avoid seg fault on flux, change back once fixed
 import random
 from flexwindow import FlexibleSelectionWindow
 #path_to_this_file = inspect.getfile(inspect.currentframe())
