@@ -1,0 +1,10 @@
+{
+'Saccharomyces cerevisiae (strain ATCC 204508 / S288c)': 'Eukaryota; Fungi; Dikarya; Ascomycota; Saccharomycotina; Saccharomycetes; Saccharomycetales; Saccharomycetaceae; Saccharomyces',
+'Bacillus subtilis (strain 168)': 'Bacteria; Firmicutes; Bacilli; Bacillales; Bacillaceae; Bacillus',
+'Sinorhizobium fredii (strain NBRC 101917 / NGR234)': 'Bacteria; Proteobacteria; Alphaproteobacteria; Rhizobiales; Rhizobiaceae; Sinorhizobium/Ensifer group; Sinorhizobium',
+'Neosp1': 'Eukaryota; Fungi; Neocallimastigomycota',
+'Orpsp1_1': 'Eukaryota; Fungi; Neocallimastigomycota',
+'Pirfi3': 'Eukaryota; Fungi; Neocallimastigomycota',
+'Rozal1_1': 'Eukaryota; Fungi; Cryptomycota; Rozella',
+'Chlamydomonas reinhardtii': 'Eukaryota; Viridiplantae; Chlorophyta; Chlorophyceae; Chlamydomonadales; Chlamydomonadaceae; Chlamydomonas'
+}
