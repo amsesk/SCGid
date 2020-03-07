@@ -5,8 +5,9 @@ import sys
 import os
 import logging
 from collections import namedtuple
-from scgid.modcomm import LoggingEntity, get_head, logger_name_gen
+from scgid.modcomm import LoggingEntity, ErrorHandler, get_head, logger_name_gen
 from scgid.library import subprocessP
+from scgid.error import ModuleError
 
 ### Definitions
 PltOut = namedtuple("PltOut", ["axis","mean","window","points"])
@@ -380,8 +381,17 @@ def calc_1d_window_symm (it, axis, inc_factor = 0.01, plot = False):
         step_window = (axis_ss.mean - s*step_size, axis_ss.mean + s*step_size)
         flextbl.rfilter_inplace_from_parent(axis, step_window)
         population_now = flextbl.tnt_population()
-        tp = population_now.target/population_whole.target
-        ntp = population_now.nontarget/population_whole.nontarget
+       
+        try:
+            tp = population_now.target/population_whole.target
+        except ZeroDivisionError:
+            tp = population_now.target/1
+
+        try:
+            ntp = population_now.nontarget/population_whole.nontarget
+        except:
+            population_now.nontarget/1
+
         pointrow = np.array([
                 s,
                 step_window[0],
@@ -442,8 +452,17 @@ def calc_1d_window_asymm (it, axis, inc_factor = 0.01, plot = False):
             step_window = (axis_ss.mean, axis_ss.mean + d * s*step_size)
             flextbl.rfilter_inplace_from_parent(axis, step_window)
             population_now = flextbl.tnt_population()
-            tp = population_now.target/population_whole.target
-            ntp = population_now.nontarget/population_whole.nontarget
+            
+            try:
+                tp = population_now.target/population_whole.target
+            except ZeroDivisionError:
+                tp = population_now.target/1
+
+            try:
+                ntp = population_now.nontarget/population_whole.nontarget
+            except:
+                population_now.nontarget/1
+
             pointrow = np.array([
                     s,
                     min(step_window),
@@ -497,8 +516,15 @@ code_to_col = {
         'gc': 'gc',
         'co': 'coverage'
         }
+class NoTargetError(ModuleError):
+    def __init__(self, error_catch = True):
+        super().__init__()
+        self.msg = f"No target-annotated points in plot data, so nothing to do. This affects all windows. Try changing target-except groupings."
+        self.errno = 27
+        if error_catch:
+            self.catch()
 
-class FlexibleSelectionWindow(LoggingEntity):
+class FlexibleSelectionWindow(LoggingEntity, ErrorHandler):
     def __init__ (self, expPat):
         self.expPat = expPat
         
@@ -545,9 +571,12 @@ class FlexibleSelectionWindow(LoggingEntity):
 
     #%%
     def calc_1d_window_symm (self, it, axis, inc_factor = 0.01, plot = False):
-        
         flextbl = it.spawn_child("flextable", it.df)
         target = it.target_filter()
+
+        if target.df.shape[0] == 0:
+            raise NoTargetError
+
         axis_ss = target.summary_stats(axis)
         pdist = axis_ss.max - axis_ss.mean
         ndist = axis_ss.mean - axis_ss.min
@@ -557,8 +586,9 @@ class FlexibleSelectionWindow(LoggingEntity):
         
         try:
             steps_to_take = int(np.floor(dist/step_size))
-        except ZeroDivisionError:
-            self.logger.warning("Abnormal data. Standard deviation of target points along {axis}-axis equals 0. Setting value to 1 to avoid ZeroDivisionError.")
+
+        except ValueError:
+            self.logger.warning(f"Abnormal data. Standard deviation of target points along {axis}-axis equals 0. Setting value to 1 to avoid ZeroDivisionError.")
             steps_to_take = int(np.floor(dist/1))
 
         points = np.ndarray(shape=(steps_to_take+1, 6), dtype='float', order='C')
@@ -573,8 +603,7 @@ class FlexibleSelectionWindow(LoggingEntity):
             try:
                 tp = population_now.target/population_whole.target
             except ZeroDivisionError:
-                self.logger.debug("No target in window. Setting value to 1 to avoid ZeroDivsionError")
-                tp = population_now.target/1
+                raise NoTargetError
             
             try:
                 ntp = population_now.nontarget/population_whole.nontarget
@@ -617,6 +646,10 @@ class FlexibleSelectionWindow(LoggingEntity):
         
         flextbl = it.spawn_child("flextable", it.df)
         target = it.target_filter()
+
+        if target.df.shape[0] == 0:
+            raise NoTargetError
+
         axis_ss = target.summary_stats(axis)
         pdist = axis_ss.max - axis_ss.mean
         ndist = axis_ss.mean - axis_ss.min
@@ -628,7 +661,7 @@ class FlexibleSelectionWindow(LoggingEntity):
                 -1: int(np.floor(ndist/step_size)),
                 1: int(np.floor(pdist/step_size))
                 }
-        except ZeroDivisionError:
+        except ValueError:
             self.logger.warning("Abnormal data. Standard deviation of target points along {axis}-axis equals 0. Setting value to 1 to avoid ZeroDivisionError.")
             steps_to_take = {
                 -1: int(np.floor(ndist/1)),
@@ -655,8 +688,7 @@ class FlexibleSelectionWindow(LoggingEntity):
                 try:
                     tp = population_now.target/population_whole.target
                 except ZeroDivisionError:
-                    self.logger.debug("No target in window. Setting value to 1 to avoid ZeroDivsionError")
-                    tp = population_now.target/1
+                    raise NoTargetError
             
                 try:
                     ntp = population_now.nontarget/population_whole.nontarget
@@ -741,9 +773,12 @@ class FlexibleSelectionWindow(LoggingEntity):
         
         target_in_window = Wtable_pop.target
         nontarget_in_window = Wtable_pop.nontarget
+
+        if all_target == 0.0:
+            raise NoTargetError
         
         if all_nontarget == 0.0:
-            self.logger.debug(f"No nontarget in final window `{self.expPat}`. Setting to 1 to avoid ZeroDivisionError.")
+            self.logger.warning(f"No nontarget in final window `{self.expPat}`. Setting to 1 to avoid ZeroDivisionError.")
             all_nontarget = 1.0
 
         self.n_target = int(target_in_window)

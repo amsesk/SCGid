@@ -308,7 +308,7 @@ class SCGid(LoggingEntity, ErrorHandler, Root, object):
             #'update': SCGIDUpdate
         }
 
-        self.logger = logging.getLogger("progress")
+        self.logger = logging.getLogger("SCGid")
         self.simplelogger = logging.getLogger("data")
         
         ''' suspend autoupdate for now - installed SCGid HOME is not a git repo

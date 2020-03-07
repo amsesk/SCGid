@@ -82,13 +82,13 @@ class InfoTable(object):
 
     def tidy (self, taxlvl_idx):
         self.df.lineage = self.df.lineage.apply(str.replace,args=(';','.'))
-        self.df.lineage = self.df.lineage.apply(str.strip)
 
         ### Need to fix this crap and deal with this when building taxdb - too late to be doing this nonsense
         self.df.lineage = self.df.lineage.apply(str.replace,args=(", ",'_'))
         self.df.lineage = self.df.lineage.apply(str.replace, args=(',','_'))
 
         self.df.lineage = self.df.lineage.apply(str.split,args='.')
+        self.df.lineage = self.df.lineage.apply(lambda x: [t.strip() for t in x])
 
         ## Get taxonomy level now so R doesn't freak out later
         self.df['pertinent_taxlvl'] = self.df.apply(it_get_taxonomy_level, args=(taxlvl_idx,), axis=1)['lineage']
@@ -204,7 +204,7 @@ def it_get_taxonomy_level(row, level):
 def it_parse_lin(row, tar, ex):
     if row['lineage'] == "Not_in_taxdb":
         row['parse_lineage'] = 'unclassified'
-    elif any([i in tar for i in row['lineage']]) is True and any([i in ex for i in row['lineage']]) is False:
+    elif any([i in tar for i in row['lineage']]) and not any([i in ex for i in row['lineage']]):
         row['parse_lineage'] = 'target'
     else:
         row['parse_lineage'] = 'nontarget'

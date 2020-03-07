@@ -70,7 +70,6 @@ class PlotlyPlotter (Module):
 
     def _scale (self):
         self.infotable.df.loc[self.infotable.df.evalue == 0, "evalue"] = 2.225074e-308
-        print(self.infotable.df.evalue)
         self.infotable.df = self.infotable.df.assign(scaled_evalue = np.log(self.infotable.df.evalue))
 
     def collapse_top_n (self, top_n):
