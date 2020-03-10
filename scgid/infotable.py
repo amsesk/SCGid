@@ -5,13 +5,13 @@ import sys
 from collections import namedtuple
 
 class InfoTable(object):
-    def __init__(self, target_taxa = None, ident="HEAD"):
-        self.colnames = ["contig","prot_len","coverage","gc","pid","sp_os","lineage","evalue","parse_lineage"]
+    def __init__(self, target_taxa = None, ident="HEAD", colnames = None):
+        
+        if colnames is None:
+            self.colnames = ['contig', 'gc', 'coverage', 'pid', 'length', 'sseqid', 'sp_os', 'desc', 'evalue', 'lineage', 'pertinent_taxlvl', 'parse_lineage']
+        else:
+            self.colnames = colnames
 
-        self.colnames_new = list(self.colnames)
-        self.colnames_new.append("pertinent_taxlvl")
-
-        self.unparse_colnames = ['contig', 'gc', 'coverage', 'pid', 'length', 'sp_os', 'desc', 'evalue', 'lineage', 'pertinent_taxlvl', 'parse_lineage']
         empty_infotable = {}
         for col in self.colnames:
             empty_infotable[col] = []
@@ -144,11 +144,11 @@ class InfoTable(object):
         self.dump = None
 
     def set_target(self, target, exceptions = None):
-        self.tar = target.split(',')
+        self.tar = [t.strip() for t in target.split(',')]
         if exceptions is None:
             self.ex = []
         else:
-            self.ex = exceptions.split(',')
+            self.ex = [e.strip() for e in exceptions.split(',')]
 
     def taxon_level(self, level):
         return self.df.apply(it_get_taxonomy_level, axis=1, args=(level,))
