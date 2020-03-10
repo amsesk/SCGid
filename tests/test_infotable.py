@@ -23,6 +23,9 @@ ldict = [{
 	"desc": "A description of the protein hit.",
 	"evalue": 1e-12
 	}]
+
+initial_colnames = ["contig","gc","coverage","pid","length","sseqid","sp_os","desc","evalue"]
+
 '''
 def test___init__(self, target_taxa = None, ident="HEAD"):
 	pass
@@ -59,8 +62,9 @@ def test_summary_stats (self, feature):
 '''
 def test_populate():
 	it = InfoTable()
-	it.populate(ldict)
+	it.populate(ldict = ldict, colnames = initial_colnames)
 	assert it.df.shape == (2, 9)
+	assert it.df.columns.to_list() == initial_colnames
 	assert it.df.iloc[0,:].to_list() == ["contig_1", 0.5, 40.5, "g0001", 450, "ACC_01", "OS=Pipcy3_1", "A description of the protein hit.", 1e-10]
 	assert it.df.iloc[1,:].to_list() == ["contig_2", 0.45, 45.5, "g0002", 760, "ACC_02", "OS=Pipcy3_1", "A description of the protein hit.", 1e-12]
 '''
