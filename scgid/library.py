@@ -5,6 +5,7 @@ import os
 import pickle
 import random
 import itertools as it
+import logging
 from io import StringIO
 from collections import OrderedDict
 from scgid.sequence import DNASequence, DNASequenceCollection, AASequence, AASequenceCollection
@@ -36,6 +37,65 @@ class spinner():
             ow_last_stdout(self.sequence[self.current-1])
             return str()
 '''
+def get_logging_config(logfile_path = "scgid.log.tmp"):
+    LOGGING_CONFIG = {
+        "version": 1,
+
+        "formatters": {
+            "verbose": {
+                "format": "%(asctime)s %(name)-12s %(levelname)-8s %(message)s",
+            },
+
+            "simple": {
+                "format": "%(message)s",
+            },
+        },
+
+        'handlers': {
+            'console_verbose': {
+                'level':'INFO',
+                'class':'logging.StreamHandler',
+                'formatter': 'verbose',
+                'stream': 'ext://sys.stdout',
+            },
+            'file_verbose': {
+                'level': 'INFO',
+                'class': 'logging.FileHandler',
+                'formatter': 'verbose',
+                'filename': logfile_path,
+                'mode': 'a',
+            },
+            'console_simple': {
+                'level':'INFO',
+                'class':'logging.StreamHandler',
+                'formatter': 'simple',
+                'stream': 'ext://sys.stdout',
+            },
+            'file_simple': {
+                'level': 'INFO',
+                'class': 'logging.FileHandler',
+                'formatter': 'simple',
+                'filename': logfile_path,
+                'mode': 'a',
+            },
+        },
+
+        "loggers": {
+
+            "SCGid": {
+                "level": "DEBUG",
+                "handlers": ['console_verbose', 'file_verbose'],
+                },
+
+            "data": {
+                "level": "DEBUG",
+                "handlers": ['console_simple', 'file_simple'],
+
+                },
+            },
+        }
+
+    return LOGGING_CONFIG
 
 class bcolors:
     MAGENTA = '\033[95m'

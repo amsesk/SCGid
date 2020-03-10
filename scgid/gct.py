@@ -8,6 +8,7 @@ else:
     import os
     import argparse
     import shutil
+    import io
     from scgid.dependencies import CaseDependency, ConstDependency
     from scgid.module import Module
     from scgid.reuse import ReusableOutputManager, ReusableOutput, augustus_predict, protein_blast
@@ -30,6 +31,10 @@ else:
                 self.argparser = Gct.generate_argparser()
                 self.parsed_args = self.argparser.parse_args()
                 self.config.load_cmdline( self.parsed_args ) # Copy command line args defined by self.argparser to self.config
+
+            self.set_rundir(self.config.get("prefix"))
+
+            self.log_to_rundir(type(self).__name__)
             
             self.config.reusable.populate(
                 ReusableOutput(
@@ -89,7 +94,10 @@ else:
             return parser
 
         def run(self):
-            self.setwd( __name__, self.config.get("prefix") )
+            self.setwd( __name__ )
+
+            self.print_opts()
+
             self.config.reusable.check()
             self.config.dependencies.check(self.config)
             self.config.reusable.generate_outputs()

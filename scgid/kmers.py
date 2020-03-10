@@ -134,6 +134,10 @@ else:
                 }
                 self.config.check_case_args(self.case_args)
 
+            self.set_rundir(self.config.get("prefix"))
+
+            self.log_to_rundir(type(self).__name__)
+
             self.config.dependencies.populate(
                 CaseDependency("somoclu", "mode", "somoclu"),
                 CaseDependency(self.config.get("mpicmd"), "mode", "somoclu"),
@@ -307,7 +311,7 @@ else:
 
         def run(self):
 
-            self.setwd( __name__, self.config.get("prefix") )
+            self.setwd( __name__ )
             self.config.reusable.check()
             self.config.dependencies.check(self.config)
             self.config.reusable.generate_outputs()
@@ -344,6 +348,11 @@ else:
                 self.argparser = Annotate.generate_argparser()
                 self.parsed_args = self.argparser.parse_args()
                 self.config.load_cmdline( self.parsed_args) # Copy command line args defined by self.argparser to self.config
+
+
+            self.set_rundir(self.config.get("prefix"))
+
+            self.log_to_rundir(type(self).__name__)
 
             self.config.reusable.populate(
                 ReusableOutput(
@@ -425,7 +434,7 @@ else:
 
         def run(self):
             #self.start_logging()
-            self.setwd( __name__, self.config.get("prefix") )
+            self.setwd( __name__ )
             self.config.reusable.check()
             self.config.dependencies.check(self.config)
             self.config.reusable.generate_outputs()

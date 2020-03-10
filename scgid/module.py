@@ -7,12 +7,14 @@ import logging
 import subprocess
 import pkg_resources
 import warnings
+from datetime import datetime
 from scgid.config import Config
 from scgid.dependencies import Dependencies
 from scgid.reuse import ReusableOutputManager
 from scgid.modcomm import logger_name_gen, LoggingEntity, ErrorHandler, get_head, get_root
-from scgid.error import ConfigError, ArgumentError, ModuleError
+from scgid.error import ConfigError, ArgumentError, ModuleError, check_result, Ok
 from scgid.parsers import PathStore
+from scgid.library import get_logging_config
 
 class Module (object):
     def __init__(self, call, name = None, parent=None, loglevel=logging.INFO):
@@ -25,14 +27,19 @@ class Module (object):
         if name is not None:
             self.name = name
         self.logger = None
+        self.loglevel = loglevel
 
         self.start_logging()
 
         self.config = Config()
 
-        self.set_module_logging_level(loglevel)
+        self.set_module_logging_level(self.loglevel)
 
         self.config.load_yaml()
+
+    def print_opts (self):
+        self.simplelogger.info (f"\nSCGid {type(self).__name__} is being run with the following settings:")
+        self.simplelogger.info(f"{'#'*50}\n{self.config}\n{'#'*50}\n")
 
     def generate_argparser(self):
         pass
@@ -46,10 +53,37 @@ class Module (object):
             else:
                 pass
         return None
+
+    @check_result
+    def log_to_rundir(self, name):
+        loggers = [logging.getLogger(x) for x in ["SCGid", "data"]]
+        
+        if not os.path.isdir("logfiles"):
+            os.mkdir("logfiles")
+
+        for l in loggers:
+            for h in l.handlers:
+                h.close()
+            l.handlers = []
+
+        now = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+
+        logfile_path = os.path.join(os.getcwd(), "logfiles", f"SCGid.{name}.{now}.log")
+        
+        try:
+            shutil.move("../scgid.log.tmp", logfile_path)
+        except FileNotFoundError:
+            pass
+
+        cfg = get_logging_config( logfile_path )
+
+        logging.config.dictConfig( cfg )
+
+        return Ok(None)
     
     def start_logging(self):
         self.logger = logging.getLogger( logger_name_gen() )
-        self.simplelogger = logging.getLogger("SCGid.unfmt")
+        self.simplelogger = logging.getLogger("data")
 
         '''
         logfiles_path = os.path.join(
@@ -60,17 +94,13 @@ class Module (object):
         '''
         #if not os.path.isdir(logfiles_path):
             
-
-
-
     def set_module_logging_level(self, loglevel = logging.INFO):
         ident = type(self).__name__
         downstream_loggers = [logging.getLogger(name) for name in logging.root.manager.loggerDict if ident in name]
         for dsl in downstream_loggers:
             dsl.setLevel(loglevel)
 
-    def setwd (self, name, prefix):
-        name = name.split(".")[1]
+    def set_rundir (self, prefix):
         rundir = "{}{}".format(prefix, self.config.OUTPUTSUFFIX)
         try:
             os.chdir(rundir)
@@ -80,7 +110,10 @@ class Module (object):
             self.logger.info("Creating directory `%s`", os.getcwd())
         
         self.config.rundir = os.getcwd()
-        
+
+    def setwd(self, name):
+        name = name.split(".")[1]
+
         try:
             os.chdir(name)
         except:
@@ -174,7 +207,7 @@ class Module (object):
         optstr.insert(0, type(self).__name__.lower())
         optstr.insert(0, "scgid")
         return optstr
-        
+            
 
     '''
     def try_catch_error(self, op):

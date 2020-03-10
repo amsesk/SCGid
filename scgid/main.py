@@ -50,79 +50,8 @@ from scgid.kmers import Kmers
 from scgid.consensus import Consensus
 from scgid.update_swissprot import SPDBUpdater, SPDBExpander
 from scgid.error import ModuleError
-from scgid.library import flatten_dict, bcolors
+from scgid.library import flatten_dict, bcolors, get_logging_config
 #from scgid.update_scgid import SCGIDUpdate
-
-LOGGING_CONFIG = { 
-    'version': 1,
-    'disable_existing_loggers': True,
-    'formatters': { 
-        'standard': { 
-            'format': '%(asctime)s [%(levelname)s] %(name)s: %(message)s'
-        },
-    },
-    'handlers': { 
-        'default': { 
-            'level': 'INFO',
-            'formatter': 'standard',
-            'class': 'logging.StreamHandler',
-            'stream': 'ext://sys.stdout',  # Default is stderr
-        },
-    },
-    'loggers': { 
-        '': {  # root logger
-            'handlers': ['default'],
-            'level': 'WARNING',
-            'propagate': False
-        },
-        'my.packg': { 
-            'handlers': ['default'],
-            'level': 'INFO',
-            'propagate': False
-        },
-        '__main__': {  # if __name__ == '__main__'
-            'handlers': ['default'],
-            'level': 'DEBUG',
-            'propagate': False
-        },
-    } 
-}
-LOGGING_CONFIG = {
-    "version": 1,
-
-    "formatters": {
-        "verbose": {
-            "format": "%(asctime)s %(name)-12s %(levelname)-8s %(message)s",
-        },
-
-        "simple": {
-            "format": "%(message)s",
-        },
-    },
-
-    'handlers': {
-        'console': {
-            'level':'INFO',
-            'class':'logging.StreamHandler',
-            'formatter': 'verbose',
-            'stream': 'ext://sys.stdout',
-        },
-    },
-
-    "loggers": {
-
-        "SCGid": {
-            "level": "DEBUG",
-            "handlers": ['console'],
-            },
-
-        "data": {
-            "level": "DEBUG",
-            "handlers": ['console'],
-
-            },
-        },
-}
 
 class SCGidPipeline(object):
     def __init__(self, opts_path):
@@ -295,7 +224,7 @@ class SCGid(LoggingEntity, ErrorHandler, Root, object):
         self.SCGID_SCRIPTS = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
         self.SCGID = os.path.dirname(self.SCGID_SCRIPTS)
 
-        logging.config.dictConfig(LOGGING_CONFIG)
+        logging.config.dictConfig( get_logging_config() )
 
         self.modcall = {
             'init': InitialConfig,
@@ -310,7 +239,12 @@ class SCGid(LoggingEntity, ErrorHandler, Root, object):
 
         self.logger = logging.getLogger("SCGid")
         self.simplelogger = logging.getLogger("data")
-        
+
+        '''
+        for i in dir(self.logger.handlers[1]):
+            print(i, getattr(self.logger.handlers[1], i))
+        '''
+
         ''' suspend autoupdate for now - installed SCGid HOME is not a git repo
         # Try to update SCGid from repo in other module calls only if being run in interactive shell
         if self.modcall != "update" and sys.stdout.isatty():
