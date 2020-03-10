@@ -96,7 +96,7 @@ else:
         def run(self):
             self.setwd( __name__ )
 
-            self.print_opts()
+            self.log_config()
 
             self.config.reusable.check()
             self.config.dependencies.check(self.config)

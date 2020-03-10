@@ -122,6 +122,7 @@ else:
                 # Probably better to implement this as a class, but let's wait and see how much it comes up before pouring time into it
                 self.case_args = {
                     "mode": {
+
                         "det": {
                             "bool": self.config.get("cpus") == 1,
                             "warning": "Since `--mode det` cannot run on multiple processors, argument passed to `--cpus` is being ignored. Running on one CPU..."
@@ -312,6 +313,9 @@ else:
         def run(self):
 
             self.setwd( __name__ )
+
+            self.log_config()
+
             self.config.reusable.check()
             self.config.dependencies.check(self.config)
             self.config.reusable.generate_outputs()
@@ -433,8 +437,11 @@ else:
             return None
 
         def run(self):
-            #self.start_logging()
+            
             self.setwd( __name__ )
+
+            self.log_config()
+
             self.config.reusable.check()
             self.config.dependencies.check(self.config)
             self.config.reusable.generate_outputs()

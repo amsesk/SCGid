@@ -24,22 +24,30 @@ class Module (object):
         self.wd = None
         self.argparser = None
         self.parsed_args = None
+        self.raw_args = sys.argv
         if name is not None:
             self.name = name
+
         self.logger = None
         self.loglevel = loglevel
 
         self.start_logging()
 
         self.config = Config()
+        self.config.logfile_path = None
 
         self.set_module_logging_level(self.loglevel)
 
         self.config.load_yaml()
 
-    def print_opts (self):
-        self.simplelogger.info (f"\nSCGid {type(self).__name__} is being run with the following settings:")
-        self.simplelogger.info(f"{'#'*50}\n{self.config}\n{'#'*50}\n")
+    def log_config (self):
+        self.logger.info(f"The logfile for this run is located at `{os.path.join(self.config.rundir, 'logfiles', self.config.logfile_path)}`.")
+        self.simplelogger.info (f"\n`scgid {type(self).__name__.lower()}` was invoked with the following call:\n{'-'*50}")
+        self.simplelogger.info(f"{' '.join(self.raw_args)}\n")
+        self.simplelogger.info(f"The full SCGid configuration for this is as follows:\n{'-'*50}\n{self.config}\n{'-'*50}\n")
+
+        self.logger.info(f"Initilization and configuration complete.")
+        self.logger.info(f"Starting `scgid {type(self).__name__.lower()}`")
 
     def generate_argparser(self):
         pass
@@ -68,7 +76,8 @@ class Module (object):
 
         now = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
 
-        logfile_path = os.path.join(os.getcwd(), "logfiles", f"SCGid.{name}.{now}.log")
+        logfile_path = os.path.join(os.getcwd(), "logfiles", f"SCGid.{name}.{self.root.start_ts}.log")
+        self.config.logfile_path = logfile_path
         
         try:
             shutil.move("../scgid.log.tmp", logfile_path)

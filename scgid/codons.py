@@ -601,6 +601,8 @@ class Codons(Module, LoggingEntity, Head, ErrorHandler):
     def run(self) -> DNASequenceCollection:
         #self.start_logging()
         self.setwd( __name__ )
+        self.log_config()
+        
         self.config.reusable.check()
         self.config.dependencies.check(self.config)
         self.config.reusable.generate_outputs()

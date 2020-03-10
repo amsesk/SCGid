@@ -42,6 +42,7 @@ import warnings
 import itertools
 import yaml
 import scgid
+from datetime import datetime
 from scgid.config import InitialConfig, FileConfig
 from scgid.modcomm import LoggingEntity, ErrorHandler, logger_name_gen, ExitOnExceptionHandler, get_root, Root
 from scgid.gct import Gct 
@@ -251,7 +252,11 @@ class SCGid(LoggingEntity, ErrorHandler, Root, object):
             SCGIDUpdate(is_automated_update=True).run()
         '''
         
-        self.logger.info(f"Calling {call}")
+        self.start_ts = round(datetime.timestamp(datetime.now()))
+        self.start_dt = datetime.fromtimestamp(self.start_ts)
+
+        self.logger.info(f"Calling `scgid {call}` on {self.start_dt.strftime('%A %B %d, %Y at %H:%M:%S')}.")
+        self.logger.info(f"Run timestamp ID: {self.start_ts} (i.e. {datetime.fromtimestamp(self.start_ts).strftime('%A %B %d, %Y at %H:%M:%S')})")
 
         if not os.path.isfile( os.path.join(self.SCGID, "config.yaml") ):
             
