@@ -136,7 +136,8 @@ else:
             self.unclassified_infotable = self.infotable.collect_unclassifieds(nucl)
 
             # Write infotables for classified and unclassified contigs to csv
-            self.infotable.df.drop("sseqid", axis=1).to_csv(f"{self.config.get('prefix')}.infotable.tsv", sep='\t', index = False, header = False)
+            self.infotable.df.to_csv(f"{self.config.get('prefix')}.infotable.tsv", sep='\t', index = False, header = False)
+            #self.infotable.df.drop("sseqid", axis=1).to_csv(f"{self.config.get('prefix')}.infotable.tsv", sep='\t', index = False, header = False)
             self.unclassified_infotable.df.to_csv(f"{self.config.get('prefix')}.unclassified.infotable.tsv", sep = '\t', index = False, header = False)
 
             # Generate all 13 windows
