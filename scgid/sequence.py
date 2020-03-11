@@ -146,6 +146,8 @@ class DNASequence(object):
             spl = header.split('_')
             self.coverage = float(spl[5])
             self.shortname = "_".join(spl[0:2])
+        else:
+            self.shortname = self.header
 
         self.gc = float()
         self.gcCount = 0
