@@ -49,7 +49,7 @@ from scgid.gct import Gct
 from scgid.codons import Codons
 from scgid.kmers import Kmers
 from scgid.consensus import Consensus
-from scgid.update_swissprot import SPDBUpdater, SPDBExpander
+from scgid.dbutils import SPDBUpdater, SPDBExpander
 from scgid.error import ModuleError
 from scgid.library import flatten_dict, bcolors, get_logging_config
 #from scgid.update_scgid import SCGIDUpdate
