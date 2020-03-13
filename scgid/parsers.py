@@ -3,26 +3,14 @@ import pandas as pd
 import argparse
 import os
 import re
-import ast
 import warnings
 from collections import namedtuple, OrderedDict
 from ete3 import NCBITaxa
-from scgid.error import ModuleError, ErrorClassNotImplemented
+from scgid.error import ModuleError, ErrorClassNotImplemented, Ok, check_result
 import scgid.pkg_settings as pkg_settings
 from scgid.modcomm import get_head, logger_name_gen, LoggingEntity, ErrorHandler
 from scgid.sequence import AASequenceCollection
-
-class MalformedTaxonomyDatabaseError(ModuleError):
-    def __init__(self, taxdbpath):
-        super().__init__()
-        self.msg = f"Taxonomy database at `{taxdbpath}` improperly formatted. Run `build_taxdb.py` to generate a new one."
-        self.catch()
-
-class MalformedLineageFileError(ModuleError):
-    def __init__(self):
-        super().__init__()
-        self.msg = "Malformed lineage file supplied as argument to `-l|--lineages`."
-        self.catch()
+from scgid.db import SPDBTaxonomy
 
 class MalformedDatabaseHeaderError(ModuleError):
     def __init__(self, offender):
@@ -69,69 +57,6 @@ class OutputPathStore(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         setattr(namespace, self.dest, os.path.abspath(values))
 
-class SPDBTaxonomy(LoggingEntity, ErrorHandler):
-    def __init__ (self, path_to_taxdb):
-        self.logger = logging.getLogger ( logger_name_gen() )
-        self.taxdb = {}
-        with open(path_to_taxdb,'r') as f:
-            try:
-                self.taxdb = ast.literal_eval( f.read() )
-
-            except SyntaxError:
-                return MalformedTaxonomyDatabaseError(taxdbpath = self.head.config.get("taxdb"))
-
-            except:
-                return ErrorClassNotImplemented()
-
-    def __repr__(self):
-        return '\n'.join([f"{k}: {v}" for k,v in self.taxdb.items()])
-
-    # This is a bad name since it specifically applies to InfoTable
-    def add_lineage_info (self, parser):
-        for p in parser.parsed_hits:
-            try:
-                lineage = self.taxdb[ p["sp_os"] ]
-            except:
-                try:
-                    # Can get rid of these once local taxdb is rebuilt
-                    sp_os = sp_os.replace("'","")
-                    sp_os = sp_os.replace("#","")
-                    lineage = self.taxdb[sp_os]
-                except KeyError:
-                    self.logger.warning(f"{sp_os} is missing from the taxdb. You probably specified an older -t|--taxdb file than the one associated with the SPDB blasted against. Rerun build_taxdb or specify a different taxdb to correct. Lineage set as 'Not_in_taxdb' for this run.")
-                    lineage = "Not_in_taxdb"
-            p["lineage"] = lineage
-        return parser
-
-    def expand(self, path_to_lineage) -> None:
-        with open(path_to_lineage) as f_in:
-            lines = f_in.readlines()
-        
-        # Split file into key,lineage for taxdb (hopefully)
-        spl = [ [i.strip() for i in l.split("\t")] for l in lines]
-
-        # Check length of splits to ensure that there are TWO columns, one key with one tab-separated lineage
-        right_ncols = [len(s) == 2 for s in spl]
-        
-        if not all(right_ncols):
-            return MalformedLineageFileError()
-        
-        else:
-            lines_parsed = {i[0]: i[1] for i in spl} 
-            self.taxdb.update(lines_parsed)
-
-        return None
-
-    # Takes open file object - use within with statment
-    # This should be done with most functions that read/write to files I think - makes tests with StringIO easy
-    def write(self, f_out) -> None:
-        f_out.write("{\n")
-        f_out.write(",\n".join([f"'{key}': '{lin}'" for key,lin in self.taxdb.items()]))
-        f_out.write("\n}")
-        return None
-
-
-
 class BlastoutParser(LoggingEntity, ErrorHandler):
     def __init__(self):
         self.path = None
@@ -140,6 +65,7 @@ class BlastoutParser(LoggingEntity, ErrorHandler):
         self.hits = []
         self.best_hits = {}
         self.parsed_hits = []
+        self.spdb_tax = None
 
         try:
             self.head = get_head()
@@ -224,6 +150,27 @@ class BlastoutParser(LoggingEntity, ErrorHandler):
 
         self.logger.info(f"Cross-referenced blastout with database at {self.head.config.get('spdb')}")
         return 0
+
+    @check_result
+    def add_lineages (self, path_to_taxdb):
+
+        self.spdb_tax = SPDBTaxonomy(path_to_taxdb)
+
+        for p in self.parsed_hits:
+            sp_os = p["sp_os"]
+            try:
+                lineage = self.spdb_tax.taxdb[ sp_os ]
+            except:
+                try:
+                    # Can get rid of these once local taxdb is rebuilt
+                    sp_os = sp_os.replace("'","")
+                    sp_os = sp_os.replace("#","")
+                    lineage = self.spdb_tax.taxdb[sp_os]
+                except KeyError:
+                    self.logger.warning(f"{sp_os} is missing from the taxdb. You probably specified an older -t|--taxdb file than the one associated with the SPDB blasted against. Rerun build_taxdb or specify a different taxdb to correct. Lineage set as 'Not_in_taxdb' for this run.")
+                    lineage = "Not_in_taxdb"
+            p["lineage"] = lineage
+        return Ok(None)
 
     def taxids(self):
         ret = []
