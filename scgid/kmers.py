@@ -137,8 +137,6 @@ else:
 
             self.set_rundir(self.config.get("prefix"))
 
-            self.log_to_rundir(type(self).__name__)
-
             self.config.dependencies.populate(
                 CaseDependency("somoclu", "mode", "somoclu"),
                 CaseDependency(self.config.get("mpicmd"), "mode", "somoclu"),
@@ -314,7 +312,13 @@ else:
 
             self.setwd( __name__ )
 
-            self.log_config()
+            ##############################################
+            ######## Skip this if called directly ########
+            ######## (i.e., in tests)             ########
+            ##############################################
+            if self.root is not None:
+                self.log_to_rundir(type(self).__name__)
+                self.log_config()
 
             self.config.reusable.check()
             self.config.dependencies.check(self.config)
@@ -355,8 +359,6 @@ else:
 
 
             self.set_rundir(self.config.get("prefix"))
-
-            self.log_to_rundir(type(self).__name__)
 
             self.config.reusable.populate(
                 ReusableOutput(
@@ -440,7 +442,13 @@ else:
             
             self.setwd( __name__ )
 
-            self.log_config()
+            ##############################################
+            ######## Skip this if called directly ########
+            ######## (i.e., in tests)             ########
+            ##############################################
+            if self.root is not None:
+                self.log_to_rundir(type(self).__name__)
+                self.log_config()
 
             self.config.reusable.check()
             self.config.dependencies.check(self.config)

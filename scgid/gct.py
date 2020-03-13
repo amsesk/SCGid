@@ -13,7 +13,7 @@ else:
     from scgid.module import Module
     from scgid.reuse import ReusableOutputManager, ReusableOutput, augustus_predict, protein_blast
     from scgid.modcomm import LoggingEntity, Head
-    from scgid.parsers import BlastoutParser, PathStore, SPDBTaxonomy
+    from scgid.parsers import BlastoutParser, PathStore
     from scgid.infotable import InfoTable, it_get_taxonomy_level
     from scgid.sequence import DNASequenceCollection, AASequenceCollection
     from scgid.flexwindow import generate_windows
@@ -33,8 +33,6 @@ else:
                 self.config.load_cmdline( self.parsed_args ) # Copy command line args defined by self.argparser to self.config
 
             self.set_rundir(self.config.get("prefix"))
-
-            self.log_to_rundir(type(self).__name__)
             
             self.config.reusable.populate(
                 ReusableOutput(
@@ -96,7 +94,13 @@ else:
         def run(self):
             self.setwd( __name__ )
 
-            self.log_config()
+            ##############################################
+            ######## Skip this if called directly ########
+            ######## (i.e., in tests)             ########
+            ##############################################
+            if self.root is not None:
+                self.log_to_rundir(type(self).__name__)
+                self.log_config()
 
             self.config.reusable.check()
             self.config.dependencies.check(self.config)
@@ -113,8 +117,8 @@ else:
             p.load_from_file(self.config.get("blastout"))
             p.get_best_hits()
             p.crossref_spdb(nucl, prot) # This function needs to be split-up and its functionality spread out
-            spdb_tax = SPDBTaxonomy(self.config.get("taxdb"))
-            p = spdb_tax.add_lineage_info(p)
+            p.add_lineages(self.config.get("taxdb"))
+            #spdb_tax = SPDBTaxonomy(self.config.get("taxdb"))
 
 
             # Fill and do some reformatting of infotable - then parse the lineage information down to target/nontarget

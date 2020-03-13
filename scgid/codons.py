@@ -310,8 +310,6 @@ class Codons(Module, LoggingEntity, Head, ErrorHandler):
 
         self.set_rundir(self.config.get("prefix"))
 
-        self.log_to_rundir(type(self).__name__)
-
         ''' This could be useful later for converting config back to argdict
         for l in self.config.__repr__().split("\n"):
             elements = [x.strip() for x in l.split(":")]
@@ -601,7 +599,14 @@ class Codons(Module, LoggingEntity, Head, ErrorHandler):
     def run(self) -> DNASequenceCollection:
         #self.start_logging()
         self.setwd( __name__ )
-        self.log_config()
+
+        ##############################################
+        ######## Skip this if called directly ########
+        ######## (i.e., in tests)             ########
+        ##############################################
+        if self.root is not None:
+            self.log_to_rundir(type(self).__name__)
+            self.log_config()
         
         self.config.reusable.check()
         self.config.dependencies.check(self.config)
