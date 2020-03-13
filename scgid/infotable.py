@@ -130,12 +130,7 @@ class InfoTable(object):
 
     def load(self, tsv):
         self.df = pd.read_csv(tsv, sep="\t", header=None)
-        if self.df.shape[1] == len(self.colnames):
-            self.df.columns = self.colnames
-        elif self.df.shape[1] == len(self.colnames_new):
-            self.df.columns = self.colnames_new
-        else:
-            self.df.columns = self.unparse_colnames
+        self.df.columns = self.colnames
 
         self.df.lineage = self.df.lineage.apply(ast.literal_eval)
 
