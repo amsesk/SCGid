@@ -68,6 +68,7 @@ class Config(LoggingEntity, ErrorHandler):
         self.dependencies = Dependencies()
         self.reusable = ReusableOutputManager()
         self.rundir = None
+        self.runid = None
 
     def __repr__(self):
         return "\n".join(["{}: {}".format(key, setting) for key,setting in self.__dict__.items()])
