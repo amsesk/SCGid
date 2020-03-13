@@ -1,4 +1,4 @@
-import scgid.parsers
+import scgid.db
 import inspect
 import io
 import ast
@@ -22,14 +22,14 @@ config_yaml_after = """
     """
 
 def test_expand_taxdb (): 
-    taxdb = scgid.parsers.SPDBTaxonomy(args['taxdb'])
+    taxdb = scgid.db.SPDBTaxonomy(args['taxdb'])
     
     taxdb.expand(args['lineages'])
     
     assert taxdb.taxdb == SPEXPAND_EXPECTED
 
 def test_write_taxdb():
-    taxdb = scgid.parsers.SPDBTaxonomy(args['taxdb'])
+    taxdb = scgid.db.SPDBTaxonomy(args['taxdb'])
     text = None
     with io.StringIO() as buff:
         taxdb.write(buff)
@@ -38,7 +38,7 @@ def test_write_taxdb():
     assert ast.literal_eval(text) == taxdb.taxdb
 
 def test_expand_and_write_taxdb():
-    taxdb = scgid.parsers.SPDBTaxonomy(args['taxdb'])
+    taxdb = scgid.db.SPDBTaxonomy(args['taxdb'])
 
     taxdb.expand(args['lineages'])
 

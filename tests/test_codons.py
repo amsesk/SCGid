@@ -6,6 +6,7 @@ import logging.config
 from scgid.codons import Codons, RSCUTree, CDSConcatenate, SmallTreeError, NoGoodCladesError
 from scgid.sequence import DNASequenceCollection
 from scgid.error import is_ok, Ok, check_result
+from scgid.main import SCGid
 
 tests_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 
