@@ -68,8 +68,12 @@ class ErrorClassNotImplemented(FatalError):
     def __init__(self):
         super().__init__()
         self.errno = 55
-        self.msg = "You are seeing this because a novel error has occured. Please report this as an issue at `https://www.github.com/amsesk/SCGid.git`"
+        self.msg = "You are seeing this because a novel error has occured. Please report this trace at `https://www.github.com/amsesk/SCGid.git`"
         self.catch()
+
+    def catch(self):
+        self.handler.logger.exception(f"[{self.__name__}] {self.msg}")
+        sys.exit(self.errno)
 
 class ModuleError(FatalError):
     def __init__(self):
