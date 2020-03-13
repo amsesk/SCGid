@@ -3,10 +3,13 @@ import inspect
 import io
 import ast
 import pytest
+import os
+
+tests_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 
 args = {
-    "lineages": "/home/aimzez/dev/SCGid/tests/data/new_lineage.tsv",
-    "taxdb": "/home/aimzez/dev/SCGid/tests/data/taxdb_in.taxdb"
+    "lineages": os.path.join(tests_dir, "data/new_lineage.tsv"),
+    "taxdb": os.path.join(tests_dir, "/home/aimzez/dev/SCGid/tests/data/taxdb_in.taxdb")
         }
 SPEXPAND_EXPECTED = {
         'Homo sapiens': 'Eukaryota; Metazoa; Chordata; Craniata; Vertebrata; Euteleostomi; Mammalia; Eutheria; Euarchontoglires; Primates; Haplorrhini; Catarrhini; Hominidae; Homo',
