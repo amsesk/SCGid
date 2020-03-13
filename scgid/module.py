@@ -35,6 +35,7 @@ class Module (object):
 
         self.config = Config()
         self.config.logfile_path = None
+        self.config.runid = self.root.start_ts
 
         self.set_module_logging_level(self.loglevel)
 
@@ -44,13 +45,14 @@ class Module (object):
         self.logger.info(f"The logfile for this run is located at `{os.path.join(self.config.rundir, 'logfiles', self.config.logfile_path)}`.")
         self.simplelogger.info (f"\n`scgid {type(self).__name__.lower()}` was invoked with the following call:\n{'-'*50}")
         self.simplelogger.info(f"{' '.join(self.raw_args)}\n")
-        self.simplelogger.info(f"The full SCGid configuration for this is as follows:\n{'-'*50}\n{self.config}\n{'-'*50}\n")
+        self.simplelogger.info(f"The full SCGid configuration for run {self.config.runid} is as follows:\n{'-'*50}\n{self.config}\n{'-'*50}\n")
 
         self.logger.info(f"Initilization and configuration complete.")
         self.logger.info(f"Starting `scgid {type(self).__name__.lower()}`")
 
+    # Defined by subclasses
     def generate_argparser(self):
-        pass
+        return None
 
     def check_path_args(self):
         warnings.warn("Using PathStore (versus PathAction) in argparser nullifies that need for this function to be run at start of module.", DeprecationWarning)
@@ -66,8 +68,8 @@ class Module (object):
     def log_to_rundir(self, name):
         loggers = [logging.getLogger(x) for x in ["SCGid", "data"]]
         
-        if not os.path.isdir("logfiles"):
-            os.mkdir("logfiles")
+        if not os.path.isdir(os.path.join(self.config.get("rundir"), "logfiles")):
+            os.mkdir(os.path.join(self.config.get("rundir"), "logfiles"))
 
         for l in loggers:
             for h in l.handlers:
@@ -76,11 +78,11 @@ class Module (object):
 
         now = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
 
-        logfile_path = os.path.join(os.getcwd(), "logfiles", f"SCGid.{name}.{self.root.start_ts}.log")
+        logfile_path = os.path.join(self.config.get("rundir"), "logfiles", f"SCGid.{name}.{self.root.start_ts}.log")
         self.config.logfile_path = logfile_path
         
         try:
-            shutil.move("../scgid.log.tmp", logfile_path)
+            shutil.move(os.path.join(self.config.get("rundir"), "../", "scgid.log.tmp"), logfile_path)
         except FileNotFoundError:
             pass
 
