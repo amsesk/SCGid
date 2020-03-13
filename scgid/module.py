@@ -35,7 +35,9 @@ class Module (object):
 
         self.config = Config()
         self.config.logfile_path = None
-        self.config.runid = self.root.start_ts
+        
+        if self.root is not None:
+            self.config.runid = self.root.start_ts
 
         self.set_module_logging_level(self.loglevel)
 
