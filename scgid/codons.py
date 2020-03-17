@@ -179,7 +179,9 @@ class RSCUTree(object):
         curr_best = 0.00
         best = [] #"best" here means worth looking into, although it is going to include some real shitty trees
 
-        clades_of_sufficient_size = [c for c in self.dendrogram.get_descendants() if len(c.get_leaves()) >= int(self.head.config.get("mincladesize")) and not c.is_leaf()]
+        # Include self.dendrogram in list of clades to encompass whole tree, but warn if the entire tree is selected as the best clade (warned at base of function)
+
+        clades_of_sufficient_size = [c for c in [self.dendrogram]+self.dendrogram.get_descendants() if len(c.get_leaves()) >= int(self.head.config.get("mincladesize")) and not c.is_leaf()]
         if len(clades_of_sufficient_size) == 0:
 
             return SmallTreeError(
@@ -187,6 +189,7 @@ class RSCUTree(object):
                 mincladesize = self.head.config.get("mincladesize"),
                 minlen = self.head.config.get("minlen"),
                 error_catch = error_catch)
+
 
         for n in clades_of_sufficient_size:
             count_t = float(len([l for l in n if l.annotation == "target"]))
@@ -259,6 +262,9 @@ class RSCUTree(object):
             final_tree = best_trees[0]
 
         self.best_clade = final_tree
+
+        if self.best_clade == self.dendrogram:
+            self.head.logger.warning("The entire RSCU tree was selected as the best clade. This either means: (i) there are no nontarget tips in your tree or (ii) your RSCU tree is small with few or no clades larger than -c|--mincladesize. Try raising -c|--mincladesize or --minlen.")
 
         return Ok(None)
 
