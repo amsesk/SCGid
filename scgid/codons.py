@@ -217,6 +217,8 @@ class RSCUTree(object):
         bins = {}
         i=0 #index iterator to add additional bins
         for p in best:
+            if p == self.dendrogram:
+                pass
             n_bins = len(bins) #number of bins present on each iteration
             found_match = False
             for n in range(0,n_bins):
@@ -228,6 +230,7 @@ class RSCUTree(object):
             if not found_match:
                 bins[i] = [p]
                 i+=1
+        bins.append([self.dendrogram])
         #Now go through each bin and find the best tree from that bin
         best_trees_by_bin = []
         for b in range(0,len(bins)):
@@ -253,7 +256,7 @@ class RSCUTree(object):
             max_leaves = max([i.leaves for i in best_trees_by_bin])
             best_trees = [i for i in best_trees if i.leaves == max_leaves]
             if len(best_trees) > 1:
-                self.head.logger.info("More than one best tree detemined from codon analysis.")
+                self.head.logger.warning("More than one best tree detemined from codon analysis.")
             else:
                 final_tree = best_trees[0]
             #for tree in best_trees:
