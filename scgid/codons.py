@@ -230,7 +230,7 @@ class RSCUTree(object):
             if not found_match:
                 bins[i] = [p]
                 i+=1
-        bins[i] = self.dendrogram
+        bins[i] = [self.dendrogram]
         #Now go through each bin and find the best tree from that bin
         best_trees_by_bin = []
         for b in range(0,len(bins)):
