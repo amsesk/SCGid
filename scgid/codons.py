@@ -218,7 +218,7 @@ class RSCUTree(object):
         i=0 #index iterator to add additional bins
         for p in best:
             if p == self.dendrogram:
-                pass
+                continue
             n_bins = len(bins) #number of bins present on each iteration
             found_match = False
             for n in range(0,n_bins):
