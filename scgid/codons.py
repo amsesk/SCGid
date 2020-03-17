@@ -201,7 +201,7 @@ class RSCUTree(object):
             if total_classified == 0:
                 continue
             measure = float( (count_t - count_nt) / total_classified )
-            if measure > curr_best:
+            if measure > curr_best or n == self.dendrogram:
                 n.add_feature("measure",measure)
                 n.add_feature("leaves", len(n.get_leaves()))
                 best.append(n)
