@@ -176,7 +176,6 @@ class RSCUTree(object):
         pass
 
     def pick_clade(self, error_catch = True):
-        curr_best = 0.00
         best = [] #"best" here means worth looking into, although it is going to include some real shitty trees
 
         # Include self.dendrogram in list of clades to encompass whole tree, but warn if the entire tree is selected as the best clade (warned at base of function)
@@ -201,7 +200,7 @@ class RSCUTree(object):
             if total_classified == 0:
                 continue
             measure = float( (count_t - count_nt) / total_classified )
-            if measure > curr_best or n == self.dendrogram:
+            if measure > 0.00:
                 n.add_feature("measure",measure)
                 n.add_feature("leaves", len(n.get_leaves()))
                 best.append(n)
