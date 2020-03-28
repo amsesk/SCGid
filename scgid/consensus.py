@@ -13,7 +13,7 @@ else:
     from scgid.modcomm import (LoggingEntity, Head)
     from scgid.module import Module
     from scgid.reuse import ReusableOutput, ReusableOutputManager
-    from scgid.parsers import PathAction
+    from scgid.parsers import PathStore
     from scgid.sequence import DNASequenceCollection
 
     class Consensus (Module, LoggingEntity, Head):
@@ -25,6 +25,8 @@ else:
                 self.argparser = self.generate_argparser()
                 self.parsed_args = self.argparser.parse_args()
                 self.config.load_cmdline( self.parsed_args)
+
+            self.set_rundir(self.config.get("prefix"))
 
             self.config.reusable.populate(
                 ReusableOutput (
@@ -62,9 +64,17 @@ else:
             return parser
 
         def run(self):
-            self.start_logging()
-            self.logger.info("Starting consensus")
-            self.setwd( __name__, self.config.get("prefix") )
+            
+            self.setwd( __name__ )
+
+            ##############################################
+            ######## Skip this if called directly ########
+            ######## (i.e., in tests)             ########
+            ##############################################
+            if self.root is not None:
+                self.log_to_rundir(type(self).__name__)
+                self.log_config()
+
             self.config.reusable.check()
             self.config.dependencies.check(self.config)
             self.config.reusable.generate_outputs()
