@@ -509,6 +509,8 @@ else:
                 self.parsed_args = self.argparser.parse_args()
                 self.config.load_cmdline( self.parsed_args) # Copy command line args defined by self.argparser to self.config
 
+            self.set_rundir(self.config.get("prefix"))
+
             self.config.reusable.populate(
                 ReusableOutput (
                     arg = "names",
@@ -543,8 +545,17 @@ else:
             return cls_to_pull
 
         def run(self):
-            self.start_logging()
-            self.setwd( __name__, self.config.get("prefix") )
+
+            self.setwd( __name__ )
+
+            ##############################################
+            ######## Skip this if called directly ########
+            ######## (i.e., in tests)             ########
+            ##############################################
+            if self.root is not None:
+                self.log_to_rundir(type(self).__name__)
+                self.log_config()
+
             self.config.reusable.check()
             self.config.dependencies.check(self.config)
             self.config.reusable.generate_outputs()
