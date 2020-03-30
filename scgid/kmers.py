@@ -56,6 +56,7 @@ else:
         def __init__(self,  argdict = None, loglevel = logging.INFO):
             super().__init__(self.__class__, loglevel = loglevel)
             self.argdict = argdict
+            self.loglevel = loglevel
 
         def update_ESOM_HOME(self, path_to_esomstart, new_home):
             with open(path_to_esomstart, 'r') as f:
@@ -75,8 +76,8 @@ else:
 
             if self.argdict is not None:
 
-                Train(argdict = self.argdict, loglevel=loglevel).run()
-                Annotate(argdict = self.argdict, loglevel=loglevel).run()
+                Train(argdict = self.argdict, loglevel=self.loglevel).run()
+                Annotate(argdict = self.argdict, loglevel=self.loglevel).run()
 
                 return (Ok(), None)
 
