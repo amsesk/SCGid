@@ -17,8 +17,52 @@ else:
     from scgid.infotable import InfoTable, it_get_taxonomy_level
     from scgid.sequence import DNASequenceCollection, AASequenceCollection
     from scgid.flexwindow import generate_windows
-    from scgid.error import Ok
+    from scgid.error import Ok, ModuleError
     from scgid.plotter import PlotlyPlotter
+
+    class MalformedCoverageTableError(ModuleError):
+        def __init__(self, msg):
+            super().__init__()
+            self.errno = 66
+            self.msg = msg
+            self.catch()
+
+        def catch(self):
+            self.handler.logger.exception(f"[{self.__name__}] {self.msg}")
+            sys.exit(self.errno)
+
+    class ContigCoverageIndex(object):
+        def __init__(self, coverage_dict):
+            self.index = coverage_dict
+
+        def __repr__(self):
+            return f"<scgid.gct.ContigCoverageIndex object at 0x7fdd6a9fb990 with {len(self.index)} contig-coverage pairs>"
+
+        def from_tsv(tsv_file_obj):
+            coverage_dict = {}
+
+            for line in tsv_file_obj:
+
+                # Skip column names coverage table if they exist (b/c generating it should be wrapped)
+
+                spl = [x.strip() for x in line.split("\t")]
+                if spl == ["contig", "depth"]:
+                    continue
+                
+                if len(spl) != 2:
+                    
+                    raise MalformedCoverageTableError("The coverage table supplied to `--coverages` is not a 2-column tab-separated text file.")
+                
+                else:
+                    if spl[0] in coverage_dict:
+
+                        raise MalformedCoverageTableError("Duplicated contig headers in coverage table supplied to `--coverages`.")
+
+                    else:
+
+                        coverage_dict[spl[0]] = float(spl[1])
+
+            return ContigCoverageIndex(coverage_dict)
 
     class Gct (Module, LoggingEntity, Head):
         def __init__(self, argdict = None, loglevel=logging.INFO):
@@ -66,6 +110,14 @@ else:
             self.infotable = InfoTable()
             self.unclassified_infotable = InfoTable()
 
+            self.config.coverage_dict = None
+            if self.config.get("coverages") is not None:
+                with open(self.config.get("coverages")) as coverage_table:
+
+                    self.config.coverage_dict = ContigCoverageIndex.from_tsv(coverage_table)
+            else:
+                pass
+
             self.keep = {}
             self.dump = {}
 
@@ -84,12 +136,13 @@ else:
             parser.add_argument('-db', '--spdb', metavar = 'swissprot_fasta', action=PathStore, required=False, default=None,  help = "The path to your version of the swissprot database in FASTA format.")
             parser.add_argument('-t','--taxdb', metavar = "swissprot_taxdb", action=PathStore, required=False, default=None, help = "The location of the taxonomy database, likely provided by an earlier script.")
             parser.add_argument('--cpus', metavar = 'cpus', action = 'store', required = False, default = '1', help = "The number of cores available for blastp to use.")
+            parser.add_argument('--coverages', metavar = 'contig_coverages', action = PathStore, required = False, default = None, help = "SCGid will try to pull contig coverage information from the SPAdes fasta headers. However, if you renamed your headers or did not use SPAdes, you need to provide those coverages in a 2-column tab-separated text file to this argument.")
 
             # MAYBE PROVIDED BY EARLIER PART OF SCRIPT
             parser.add_argument('-b','--blastout', metavar = "spdb_blast_output", action=PathStore,required=False, help = "The blast output file from a search of the swissprot database with your proteins as query. Defaults to outfmt=6 and max_target_seqs=1. Provided by earlier script.")
             parser.add_argument('-p','--prot', metavar = "protein_fasta", action=PathStore, required=False, help = "A FASTA file containing the proteins called from the genome.")
 
-            return parser
+            return parser            
 
         def run(self):
             self.setwd( __name__ )
@@ -106,7 +159,7 @@ else:
             self.config.dependencies.check(self.config)
             self.config.reusable.generate_outputs()
 
-            nucl = DNASequenceCollection().from_fasta(self.config.get("nucl"), spades = True)
+            nucl = DNASequenceCollection().from_fasta(self.config.get("nucl"), spades = True, coverage_dict = self.config.coverage_dict)
             nucl.rekey_by_shortname()
             self.logger.info(f"Read nucleotide fasta at `{self.config.get('nucl')}`")
 

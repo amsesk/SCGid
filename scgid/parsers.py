@@ -120,6 +120,9 @@ class BlastoutParser(LoggingEntity, ErrorHandler):
             spl = query.split('_')
             contig_shortname = '_'.join( spl[0:2] )
 
+            # Remove pid if it's still tagged onto the contig name after `_` split
+            contig_shortname = re.sub("[.]g[0-9]*$", "", contig_shortname)
+
             try:
                 desc = spdb.loc[acc].description
 
