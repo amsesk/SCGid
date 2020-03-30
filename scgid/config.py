@@ -164,11 +164,11 @@ class InitialConfig(object):
                 'question': "Enter full path to ESOM install: "
                 },
             "clams_path": {
-                'target': lambda path: os.path.isfile(path),
+                'target': lambda path: os.path.isfile(path) and os.path.split(path)[1] == "ClaMS-CLI.jar",
                 'question': "Enter full path to ClaMS-CLI.jar: "
                 },
             "path_to_Rscript": {
-                'target': lambda path: os.path.isfile(path),
+                'target': lambda path: os.path.isfile(path) and os.path.split(path)[1] == "Rscript",
                 'question': "Enter full path to Rscript: "
                 }
             }
