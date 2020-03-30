@@ -252,7 +252,7 @@ class RSCUTree(object):
         max_measure = max([i.measure for i in best_trees_by_bin])
         best_trees = [i for i in best_trees_by_bin if i.measure == max_measure]
         if len(best_trees) > 1:
-            max_leaves = max([i.leaves for i in best_trees_by_bin])
+            max_leaves = max([i.leaves for i in best_trees])
             best_trees = [i for i in best_trees if i.leaves == max_leaves]
             if len(best_trees) > 1:
                 self.head.logger.warning("More than one best tree detemined from codon analysis.")
