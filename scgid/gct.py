@@ -111,8 +111,8 @@ else:
             self.unclassified_infotable = InfoTable()
 
             self.config.coverage_dict = None
-            if self.config.get("coverages") is not None:
-                with open(self.config.get("coverages")) as coverage_table:
+            if self.config.get("contig_coverages") is not None:
+                with open(self.config.get("contig_coverages")) as coverage_table:
 
                     self.config.coverage_dict = ContigCoverageIndex.from_tsv(coverage_table)
             else:
