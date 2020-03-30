@@ -504,7 +504,7 @@ class Codons(Module, LoggingEntity, Head, ErrorHandler):
     # Function that confirms size of CDSConcatenate DNASequenceCollection is larger than minlen arg
     @check_result
     def check_n_concatenates (self, seq_collection, error_catch = True):
-        if not seq_collection.check_size(self.config.get("mincladesize")):
+        if not seq_collection.check_size(int(self.config.get("mincladesize"))):
             
             return SmallTreeError (
                 ntips = len(seq_collection.seqs()), 
