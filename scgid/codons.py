@@ -199,16 +199,19 @@ class RSCUTree(object):
 
             if total_classified == 0:
                 continue
+
             measure = float( (count_t - count_nt) / total_classified )
-            if measure > 0.00:
-                n.add_feature("measure",measure)
-                n.add_feature("leaves", len(n.get_leaves()))
-                best.append(n)
+            n.add_feature("measure",measure)
+            n.add_feature("leaves", len(n.get_leaves()))
+            best.append(n)
+
+        #Remove clades with more nontarget than target
+        best = [n for n in best if n.measure > 0.00]
+
         if len(best) == 0:
             return NoGoodCladesError(error_catch = error_catch)
 
-        #order trees in order of best measure
-        #best = [n for n in best if n.measure >= 0.90]
+        # Order clades by measure, descending
         best = sorted(best, key=lambda x: x.measure, reverse=True)
 
         #Bin trees based on common edges, or in other words look for sets of trees that aren't just nested within eachother from the list of best trees
