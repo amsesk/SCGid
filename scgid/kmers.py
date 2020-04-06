@@ -458,8 +458,6 @@ else:
             bestfile = "{}.best".format(self.config.get("blastout"))
             taxidfile= "{}.best.taxids".format(self.config.get("blastout"))
 
-            sys.exit()
-
             p = BlastoutParser()
             p.load_from_file(self.config.get("blastout"))
             p.get_best_hits()
