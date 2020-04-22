@@ -12,7 +12,7 @@ from importlib_metadata import version
 from scgid.modcomm import logger_name_gen, LoggingEntity, ErrorHandler, pkgloc
 from scgid.dependencies import Dependencies
 from scgid.reuse import ReusableOutputManager
-from scgid.error import ConfigError
+from scgid.error import ConfigError, Ok
 from scgid.library import report_outcome, is_fasta, file_grep, output_cols, CURSOR_UP_ONE, ERASE_LINE, ow_last_stdout
 from scgid.db import UniprotFTP
 
@@ -325,4 +325,6 @@ class InitialConfig(object):
         self.config_taxdb()
 
         self.write_config()
+
+        return (Ok(), None)
 
