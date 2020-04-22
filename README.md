@@ -35,7 +35,9 @@ Please report any and all errors and issues that you run into while using *SCGid
 	* pyyaml
 	* urllib3
 	* importlib_metadata
+	
 **Note** *SCGid* will install these python dependencies during installation.
+
 * R 3.4.1
 	* ape 
 	* dplyr
