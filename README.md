@@ -36,7 +36,7 @@ Please report any and all errors and issues that you run into while using *SCGid
 	* urllib3
 	* importlib_metadata
 	
-**Note** *SCGid* will install these python dependencies during installation.
+**Note** *SCGid* will install the above python dependencies during installation.
 
 * R 3.4.1
 	* ape 
