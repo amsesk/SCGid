@@ -1,118 +1,88 @@
-## ***scgid***, a python-based tool for scaffold binning and genome prediction from single-cell sequencing libraries
-### version 0.1b
+### ***SCGid*** was updated to version 0.9 on April 22, 2020
+
+## SCGid: a consensus approach to contig filtering and genome prediction from single-cell sequencing libraries of uncultured eukaryotes
+### version 0.9b
+[SCGid Publication](https://academic.oup.com/bioinformatics/article-abstract/36/7/1994/5640497)
 -----
 
-### What is ***scgid*** for?
-*scgid* is a python-based tool aimed at extracting a draft genome sequence for a single organism from a mildly metagenomic sequencing library resulting from single-cell genomic amplifications. The only thing that you need to start is your assebmly in FASTA format and *scgid* will do the rest.
+### What is ***SCGid*** for?
+*SCGid* is a python-based tool aimed at extracting a draft genome sequence for a single organism from a mildly metagenomic sequencing library resulting from single-cell genomic amplifications. The only thing that you need to start is your assebmly in FASTA format and *SCGid* will do the rest.
 
-*scgid* takes your SPAdes assebmly and subjects it to three binning methods each based on a different sequence signature. It takes the output of each, draws consensus based on majority-rule, and yields one final consensus-genome draft at the intersection of all three methods. 
+*SCGid* takes your nucleotide assebmly and subjects it to three binning methods each based on a different sequence signature. It takes the output of each, draws consensus based on majority-rule, and yields one final consensus-genome draft at the intersection of all three methods. 
 
-As of this version, *scgid* is only compatible with genome assemblies generated with SPAdes (http://bioinf.spbau.ru/en/spades_for_remove) that have their sequence fasta headers **unchanged** (this is very important - just rename them after you're done with *scgid*). 
+*SCGid* is now compatible with any nucleotide assembly (SPAdes or other). If your input is a non-SPAdes assembly or a SPAdes asembly that has had the sequence headers modified, you will have to supply a contig coverage matrix to `scgid gct`. See `scgid gct -h` for more information.
 
-Please note that this version of *scgid* constitutes an early-release beta version. Some aspects of it and its documentation may be incomplete and/or under development. We actively support *scgid* and are working to expand and test it. If you encounter an error or obstacle when running *scgid*, please open an issue on this github repositiory so that we can address it and get you up and running again. See the next section below for some more notes about this version of *scgid*.
+Please note that this version of *scgid* constitutes an early-release beta version. Some aspects of it and its documentation may be incomplete and/or under development. We actively support *SCGid* and are working to expand and test it. If you encounter an error or obstacle when running *SCGid*, please open an issue on this github repositiory so that we can address it and get you up and running again. See the next section below for some more notes about this version of *SCGid*.
 
-### A couple of notes about the beta version, 0.1b
-This pre-publication release version of *scgid* is still under active development and thus updates to the GitHub repository are being made quite consistently. To ensure that you are able to take advantage of new features and bug fixes, make sure that you are updating your local repo consistently. We've tried to make this easy for you.
-
-Type `scgid update` and confirm to automatically pull the current source from this repo.
-
-One of the most obvious inconsistencies that we still need to correct involve some naming differences in between the module calls and the file architecture of the output folder. This will be fixed in the next version, but in the mean time, here are the synonyms:  
-```
-scgid kmers [args...]		Outputs to <prefix>_scgid_output/esom
-scgid gc-cov [args...]		Outputs to <prefix>_scgid_output/blob
-scgid codons [args...]		Outputs to <prefix>_scgid_output/rscu
-scgid consensus [args...]	Outputs to <prefix>_scgid_output/consensus
-```
-
-In this version of *scgid*,  
+In this version of *SCGid*,  
 	(i) `scgid kmers` can only be annotated with blastn searches of the NCBI nt database. This will be expanded in later versions. `scgid kmers` will perform this BLAST search for you.  
-	(ii) `scgid gc-cov` results can be annotated with blastp searches against a local swissprot-style protein database (see below section for what exactly this means. `scgid gc-cov` will perform this BLAST search for you.  
-	(iii) `scgid codons` results can be annotated with either blastn searches against the NCBI nt database (default, done for you) OR blastp searches against a local swissprot-style protein database. This latter feature is still in the process of being fully integrated into *scgid*. We found that we got a higher proportion of tree leaf annotations using blastp searches. For the time being, `scgid codons` will not perform the blastp search for you. Instead, run `scgid gc-cov` on your assembly first and then provide the `blob/<prefix>_info_table.tsv` file to `scgid codons` using the `-i|--infotable` option and specify `--mode blastp`. Doing so will allow `scgid codons` to use the results of the blastp search against the local swissprot-style database.  
+	(ii) `SCGid gc-cov` results can be annotated with blastp searches against a local swissprot-style protein database (see below section for what exactly this means. `scgid gc-cov` will perform this BLAST search for you.  
+	(iii) `scgid codons` results can be annotated with either blastn searches against the NCBI nt database (default, done for you) OR blastp searches against a local swissprot-style protein database. We found that we got a higher proportion of tree leaf annotations using blastp searches. For the time being, `scgid codons` will not perform the blastp search for you, but can use the outputs of this search generated by `scgid gct` when using `--mode blastp` in `scgid codons`.
 
-This version of *scgid* has been tested on MacOS X and several Linux distributions (CentOS, Ubuntu, and Arch).  
+*SCGid* has been tested on MacOS X and several Linux distributions (CentOS, Ubuntu, and Arch).  
 
-Please report any and all errors and issues that you run into while using *scgid*. Its development is a top priority for me at this time and I want it to work for you! Please open issues here on the GitHub page or [email me directly](amsesk@umich.edu).  
+Please report any and all errors and issues that you run into while using *SCGid*. Its development is a top priority for me at this time and I want it to work for you! Please open issues here on the GitHub page.
 
 ### Dependencies
-* python 2.7 (*scgid* is not compatbile with python 3.x.x)
-	* pandas 1.15.0
-	* numpy 0.23.4
-	* ETE3 toolkit 3.1.1  
-**Note** *scgid* will try to install these python dependencies if using automatic setup (recommended) below.
+* python3 (*SCGid* is not compatbile with python 2.7)
+	* pandas >= 0.23.4
+	* numpy >= 1.15.0
+	* ETE3 toolkit >= 3.1.1  
+	* plotly
+	* pyyaml
+	* urllib3
+	* importlib_metadata
+**Note** *SCGid* will install these python dependencies during installation.
 * R 3.4.1
 	* ape 
-	`install.packages("ape")`
 	* dplyr
-    `install.packages("dplyr")`
-    * phytools
-    `install.packages("phytools")`
-    * Rscript (included with most R distributions)
-* NCBI Blast+
+    	* phytools
+	* RColorBrewer
+    	* Rscript (included with most R distributions)
+* NCBI Blast+ 
 * Augustus (http://bioinf.uni-greifswald.de/augustus/)
 * ClaMS-CLI  
-    (i) ClaMS-CLI is apparently no longer available vis the JGI website. I've uploaded the source in its original form with the original copyright notice and liscence to https://github.com/amsesk/ClaMS-CLI-fork.
+    (i) ClaMS-CLI is apparently no longer available vis the JGI website. I've forked the source in its original form with the original copyright notice and liscence to https://github.com/amsesk/ClaMS-CLI-fork.
     (ii) Clone it with `git clone https://github.com/amsesk/ClaMS-CLI-fork.git` 
 * Java
 * Databionic ESOM (http://www.databionin-esom.sourceforge.net)  
     (i) Download the ESOM Installer .jar file and follow the instructions in the GUI installer.
-* BASH
 
-### Downloading and Installing ***scgid***
-* Clone the repository at [https://github.com/amsesk/scgid.git](https://github.com/amsesk/scgid.git)
-* Navigate to `bin` within the newly created directory
-`cd scgid/bin`
-
-#### Automatic Setup (recommended)
-* Type `./scgid init`
-	* Follow the prompts to define some package-wide settings and download the necessary databases.
-	* This script **will try** to install the required python packages, if they are not already available, using `conda` or `pip`. Make sure you know which package manager is being used on your system as installation via `pip` has been known to break some conda installations. If the flavor of python package manager on your system is up to you, I strongly recommend using `conda` since it will also install important module dependencies for you. You can download miniconda [here](https://conda.io/miniconda.html).
-	* You are responsible for having downloaded and installed all of the other third-party dependencies listed above. You will be asked where some of them are.
-	* This script requires an internet connection in order to download the swissprot protein and taxonomy databases.
-	
-* Modify your `.bashrc` or `.bash_profile` file and add `scgid/bin` to your enviornmental $PATH variable. For instance, add a line like... `export PATH=$PATH:/path/to/scgid/bin`
-* Ensure that other stand-alone dependencies (i.e. BLAST and Augustus) have also been added to $PATH.
-
-#### Manual Setup (if auto isn't working)
-* Download and decompress a copy of the most recent swissprot database.
-* Download and save the file located [here](https://www.uniprot.org/taxonomy/?query=*&format=tab) and then run `./scgid buildtaxdb [args...]`. See `./scgid buildtaxdb -h` for more information.
-* Edit `settings.py` to reflect the locations of ESOM, ClaMS, and Rscript, and your swissprot databases, as follows:
+### Downloading and Installing ***SCGid***
+* Clone the repository and run setup.py
 ```
-esom_path ="<path_to_folder_containing_bin>"`
-clams_path="<path_to_folder_containing_clams-cli_jar>"
-path_to_Rscript="<path_to_folder_containing_Rscript>"
-path_to_spdb="<path_to_swissprot_database>"
-path_to_taxdb="<path_to_taxdb>"
-taxonomy_all_tab="<path_to_taxonomy_all_tab>"
-spdb_version="dd-Mon-yy" #eg 21-Jul-18
+git clone https://github.com/amsesk/SCGid.git
+cd SCGid
+python -m venv scgidenv
+source /path/to/scgidenv/bin/activate
+python setup.py develop # Use develop instead of install to make updates easier ahead of release version 
+scgid init
 ```
-**Note** Don't forget the quotes! This file is interpereted by python.
+* Follow the prompts to define some package-wide settings and download the necessary databases.
+* Ensure that other stand-alone dependencies (i.e. BLAST, and Augustus) have also been added to $PATH. You will be asked for the paths to Rscript, Databioincs, ESOM and ClaMS-CLI.
 
-* Modify your `.bashrc` or `.bash_profile` file and add `scgid/bin` to your enviornmental $PATH variable. For instance, add a line like... 
-	`export PATH=$PATH:/path/to/scgid/bin`
-* Ensure that other stand-alone dependencies (i.e. BLAST and Augustus) have also been added to $PATH.
-
-### Running ***scgid***
-To run *scgid*, all you need is a SPAdes assembly (or at least an assembly with SPAdes-style fasta headers). In its current version, SPAdes-style fasta headers are a requirement for *scgid*. This means that each fasta header contains identification, length, and coverage information for each contig in the format `NODE_XXX_length_XXX_cov_XXX.XXX`. If this is an issue for you please open a new issue and we'll try to expand compatibility in future versions.
-
-Each module of *scgid* is designed to be run separately in a bash command line. To enumerate the command-line arguments and their descriptions, merely type `scgid <module> -h` or `scgid <module> --help`. Try running `scgid -h` to get descriptions of the available module commands to see where to get started. In most cases, *scgid* will try to pull options that you don't specify from your `settings.py` file, so keep in mind what is specified there (you set-up this file when you ran `./scgid init`). You only need to explicitly specify these options when you want to use databases NOT pointed to in your `settings.py` file.
-
-**IMPORTANT** Output directories for runs are determined by the `-f|--prefix` option supplied to each call to the module. So, if you would like the outputs of all modules to be located in the same output head directory, make sure you are in the parent directory of the `<prefix>_scgid_output` folder and that you specify the same prefix for each call to *scgid*. This will ensure that the outputs of each module for each run (on a particular assembly) are located in the same output directory. Changing the prefix of the call to *scgid* will create a new output directory. Further, calling *scgid* from a different directory will create a new output folder in that directory. Also note that because of this, results can be overwritten. For instance, if you call `scgid gc-cov [args...]` from the same directory twice with the same prefix, the outputs contained within the `<prefix>_scgid_output/gc-cov` directory will be overwritten.
-
-To take full advantage of *scgid*'s consensus-based approach, run all three binning algorithms (gc-cov, kmers, codons) prior to running `scgid consesnsus` to determine your final genome draft. The basic workflow for a *scgid* run is as follows...
 ```
-scgid gc-cov [args...] 
+cp config.yaml config.yaml.local # Another pre-release workaround to make updates easier
+scgid --help
+```
+
+### Running ***SCGid***
+To run *SCGid*, all you need is a nucleotide assembly.
+
+Each module of *scgid* is designed to be run separately in a bash command line. To enumerate the command-line arguments and their descriptions, merely type `scgid <module> -h` or `scgid <module> --help`. Try running `scgid -h` to get descriptions of the available module commands to see where to get started. In most cases, *SCGid* will try to pull options that you don't specify from `config.yaml`, so keep in mind what is specified there. You only need to explicitly specify some options when you want to use databases NOT pointed to in `config.yaml`.
+
+**IMPORTANT** Output directories for runs are determined by the `-f|--prefix` option supplied to each call to the module. So, if you would like the outputs of all modules to be located in the same output head directory, make sure you are in the parent directory of the `<prefix>_scgid_output` folder and that you specify the same prefix for each call to *SCGid*. This will ensure that the outputs of each module for each run (on a particular assembly) are located in the same output directory. Changing the prefix of the call to *scgid* will create a new output directory. Further, calling *SCGid* from a different directory will create a new output folder in that directory. Also note that because of this, results can be easily overwritten. For instance, if you call `scgid gct [args...]` from the same directory twice with the same prefix, the outputs contained within the `<prefix>_scgid_output/gct` directory will be overwritten.
+
+To take full advantage of *SCGid*'s consensus-based approach, run all three binning algorithms (gc-cov, kmers, codons) prior to running `scgid consesnsus` to generate a consensus-filtered draft. The basic workflow for a *scgid* run is as follows...
+```
+scgid gct [args...] 
 scgid codons [args...]
 scgid kmers train [args...] (a good reference for which options to specify for ESOM training: https://github.com/tetramerFreqs/Binning)
 scgid kmers annotate [args...]
 scgid kmers extract [args...]
+scgid consensus [args...]
 ```
-**Note** Because of the need to manually select a region from the self-organizing kmer map, the `scgid kmers...` portion of the workflow is divided into three separate commands. You will select your region of interest using the `esomana` GUI in between calls to `scgid kmers annotate` and `scgid kmers extract`. See below section for more information.
-
-Finally, run the consensus portion of `scgid` to draw consensus between all three binning algorithms.
-
-`scgid consensus [args...]`
-
-The final consensus genome draft is now located at `<prefix>_scgid_output/consensus/<prefix>_final_genome.fasta` 
+**Note** Because of the need to manually select a region from the ESOM map, the `scgid kmers...` portion of the workflow is divided into three separate CLI calls. You will select your region of interest using the `esomana` GUI from Databioincs ESOM in between calls to `scgid kmers annotate` and `scgid kmers extract`. See below section for more information.
 
 ### I just ran `scgid kmers annotate [args...]`, now what?
 Completion of this command means that you have successfully trained and taxonomically-annotated the ESOM topology for your metagenome. Now it is time to look at the annotated "map" and decide which sector you want to carve-out as your target organism. Follow these steps to do so (**pictures coming**):   
@@ -129,11 +99,11 @@ Completion of this command means that you have successfully trained and taxonomi
 11. Now you should have a final draft genome from the kmers module in your `path/to/<prefix>_scgid_output/kmers` directory.
 
 ### What is a "swissprot-style database" and how do I know I have one?
-**Preface** - It is unlikely that you will ever run into an issue with this as long as you're working with the database downloaded by `./scgid init` and only update or edit it with `scgid updatedb` or `scgid spexpand` respectively. So don't worry about this too much.
+**Preface** - It is unlikely that you will ever run into an issue with this as long as you're working with the database downloaded by `./scgid init` and only update or edit it with `scgid spdbup` or `scgid spexpand` respectively. So don't worry about this too much.
 
-**If you like to worry** - *scigd* is currently only compatible with a swissprot-style protein database. What that means is that the fasta headers (ie everything after '>' in the fasta file) have to share some elements with the standard swissprot format. Namely, each fasta header must contain a unique sequence identifier or USID (first) and a description (second). The USID and the description must be separated by a space. The USID cannot have any spaces in it, but the description can have as many as you like. Furthermore, the description must have a species designation in the format `OS=<species>`. The species name can have spaces but should occur at the end of the description (and fasta header). *scgid* uses this species designation to link sequences in the protein database with lineage information in the taxonomy database, so this is very important. You will be stopped if you try to use a misformatted database, but the source of these errors can be a pain to locate and correct. 
+**If you like to worry** - *SCGid* is currently only compatible with a swissprot-style protein database. What that means is that the fasta headers (ie everything after '>' in the fasta file) have to share some elements with the standard swissprot format. Namely, each fasta header must contain a unique sequence identifier or USID (first) and a description (second). The USID and the description must be separated by a space. The USID cannot have any spaces in it, but the description can have as many as you like. Furthermore, the description must have a species designation in the format `OS=<species>`. The species name can have spaces but should occur at the end of the description (and fasta header). *SCGid* uses this species designation to link sequences in the protein database with lineage information in the taxonomy database, so this is very important.
 
-So, it is recommended that you let the included scripts do the work when making updates or edits to the swissprot-style database. The only time that you should be aware of these formatting requirements is when you want to manually add protein sequences to the database. So, here are some examples of GOOD and BAD ways to format your fasta headers for inclusion in the *scgid*-linked swissprot-style database.
+So, it is recommended that you let the included modules do the work when making updates or edits to the swissprot-style database. The only time that you should be aware of these formatting requirements is when you want to manually add protein sequences to the database. So, here are some examples of GOOD and BAD ways to format your fasta headers for inclusion in the *scgid*-linked swissprot-style database.
 
 ```
 GOOD HEADERS
@@ -171,52 +141,7 @@ Sacce	Fungi;Ascomycota;Saccharomycetales;Saccharomycetaceae;Sacharomyces
 etc..
 ```
 
-Now all you have to do is run `scgid spexpand [args...]` remembering to provide File #1 as `-p|--proteins` and File #2 as `-l|--lineages` and you're all set to go.
-
-### Output Directories and Content
-*scgid* makes a separate folder for each of its modules, all contained within a shared working directory named with the `-f|--prefix` command line option. This means that if you want to keep the outputs of each module in the same working directory (which is what you should do), make sure to specify the same `-f|--prefix` for each and every call to scgid when working on a your workflow. 
-
-For your reference, I'm going to go through the content of the output folders for each module (excluding the prefices).The names are intended to be intuitive.
-
-```
-<prefix>_scgid_output/
-	./gc-cov/
-		1) aug.out.fasta** -> protein sequences of gene models called by augustus in FASTA format
-		
-		2) aug.out.gff3 -> gene models called by augustus 
-		
-		3) final_genome.fasta -> the final draft genome based on the gc-coverage-based genome selection process in FASTA format
-		
-		4) final_nontarget_bin.fasta -> all of the contigs **thrown out** based on the gc-coverage-based genome selection process in FASTA format
-		
-		5) gc_coverage_plots.pdf -> PDF file containing static graphical representations of the gc-coverage plots and the best window used to select unclassified contigs
-		
-		6) info_table.tsv -> Tab-deliminted table of information on contigs and their proteins that got an annotation based on blastp searches of the swissprot-style database. The columns of this file are as follows: 
-    (i) contig_name, (ii) protein_length, (iii) contig_coverage, (iv) contig_gc, (v) protein_id, (vi) top_hit_species_id, (vii) top_hit_lineage, (viii) evalue, (ix) parsed_taxonomy [ie target/nontarget]
-    
-		7) unclassified_info_table.tsv -> Tab delimited table of information on contigs that did not get an annotation based on blastp searches of the swissprot-style database. The columns of this file are as follows:
-    (i) contig_name, (ii) contig_coverage, (iii) contig_gc, (iv) taxonomy [ie Unclassified]
-    
-		8) spdb.blast.out** -> the output file resulting from a blastp search of the swussprot-style database, tab-delimited 
-		9) spdb.blast.out.best -> the filtered "best" blast hits from the blast output file, tab delimited
-		
-		10) spdb.blast.out.parsed -> the "parsed, best" blast hits from the best blast output file, annotated with their swissprot-style fasta headers
-		
-		11) windows.all.out -> Tab-delimited file containing information of all twelve gc-coverage selection windows generated by scgid gc-cov. The columns of this file are as follows:
-    (i) method, (ii) p_target, (iii) p_nontarget, (iv) gc_window, (v) gc_window_width, (vi) cov_window (vii) cov_window_width
-    
-		12) exluded_by_sp_taxonomy -> a list of the contigs that were excluded by scgid gc-cov based solely on their taxonomy hit
-
-	./kmers/
-		<put file descriptions here>
-	./codons/
-		<put file descriptions here>
-```
-
-### Command Line Arguments, explained
-**\<In progress\>**  
-For now, type `scgid <module> -h` or `scgid <module> --help` into your command line for descriptions of supported command-line arguments.
-
+Now all you have to do is run `scgid spexpand [args...]` remembering to provide File #1 as `-p|--proteins` and File #2 as `-l|--lineages`.
 
 ### Citations
 Altschup, S. F., Gish, W., Pennsylvania, T., & Park, U. (1990). Basic Local Alignment Search Tool 2Department of Computer Science, 403–410.  
