@@ -50,7 +50,6 @@ Please report any and all errors and issues that you run into while using *SCGid
     (i) Download the ESOM Installer .jar file and follow the instructions in the GUI installer.
 
 ### Downloading and Installing ***SCGid***
-* Clone the repository and run setup.py
 ```
 git clone https://github.com/amsesk/SCGid.git
 cd SCGid
