@@ -133,7 +133,7 @@ class BlastoutParser(LoggingEntity, ErrorHandler):
                 return ErrorClassNotImplemented()
 
             s = re.search(search_pattern, desc)
-            
+
             if s is None:
                 return MalformedDatabaseHeaderError(offender = hit)
 
@@ -199,7 +199,14 @@ class BlastoutParser(LoggingEntity, ErrorHandler):
                             ids[t.query] = ncbi.get_taxid_translator(ncbi.get_lineage(num))
                 else:
                     num = int(t.taxids)
-                    ids[t.query] = ncbi.get_taxid_translator(ncbi.get_lineage(num))
+
+                    try:
+                        ids[t.query] = ncbi.get_taxid_translator(ncbi.get_lineage(num))
+
+                    except ValueError:
+                        self.logger.warning(f"taxid not found in ncbi taxonomy database: SKIPPING {num}")
+                        continue
+
                 vals  = ids[t.query].values()
                 ranks = ncbi.get_rank(ids[t.query]).values()
                 row = {k:v for k,v in list(zip(ranks,vals))}
