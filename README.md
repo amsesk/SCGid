@@ -54,16 +54,25 @@ Please report any and all errors and issues that you run into while using *SCGid
 ```
 git clone https://github.com/amsesk/SCGid.git
 cd SCGid
+
+# Running in a virtual environment is recommended
 python -m venv scgidenv
 source /path/to/scgidenv/bin/activate
-python setup.py develop # Use develop instead of install to make updates easier ahead of release version 
-scgid init
-```
-* Follow the prompts to define some package-wide settings and download the necessary databases.
-* Ensure that other stand-alone dependencies (i.e. BLAST, and Augustus) have also been added to $PATH. You will be asked for the paths to Rscript, Databioincs, ESOM and ClaMS-CLI.
 
-```
-cp config.yaml config.yaml.local # Another pre-release workaround to make updates easier
+# Use develop instead of install to make updates easier ahead of release version
+python setup.py develop 
+
+# Set some package-wide settings and download the necessary databases
+scgid init
+
+# Another pre-release workaround to make updates easier
+cp config.yaml config.yaml.local
+
+# Make sure that augustus and BLAST are installed, working, and available in $PATH by adding them to .bashrc
+export PATH=$PATH:/path/to/augustus
+export PATH=$PATH:/path/to/blast
+
+# Ready to run SCGid
 scgid --help
 ```
 
