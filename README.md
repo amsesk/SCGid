@@ -1,4 +1,6 @@
-### ***SCGid*** was updated to version 0.9 on April 22, 2020
+#### ***SCGid*** was updated to version 0.9b on April 22, 2020
+
+-----
 
 ## SCGid: a consensus approach to contig filtering and genome prediction from single-cell sequencing libraries of uncultured eukaryotes
 -----
