@@ -113,7 +113,11 @@ class Module (object):
         for dsl in downstream_loggers:
             dsl.setLevel(loglevel)
 
+    @check_result
     def set_rundir (self, prefix):
+        if not self.root.traverse_fs:
+            return Ok(None)
+
         rundir = "{}{}".format(prefix, self.config.OUTPUTSUFFIX)
         try:
             os.chdir(rundir)
@@ -123,6 +127,8 @@ class Module (object):
             self.logger.info("Creating directory `%s`", os.getcwd())
         
         self.config.rundir = os.getcwd()
+
+        return Ok(None)
 
     def setwd(self, name):
         name = name.split(".")[1]

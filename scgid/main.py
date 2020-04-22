@@ -63,7 +63,7 @@ class SCGidPipeline(object):
         self.KMERS = {}
         self.CODONS = {}
 
-        self.simplelogger = logging.getLogger("SCGid.unfmt")
+        self.simplelogger = logging.getLogger("data")
 
     def create_options_file(self) -> str:
         gct_args = Gct.generate_argparser()._actions
@@ -225,6 +225,11 @@ class SCGid(LoggingEntity, ErrorHandler, Root, object):
         self.SCGID_SCRIPTS = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
         self.SCGID = os.path.dirname(self.SCGID_SCRIPTS)
 
+        # This attribute is here to tell child modules whether or not to make output 
+        # directories and move between them. By setting this to False calls like `scgid 
+        # `show_pipeline` don't make ghost directories
+        self.traverse_fs = True
+
         logging.config.dictConfig( get_logging_config() )
 
         self.modcall = {
@@ -282,6 +287,7 @@ class SCGid(LoggingEntity, ErrorHandler, Root, object):
                     SCGidPipeline(opts_path = sys.argv[2]).run()
 
                 elif call == "show_pipeline":
+                    self.traverse_fs = False
                     SCGidPipeline(opts_path = sys.argv[2]).show()
 
                 else: 
