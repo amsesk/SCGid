@@ -1,9 +1,9 @@
 ### ***SCGid*** was updated to version 0.9 on April 22, 2020
 
 ## SCGid: a consensus approach to contig filtering and genome prediction from single-cell sequencing libraries of uncultured eukaryotes
-### version 0.9b
-[SCGid Publication](https://academic.oup.com/bioinformatics/article-abstract/36/7/1994/5640497)
 -----
+version 0.9b
+[Link to SCGid Publication](https://academic.oup.com/bioinformatics/article-abstract/36/7/1994/5640497)
 
 ### What is ***SCGid*** for?
 *SCGid* is a python-based tool aimed at extracting a draft genome sequence for a single organism from a mildly metagenomic sequencing library resulting from single-cell genomic amplifications. The only thing that you need to start is your assebmly in FASTA format and *SCGid* will do the rest.
