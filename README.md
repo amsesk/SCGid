@@ -39,10 +39,11 @@ Please report any and all errors and issues that you run into while using *SCGid
 **Note** *SCGid* will install the above python dependencies during installation.
 
 * R 3.4.1
-	- ape 
+	- ape
 	- dplyr
-    	- phytools
-    	- Rscript (included with most R distributions)
+	- phytools
+	- Rscript
+	
 * NCBI Blast+ 
 * Augustus (http://bioinf.uni-greifswald.de/augustus/)
 * ClaMS-CLI  
