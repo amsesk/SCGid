@@ -139,8 +139,6 @@ Use `scgid spexpand [args...]` to expand your swissprot protein and taxonomy dat
 **You will need two files:**
 1) FASTA file of the proteomes or sets of proteins you want to add the database. 
 
-*Note* You can either append the applicable "OS=<species>" portion of the sequence description to each header manually (see above section "What is a "swissprot-style database" and how do I know I have one?") or use the provided `bin/reformat_my_headers.py` script to append them for you (see `reformat_my_headers.py -h` for details)
-
 2) A two-column, tab-separated list of the OS's (column 1) and semicolon-separated lineage information. Here's an example:
 
 ```
