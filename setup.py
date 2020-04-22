@@ -1,7 +1,7 @@
 from setuptools import setup
 setup(
     name = "SCGid",
-    version = "0.9.0 beta",
+    version = "0.9b",
     author = "Kevin Amses",
     author_email = "amsesk@umich.edu",
     description = (

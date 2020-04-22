@@ -11,7 +11,7 @@ help_msg = """
 (___/ \___)\___/(____)(____/ 
 
 Author: Kevin Amses (amsesk@umich.edu)
-Version: 0.9.0b
+Version: 0.9b0
 
 Usage: scgid <module> [args...] --> try scgid <module> -h|--help to see module-specific arguments
 
