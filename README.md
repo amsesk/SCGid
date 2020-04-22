@@ -38,7 +38,7 @@ Please report any and all errors and issues that you run into while using *SCGid
 	
 **Note** *SCGid* will install the above python dependencies during installation.
 
-* R 3.4.1
+* R 3.x.x
 	- ape
 	- dplyr
 	- phytools
