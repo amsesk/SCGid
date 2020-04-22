@@ -1,1 +1,1 @@
-scgid version 0.9b0
+SCGid version 0.9b0
