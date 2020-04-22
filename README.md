@@ -1,4 +1,4 @@
-#### ***SCGid*** was updated to version 0.9b on April 22, 2020
+#### ***SCGid*** was updated to version 0.9b0 on April 22, 2020
 
 -----
 
