@@ -6,7 +6,7 @@
 -----
 version 0.9b
 
-[Link to SCGid Publication](https://academic.oup.com/bioinformatics/article-abstract/36/7/1994/5640497)
+[Link to the SCGid Publication](https://academic.oup.com/bioinformatics/article-abstract/36/7/1994/5640497)
 
 ### What is ***SCGid*** for?
 *SCGid* is a python-based tool aimed at extracting a draft genome sequence for a single organism from a mildly metagenomic sequencing library resulting from single-cell genomic amplifications. The only thing that you need to start is your assebmly in FASTA format and *SCGid* will do the rest.
