@@ -3,6 +3,7 @@
 ## SCGid: a consensus approach to contig filtering and genome prediction from single-cell sequencing libraries of uncultured eukaryotes
 -----
 version 0.9b
+
 [Link to SCGid Publication](https://academic.oup.com/bioinformatics/article-abstract/36/7/1994/5640497)
 
 ### What is ***SCGid*** for?
