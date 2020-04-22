@@ -79,6 +79,18 @@ export PATH=$PATH:/path/to/blast
 scgid --help
 ```
 
+### Updating SCGid v0.9b
+```
+# Make sure you have copied your local config.yaml
+cp config.yaml config.yaml.local
+
+# Pull the updated repository
+git pull origin
+
+# No need to rename config.yaml.local, as SCGid will look at config.yaml.local first
+sleep(5)
+```
+
 ### Running ***SCGid***
 To run *SCGid*, all you need is a nucleotide assembly.
 
