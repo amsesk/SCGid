@@ -63,7 +63,7 @@ class PlotlyPlotter (Module):
             self.infotable.load(path)
 
         self.infotable.df["log_coverage"] = np.log(self.infotable.df.coverage)
-        self.infotable.df["log_coverage"].fillna(0)
+        self.infotable.df["log_coverage"].fillna(0, inplace = True)
         self.infotable.df.evalue = self.infotable.df.evalue.astype("float64")
 
         return None
