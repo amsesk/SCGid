@@ -41,10 +41,10 @@ class PlotlyPlotter (Module):
 
         self.taxon_colors = {}
         self.display_taxa = None
-        
+
         self._set_data (infotable)
         self._scale()
-    
+
     def _set_data (self, infotable):
         # Get infotable from module head or function kwarg or raise ValueError if both are None
         if self.head is None and infotable is None:
@@ -55,16 +55,15 @@ class PlotlyPlotter (Module):
             self.infotable = self.head.infotable
 
         ##############################################################################
-        # If infotable is not and instance of scgid.infotable.Infotable              #
+        # If infotable is not an instance of scgid.infotable.Infotable               #
         # (i.e., from a head module), it should be a path to one that can be loaded. #
-        ##############################################################################=
+        ##############################################################################
         if not isinstance(infotable, InfoTable):
             self.infotable = InfoTable()
             self.infotable.load(path)
-
-        self.infotable.df["log_coverage"] = np.log(self.infotable.df.coverage)
-        self.infotable.df["log_coverage"].fillna(0, inplace = True)
         self.infotable.df.evalue = self.infotable.df.evalue.astype("float64")
+        self.infotable.df.coverage.replace(0.0, 1e-100, inplace=True)
+        self.infotable.df["log_coverage"] = np.log(self.infotable.df.coverage)
 
         return None
 
@@ -97,33 +96,33 @@ class PlotlyPlotter (Module):
         self.set_colors()
 
         fig = make_subplots(
-            rows=2, 
-            cols=2, 
-            column_widths=[0.8,0.2], 
-            row_heights=[0.2,0.8], 
-            shared_xaxes=True, 
-            shared_yaxes=True, 
-            vertical_spacing=0.01, 
+            rows=2,
+            cols=2,
+            column_widths=[0.8,0.2],
+            row_heights=[0.2,0.8],
+            shared_xaxes=True,
+            shared_yaxes=True,
+            vertical_spacing=0.01,
             horizontal_spacing=0.01
             )
 
         for lin in self.display_taxa:
-    
+
             # Get values for this trace
             subframe= self.infotable.df[self.infotable.df.pertinent_taxlvl == lin]
-            gc_counts,gc_div = np.histogram(self.infotable.df[self.infotable.df.pertinent_taxlvl == lin].gc, bins=1000)
-            cov_counts,cov_div = np.histogram(self.infotable.df[self.infotable.df.pertinent_taxlvl == lin].log_coverage, bins=1000)
+            gc_counts,gc_div = np.histogram(subframe.gc, bins=1000)
+            cov_counts,cov_div = np.histogram(subframe.log_coverage, bins=1000)
             extra_data = subframe[["contig", "coverage", "evalue", "pertinent_taxlvl", "lineage", "pid"]]
             extra_data.loc[:,"lineage"] = extra_data["lineage"].apply(lambda x: "<br>".join(x))
-         
+
             points = go.Scatter(
-                        x=subframe.log_coverage, 
+                        x=subframe.log_coverage,
                         y=subframe.gc,
                         name=lin,
                         mode="markers",
                         marker=dict(
-                            color=self.taxon_colors[lin], 
-                            size=np.sqrt(abs(subframe.scaled_evalue))*1.5, 
+                            color=self.taxon_colors[lin],
+                            size=np.sqrt(abs(subframe.scaled_evalue))*1.5,
                             opacity=0.4),
                         customdata = extra_data,
                         hovertemplate = "<b>%{customdata[0]}; %{customdata[5]}</b><br>GC Content: %{y:.2f}<br>Coverage: %{customdata[1]:.2f}<br>ln(Coverage): %{x:.2f}<br>Taxonomy: %{customdata[3]}<br>e-value: %{customdata[2]:.2e}<extra><b>Lineage:</b><br>%{customdata[4]}</extra>"
@@ -136,31 +135,31 @@ class PlotlyPlotter (Module):
                 )
 
             # Add coverage histogram for category on top of main panel
-            fig.add_trace( 
+            fig.add_trace(
                 go.Scatter(
-                    x=cov_div, 
-                    y=np.sqrt(cov_counts), 
+                    x=cov_div,
+                    y=np.sqrt(cov_counts),
                     name=lin,
                     line=dict(color=self.taxon_colors[lin]),
                     showlegend=False
-                ), 
-                row=1, 
+                ),
+                row=1,
                 col=1,
             )
-            
+
             # Add GC histogram for category to right side of main panel
-            fig.add_trace( 
+            fig.add_trace(
                 go.Scatter(
-                    x=gc_counts, 
-                    y=gc_div, 
+                    x=gc_counts,
+                    y=gc_div,
                     name=lin,
                     line=dict(color=self.taxon_colors[lin]),
                     showlegend=False
-                ), 
-                row=2, 
+                ),
+                row=2,
                 col=2,
             )
-         
+
         fig.update_layout(legend = {"itemsizing":"constant"})
 
         fig.update_xaxes(title="ln(Coverage)", row=2, col=1)
@@ -181,13 +180,13 @@ if len(sys.argv) > 1:
 
 extra_data = plotter.infotable.df[["contig", "coverage", "evalue", "pertinent_taxlvl"]]
 points = go.Scatter(
-            x=plotter.infotable.df.log_coverage, 
+            x=plotter.infotable.df.log_coverage,
             y=plotter.infotable.df.gc,
             name="All",
             mode="markers",
             marker=dict(
-                color=plotter.infotable.df.color, 
-                size=np.sqrt(abs(plotter.infotable.df.scaled_evalue))*1.5, 
+                color=plotter.infotable.df.color,
+                size=np.sqrt(abs(plotter.infotable.df.scaled_evalue))*1.5,
                 opacity=0.4
                 ),
             customdata = extra_data.to_numpy(),
@@ -204,22 +203,22 @@ print(dir(points))
 
 
 for lin in self.display_taxa:
-    
+
     # Get values for this trace
     subframe= self.infotable.df[self.infotable.df.pertinent_taxlvl == lin]
     gc_counts,gc_div = np.histogram(self.infotable.df[self.infotable.df.pertinent_taxlvl == lin].gc, bins=1000)
     cov_counts,cov_div = np.histogram(self.infotable.df[self.infotable.df.pertinent_taxlvl == lin].log_coverage, bins=1000)
     extra_data = subframe[["contig", "coverage", "evalue", "pertinent_taxlvl", "lineage", "pid"]]
     extra_data.loc[:,"lineage"] = extra_data["lineage"].apply(lambda x: "<br>".join(x))
- 
+
     points = go.Scatter(
-                x=subframe.log_coverage, 
+                x=subframe.log_coverage,
                 y=subframe.gc,
                 name=lin,
                 mode="markers",
                 marker=dict(
-                    color=tax_to_color[lin], 
-                    size=np.sqrt(abs(subframe.scaled_evalue))*1.5, 
+                    color=tax_to_color[lin],
+                    size=np.sqrt(abs(subframe.scaled_evalue))*1.5,
                     opacity=0.4),
                 customdata = extra_data,
                 hovertemplate = "<b>%{customdata[0]}; %{customdata[5]}</b><br>GC Content: %{y:.2f}<br>Coverage: %{customdata[1]:.2f}<br>ln(Coverage): %{x:.2f}<br>Taxonomy: %{customdata[3]}<br>e-value: %{customdata[2]:.2e}<extra><b>Lineage:</b><br>%{customdata[4]}</extra>"
@@ -233,28 +232,28 @@ for lin in self.display_taxa:
     #print (points)
 
     # Add coverage histogram for category on top of main panel
-    fig.add_trace( 
+    fig.add_trace(
         go.Scatter(
-            x=cov_div, 
-            y=np.sqrt(cov_counts), 
+            x=cov_div,
+            y=np.sqrt(cov_counts),
             name=lin,
             line=dict(color=tax_to_color[lin]),
             showlegend=False
-        ), 
-        row=1, 
+        ),
+        row=1,
         col=1,
     )
-    
+
     # Add GC histogram for category to right side of main panel
-    fig.add_trace( 
+    fig.add_trace(
         go.Scatter(
-            x=gc_counts, 
-            y=gc_div, 
+            x=gc_counts,
+            y=gc_div,
             name=lin,
             line=dict(color=tax_to_color[lin]),
             showlegend=False
-        ), 
-        row=2, 
+        ),
+        row=2,
         col=2,
     )
 
