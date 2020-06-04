@@ -170,6 +170,12 @@ def gff3_to_fasta(gff3, outname):
             if s is not None:
                 recording = True
                 s = re.search("[#][ ]protein[ ]sequence[ ][=][ ][[]([A-Za-z]+)",line)
+
+                # Case where augustus outputs 0 length protein
+                if s is None:
+                    recording = False
+                    continue
+
                 protein_sequence = s.group(1)
         elif recording is True:
             s = re.search("[#][ ]end[ ]gene[ ]([A-Za-z0-9_.]+)",line)
@@ -280,6 +286,6 @@ def spdb_grab_os(spdb): ## takes a per_line generator as arg (like file_yield_li
 def flatten_dict(nested_dict):
     flattened_dict = {}
     for _,d in nested_dict.items():
-        for k,v in d.items(): 
+        for k,v in d.items():
             flattened_dict[k] = v
     return flattened_dict
