@@ -130,7 +130,7 @@ def augustus_predict(prefix, nucl, augustus_sp, outpath):
     # Unset means it is None (based on argparse default)
     if augustus_sp is None:
         raise ArgumentError(
-            "-sp|--augustus_species is required for gene prediction")
+            "-sp|--augustus_sp is required for gene prediction")
 
     log = get_head().logger
     gff3_fname = f"{prefix}.aug.out.gff3"
