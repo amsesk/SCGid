@@ -527,8 +527,18 @@ else:
             parser.add_argument('-nf', '--names', metavar = 'names_file', action = PathStore, required = False, default = None, help = 'The .names output file from "esom train".')
             parser.add_argument('-cid', '--classnum', metavar = 'class_number', action = 'store', required = True, help = "The class number of interest. That is, the class that represents the selection of target contigs you made in esomana.")
             parser.add_argument('-f','--prefix', metavar = 'prefix_for_output', required=False, default='scgid', help="The prefix that you would like to be used for all output files. DEFAULT = scgid")
-            parser.add_argument('-l','--loyal', metavar = 'loyalty_threshold', required=False, default='51', help="The loyalty threshold for keeping a contig based on where its various windows end-up in ESOM. DEFAULT = 51")
+            parser.add_argument('-l','--loyal', metavar = 'loyalty_threshold', required=False, default='0.51', help="The loyalty threshold for keeping a contig based on where its various windows end-up in ESOM. DEFAULT = 0.51")
             return parser
+        def contig_class_loyalty (series):
+            props = {}
+            for v in series:
+                if v in props:
+                    props[v] += 1
+                else:
+                    props[v] = 1
+
+            props = {k: np.true_divide(v, sum(props.values())) for k,v  in props.items()}
+            return props
 
         def map_cls_to_nucl(self):
             cls_refs = pd.read_csv(self.config.get("cls"), sep='\t', comment='%', header=None)
@@ -539,7 +549,13 @@ else:
 
             map_frame = (pd.merge(cls_refs, names_refs, on="idx"))
 
-            cls_to_pull = map_frame.loc[ map_frame.cid.isin(self.config.get("classnum").split(",")) ]
+            loyalty_frame = map_frame.groupby("contigs").agg({"cid": Extract.contig_class_loyalty})
+            loyalty_frame = loyalty_frame.cid.apply(pd.Series).fillna(0).reset_index()
+
+            cls_to_pull = pd.DataFrame()
+            for class_id in self.config.get("classnum").split(","):
+                this_cid = loyalty_frame[ loyalty_frame[int(class_id)] >= float(self.config.get("loyal")) ]
+                cls_to_pull = pd.concat([cls_to_pull, this_cid])
 
             return cls_to_pull
 
