@@ -377,7 +377,7 @@ else:
                 self.config.check_esom_path()
                 self.train_det()
 
-            elif self.config.get("mode") == "somoclu":
+            elif self.config.get("mode") in ["somoclu", "somoclu-mpi"]:
 
                 self.train_somoclu()
 
