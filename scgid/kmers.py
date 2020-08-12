@@ -140,7 +140,7 @@ else:
                         "somoclu": {
                             "bool": self.config.get("cpus") != 1,
                             "warning": "Since `--mode somoclu` runs using OpenMP, argument `--cpus` should be set. Running on one CPU...` "
-                        }
+                        },
                         "somoclu-mpi": {
                             "bool": self.config.get("cpus") != 1,
                             "warning": "Since `--mode somoclu` runs using MPI, argument `--cpus` should be set. Running on one CPU...` "
