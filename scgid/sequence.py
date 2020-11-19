@@ -13,6 +13,17 @@ def reverse (string):
         pos -= 1
     return ''.join(chars)
 
+def complement_dna(string):
+    convert = {
+            'A': 'T',
+            'T': 'A',
+            'G': 'C',
+            'C': 'G',
+            'N': 'N'
+        }
+    comp = [convert[l] for l in string]
+    return ''.join(comp)
+
 def complement(string):
     convert = {
             'A': 'T',
@@ -38,7 +49,7 @@ def revcomp(string):
     revcomp = comp[::-1]
 
     return ''.join(revcomp)
-    
+
 
 class DNASequenceCollection(object):
 
@@ -48,7 +59,7 @@ class DNASequenceCollection(object):
 
     def get(self, header):
         return self.index[header]
-    
+
     def pop(self, header):
         return self.index.pop(header)
 
@@ -60,7 +71,7 @@ class DNASequenceCollection(object):
 
     def seqs(self):
         return self.index.values()
-    
+
     def headers(self):
         return self.index.keys()
 
@@ -68,14 +79,14 @@ class DNASequenceCollection(object):
         self.index.clear()
         self.index.update(d)
         return self
-    
+
     def remove_small_sequences (self, minlen):
         self.index = {header: seqobj for header, seqobj in self.index.items() if seqobj.length >= minlen}
 
     def gc_cov_filter(self, gc_range, coverage_range):
         gc_min, gc_max = gc_range
         coverage_min, coverage_max = coverage_range
-        
+
         sort = {
             "keep": {},
             "dump": {}
@@ -86,7 +97,7 @@ class DNASequenceCollection(object):
                 sort["keep"][key] = self.get(key)
             else:
                 sort["dump"][key] = self.get(key)
-        
+
         return sort
 
     def header_list_filter(self, header_list):
@@ -119,7 +130,7 @@ class DNASequenceCollection(object):
                                 raise scgid.gct.MalformedCoverageTableError(f"Contig `{header}` is not present in the supplied coverage table.")
                         else:
                             coverage = np.nan
-                        
+
                         if header in self.index:
                             raise KeyError("FASTA has duplicated headers")
 
@@ -130,7 +141,7 @@ class DNASequenceCollection(object):
                         header = m.group(1)
                 else:
                     sequence += line
-            
+
             # Add the last sequence to the OrderedDict
             if coverage_dict is not None:
                 try:
@@ -139,7 +150,7 @@ class DNASequenceCollection(object):
                     raise scgid.gct.MalformedCoverageTableError(f"Contig `{header}` is not present in the supplied coverage table.")
             else:
                 coverage = np.nan
-            
+
             if header in self.index:
                 raise KeyError("FASTA has duplicated headers")
             self.index[header] = DNASequence(header, sequence, spades, coverage)
@@ -163,7 +174,7 @@ class DNASequence(object):
 
         self.coverage = None
         self.shortname = None
-        
+
         try:
             spl = header.split('_')
             self.shortname = "_".join(spl[0:2])
@@ -192,13 +203,13 @@ class DNASequence(object):
 
     def to_fasta(self):
         return f">{self.header}\n{self.string}"
-    
+
     def revcomp(self, inplace = False):
         if inplace:
             self.string = revcomp(self.string)
         else:
             return revcomp(self.string)
-    
+
     def transcribe(self):
         trans = {
                 'A':'U',
@@ -257,7 +268,7 @@ class AASequence(object):
         self.header = header
         self.string = string
         self.length = len(self.string)
-    
+
     def to_fasta(self):
         return f">{self.header}\n{self.string}"
 
