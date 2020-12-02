@@ -189,6 +189,8 @@ class DNASequence(object):
                 self.coverage = float(spl[5])
             except IndexError:
                 pass
+            except ValueError:
+                pass
             except:
                 raise ErrorClassNotImplemented
         else:
