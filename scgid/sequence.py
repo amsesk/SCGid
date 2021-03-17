@@ -5,40 +5,174 @@ import numpy as np
 from collections import OrderedDict
 from scgid.error import ErrorClassNotImplemented
 
-def reverse (string):
-    chars = ["x"]*len(string)
+SPADES_HEADER_PATTERN = re.compile("NODE_[0-9]+_length_[0-9]+_cov_[0-9.]+")
+
+
+def reverse(string):
+    chars = ["x"] * len(string)
     pos = len(string) - 1
     for l in string:
         chars[pos] = l
         pos -= 1
     return ''.join(chars)
 
+
 def complement(string):
     convert = {
-            'A': 'T',
-            'T': 'A',
-            'A': 'U',
-            'U': 'A',
-            'G': 'C',
-            'C': 'G',
-            'N': 'N'
-        }
+        'A': 'T',
+        'T': 'A',
+        'A': 'U',
+        'U': 'A',
+        'G': 'C',
+        'C': 'G',
+        'N': 'N'
+    }
     comp = [convert[l] for l in string]
     return ''.join(comp)
 
+
 def revcomp(string):
     convert = {
-            'A': 'T',
-            'T': 'A',
-            'G': 'C',
-            'C': 'G',
-            'N': 'N'
-        }
+        'A': 'T',
+        'T': 'A',
+        'G': 'C',
+        'C': 'G',
+        'N': 'N'
+    }
     comp = [convert[l] for l in string]
     revcomp = comp[::-1]
 
     return ''.join(revcomp)
-    
+
+
+class DnaSequence(object):
+
+    def __init__(self, accession, description, string):
+        self.accession = accession
+        self.description = description
+        self.string = "".join([c.upper() for c in string])
+        self.length = len(string)
+
+    def gc_content(self):
+        gc_count = 0
+        for letter in self.string:
+            if letter in ["G", "C"]:
+                gc_count += 1
+        gc_content = float(gc_count) / float(self.length)
+        return gc_content
+
+    def to_fasta(self):
+        header = f">{self.accession} {self.description}".strip()
+        return f"{header}\n{self.string}"
+
+    def revcomp(self, inplace=False):
+        if inplace:
+            self.string = revcomp(self.string)
+        else:
+            return revcomp(self.string)
+
+    def transcribe(self):
+        trans = {
+            'A': 'U',
+            'T': 'A',
+            'G': 'C',
+            'C': 'G',
+            'N': 'N'
+        }
+        transcript = ''.join([trans[l] for l in self.string])
+        return transcript
+
+
+class Sequences(object):
+
+    def __init__(self, seqtype):
+        self.index = OrderedDict()
+        self.seqtype = seqtype
+
+    def from_fasta(fasta_handle, seqtype):
+        header_pattern = re.compile("^>(.+)")
+
+        sequences = Sequences(seqtype)
+
+        accession = ""
+        description = ""
+        sequence = ""
+
+        for line in fasta_handle:
+            line = line.strip()
+            if len(line) == 0:
+                continue
+
+            m = re.match(header_pattern, line)
+
+            ##############################
+            ## Are we on a header line? ##
+            ##############################
+            if m is not None:
+                ################
+                ## Yes we are ##
+                ################
+
+                #############################################
+                ## Are we currently working on a sequence? ##
+                ## If so, add the current sequence to the  ##
+                ## index before moving on to the new one   ##
+                #############################################
+                if len(accession) != 0:
+                    sequences.index[accession] = sequences.seqtype(
+                        accession, description, sequence)
+                    accession = ""
+                    description = ""
+                    sequence = ""
+
+                ###############################
+                ## Now move on to the header ##
+                ## on this line              ##
+                ###############################
+                header = m.group(1).split(" ")
+                if len(header) > 1:
+                    accession = header[0]
+                    description = " ".join(header[1:])
+                else:
+                    accession = header[0]
+                    description = ""
+
+                # Make sure this accession is not yet in the index
+                if accession in sequences.index:
+                    raise KeyError("FASTA has duplicated headers")
+
+            else:
+                ################################
+                ## This is not a header line, ##
+                ## so add to the sequence    ###
+                ################################
+                sequence += line
+
+        ########################################
+        ## Add the last sequence to the index ##
+        ########################################
+        if accession in sequences.index:
+            raise KeyError("FASTA has duplicated headers")
+        sequences.index[accession] = sequences.seqtype(
+            accession, description, sequence)
+        print(sequences.index[accession].string)
+
+        return sequences
+
+    def has_spades_headers(self):
+        spades_header_pattern = SPADES_HEADER_PATTERN
+        for k in self.index:
+            if not re.match(spades_header_pattern, k):
+                return False
+
+        return True
+
+    def seqs(self):
+        return self.index.values()
+
+    def __str__(self):
+        return "\n".join([s.to_fasta() for _k, s in self.index.items()])
+
 
 class DNASequenceCollection(object):
 
@@ -47,8 +181,17 @@ class DNASequenceCollection(object):
         self.seqtype = DNASequence
 
     def get(self, header):
-        return self.index[header]
-    
+        if header in self.index:
+            return self.index[header]
+
+        else:
+            accession = header.split(" ")[0]
+            if accession in self.index:
+                return self.index[accession]
+
+            else:
+                raise KeyError
+
     def pop(self, header):
         return self.index.pop(header)
 
@@ -60,7 +203,7 @@ class DNASequenceCollection(object):
 
     def seqs(self):
         return self.index.values()
-    
+
     def headers(self):
         return self.index.keys()
 
@@ -68,14 +211,15 @@ class DNASequenceCollection(object):
         self.index.clear()
         self.index.update(d)
         return self
-    
-    def remove_small_sequences (self, minlen):
-        self.index = {header: seqobj for header, seqobj in self.index.items() if seqobj.length >= minlen}
+
+    def remove_small_sequences(self, minlen):
+        self.index = {header: seqobj for header,
+                      seqobj in self.index.items() if seqobj.length >= minlen}
 
     def gc_cov_filter(self, gc_range, coverage_range):
         gc_min, gc_max = gc_range
         coverage_min, coverage_max = coverage_range
-        
+
         sort = {
             "keep": {},
             "dump": {}
@@ -86,7 +230,7 @@ class DNASequenceCollection(object):
                 sort["keep"][key] = self.get(key)
             else:
                 sort["dump"][key] = self.get(key)
-        
+
         return sort
 
     def header_list_filter(self, header_list):
@@ -94,10 +238,10 @@ class DNASequenceCollection(object):
         for header in header_list:
             seq_dict[header] = self.index.get(header)
         return DNASequenceCollection().from_dict(
-            { h: seq_dict[h] for h in sorted(seq_dict) }
+            {h: seq_dict[h] for h in sorted(seq_dict)}
         )
 
-    def from_fasta(self, fasta, spades = False, coverage_dict = None):
+    def from_fasta(self, fasta, spades=False, coverage_dict=None):
         header_pattern = re.compile("^>(.+)")
         header = str()
         sequence = str()
@@ -119,18 +263,19 @@ class DNASequenceCollection(object):
                                 raise scgid.gct.MalformedCoverageTableError(f"Contig `{header}` is not present in the supplied coverage table.")
                         else:
                             coverage = np.nan
-                        
+
                         if header in self.index:
                             raise KeyError("FASTA has duplicated headers")
 
-                        self.index[header] = self.seqtype(header, sequence, spades, coverage)
+                        self.index[header] = self.seqtype(
+                            header, sequence, spades, coverage)
                         header = m.group(1)
                         sequence = str()
                     else:
                         header = m.group(1)
                 else:
                     sequence += line
-            
+
             # Add the last sequence to the OrderedDict
             if coverage_dict is not None:
                 try:
@@ -139,31 +284,34 @@ class DNASequenceCollection(object):
                     raise scgid.gct.MalformedCoverageTableError(f"Contig `{header}` is not present in the supplied coverage table.")
             else:
                 coverage = np.nan
-            
+
             if header in self.index:
                 raise KeyError("FASTA has duplicated headers")
-            self.index[header] = DNASequence(header, sequence, spades, coverage)
+            self.index[header] = DNASequence(
+                header, sequence, spades, coverage)
 
         return self
 
-    def rekey_by_shortname (self):
-        self.index = {"_".join(k.split("_")[0:2]): v for k,v in self.index.items()}
+    def rekey_by_shortname(self):
+        self.index = {
+            "_".join(k.split("_")[0:2]): v for k, v in self.index.items()}
 
-    def write_fasta (self, outpath):
+    def write_fasta(self, outpath):
         with open(outpath, 'w') as o:
-            for _,s in self.index.items():
+            for _, s in self.index.items():
                 o.write(f"{s.to_fasta()}\n")
+
 
 class DNASequence(object):
 
-    def __init__(self, header, string, spades = False, coverage = np.nan):
+    def __init__(self, header, string, spades=False, coverage=np.nan):
         self.header = header
         self.string = string
         self.length = len(self.string)
 
         self.coverage = None
         self.shortname = None
-        
+
         try:
             spl = header.split('_')
             self.shortname = "_".join(spl[0:2])
@@ -178,6 +326,8 @@ class DNASequence(object):
                 self.coverage = float(spl[5])
             except IndexError:
                 pass
+            except ValueError:
+                pass
             except:
                 raise ErrorClassNotImplemented
         else:
@@ -188,27 +338,28 @@ class DNASequence(object):
         for letter in self.string:
             if letter == "G" or letter == "C":
                 self.gcCount += 1
-        self.gc = float(self.gcCount)/float(self.length)
+        self.gc = float(self.gcCount) / float(self.length)
 
     def to_fasta(self):
         return f">{self.header}\n{self.string}"
-    
-    def revcomp(self, inplace = False):
+
+    def revcomp(self, inplace=False):
         if inplace:
             self.string = revcomp(self.string)
         else:
             return revcomp(self.string)
-    
+
     def transcribe(self):
         trans = {
-                'A':'U',
-                'T':'A',
-                'G':'C',
-                'C':'G',
-                'N':'N'
-                }
+            'A': 'U',
+            'T': 'A',
+            'G': 'C',
+            'C': 'G',
+            'N': 'N'
+        }
         transcript = ''.join([trans[l] for l in self.string])
         return transcript
+
 
 class AASequenceCollection(object):
 
@@ -221,7 +372,7 @@ class AASequenceCollection(object):
     def seqs(self):
         return self.index.values()
 
-    def from_dict (self, odict):
+    def from_dict(self, odict):
         self.index.update(odict)
         return self
 
@@ -246,10 +397,11 @@ class AASequenceCollection(object):
                         header = m.group(1)
                 else:
                     sequence += line
-            ## add the last sequence to the list
+            # add the last sequence to the list
             self.index[header] = AASequence(header, sequence)
 
         return self
+
 
 class AASequence(object):
 
@@ -257,10 +409,11 @@ class AASequence(object):
         self.header = header
         self.string = string
         self.length = len(self.string)
-    
+
     def to_fasta(self):
         return f">{self.header}\n{self.string}"
 
+'''
 # Old shit
 class Sequence(object):
     def __init__(self, label, seq, seq_type = "nucl", contig_info = False):
@@ -415,3 +568,4 @@ def get_attribute_list (instanceList, attribute):
         listToOutput.append(getattr(i,attribute))
     return listToOutput
 
+'''
