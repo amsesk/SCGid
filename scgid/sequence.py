@@ -17,6 +17,18 @@ def reverse(string):
     return ''.join(chars)
 
 
+def complement_dna(string):
+    convert = {
+        'A': 'T',
+        'T': 'A',
+        'G': 'C',
+        'C': 'G',
+        'N': 'N'
+    }
+    comp = [convert[l] for l in string]
+    return ''.join(comp)
+
+
 def complement(string):
     convert = {
         'A': 'T',
@@ -435,7 +447,7 @@ class Sequence(object):
         self.sequence = seq
         self.length = len(self.sequence.strip())
 
-        ## Check format to shorten Node names if possible
+        # Check format to shorten Node names if possible
         m = re.match("NODE[_][0-9]+[_]length[_][0-9]+[_]cov[_][0-9]+",self.label)
         if m is not None:
             spl = self.label.split("_")
@@ -482,7 +494,7 @@ def revcomp_str(dna_string):
             comp+="C"
     out = reverse(comp)
     return out
-#read sequences in a fasta file into individual sequence() objects
+# read sequences in a fasta file into individual sequence() objects
 def readFastq(infile):
     allSeqs=[]
     lengths=[]
@@ -497,9 +509,9 @@ def readFastq(infile):
             p = 0
         p+=1
         m+=1
-        #print i.split("\n")[1]
-        #print "XXXXXXX"
-        #p+=1
+        # print i.split("\n")[1]
+        # print "XXXXXXX"
+        # p+=1
     return numpy.mean(lengths)
 
 def getFastaHeaders (fasta):
@@ -533,7 +545,7 @@ def readFasta (fasta, seq_type = "nucl", contig_info = False):
                     label = m.group(1)
             else:
                 seq += line
-        ## add the last sequence to the list
+        # add the last sequence to the list
         all_seqs.append( Sequence(label, seq, seq_type, contig_info) )
     return all_seqs
 
@@ -544,7 +556,7 @@ def readFasta_dumber(file, seq_type = "nucl", contig_info = False):
             continue
         l=0
         seq=""
-        #print i
+        # print i
         for x in i.split("\n"):
             if l==0:
                 lab=x
@@ -559,7 +571,7 @@ def readFasta_dumber(file, seq_type = "nucl", contig_info = False):
             allSeqs.append(Sequence(lab,seq,"prot",False))
         elif seq_type == "nucl" and contig_info == False:
             allSeqs.append(Sequence(lab,seq,"nucl",False))
-            #allSeqs.append(contig(lab,seq))
+            # allSeqs.append(contig(lab,seq))
     return allSeqs
 
 def get_attribute_list (instanceList, attribute):
