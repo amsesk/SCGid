@@ -193,16 +193,7 @@ class DNASequenceCollection(object):
         self.seqtype = DNASequence
 
     def get(self, header):
-        if header in self.index:
-            return self.index[header]
-
-        else:
-            accession = header.split(" ")[0]
-            if accession in self.index:
-                return self.index[accession]
-
-            else:
-                raise KeyError
+        return self.index[header]
 
     def pop(self, header):
         return self.index.pop(header)
