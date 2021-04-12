@@ -339,7 +339,7 @@ class DNASequence(object):
         self.gc = float()
         self.gcCount = 0
         for letter in self.string:
-            if letter.to_upper() == "G" or letter.to_upper() == "C":
+            if letter.upper() == "G" or letter.upper() == "C":
                 self.gcCount += 1
         self.gc = float(self.gcCount) / float(self.length)
 
