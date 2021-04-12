@@ -341,7 +341,7 @@ class DNASequence(object):
         for letter in self.string:
             if letter.upper() == "G" or letter.upper() == "C":
                 self.gcCount += 1
-        self.gc = float(self.gcCount) / float(self.length)
+        self.gc = np.divide(self.gCCount, self.length)
 
     def to_fasta(self):
         return f">{self.header}\n{self.string}"
