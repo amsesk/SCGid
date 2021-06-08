@@ -9,11 +9,11 @@ version 0.9b
 [Link to the SCGid Publication](https://academic.oup.com/bioinformatics/article-abstract/36/7/1994/5640497)
 
 ### What is ***SCGid*** for?
-*SCGid* is a python-based tool aimed at extracting a draft genome sequence for a single organism from a mildly metagenomic sequencing library resulting from single-cell genomic amplifications. The only thing that you need to start is your assebmly in FASTA format and *SCGid* will do the rest.
+*SCGid* is a python-based tool aimed at extracting a draft genome sequence for a single organism from a mildly metagenomic sequencing library resulting from single-cell genomic amplifications. The only thing that you need to start is your assembly in FASTA format and *SCGid* will do the rest.
 
-*SCGid* takes your nucleotide assebmly and subjects it to three binning methods each based on a different sequence signature. It takes the output of each, draws consensus based on majority-rule, and yields one final consensus-genome draft at the intersection of all three methods. 
+*SCGid* takes your nucleotide assembly and subjects it to three binning methods each based on a different sequence signature. It takes the output of each, draws consensus based on majority-rule, and yields one final consensus-genome draft at the intersection of all three methods. 
 
-*SCGid* is now compatible with any nucleotide assembly (SPAdes or other). If your input is a non-SPAdes assembly or a SPAdes asembly that has had the sequence headers modified, you will have to supply a contig coverage matrix to `scgid gct` and run the helper script at `utils/rename_fasta_headers.py` prior to running SCGid. See `scgid gct -h` for more information about supplied contig coverage matrices.
+*SCGid* is now compatible with any nucleotide assembly (SPAdes or other). If your input is a non-SPAdes assembly or a SPAdes assembly that has had the sequence headers modified, you will have to supply a contig coverage matrix to `scgid gct` and run the helper script at `utils/rename_fasta_headers.py` prior to running SCGid. See `scgid gct -h` for more information about supplied contig coverage matrices.
 
 Please note that this version of *scgid* constitutes an early-release beta version. Some aspects of it and its documentation may be incomplete and/or under development. We actively support *SCGid* and are working to expand and test it. If you encounter an error or obstacle when running *SCGid*, please open an issue on this github repositiory so that we can address it and get you up and running again. See the next section below for some more notes about this version of *SCGid*.
 
