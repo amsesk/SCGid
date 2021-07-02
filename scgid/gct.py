@@ -229,7 +229,7 @@ else:
             self.unclassified_infotable.df.to_csv(f"{self.config.get('prefix')}.unclassified.infotable.tsv", sep='\t', index=False, header=False)
 
             # Generate all 13 windows
-            windows = generate_windows(self.infotable)
+            windows = generate_windows(self.infotable, inc_factor = 0.01)
 
             # Print PDFs of windows to pdf in directory `windows` and stats on
             # all windows to tsv
