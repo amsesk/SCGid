@@ -30,7 +30,7 @@ def generate_windows(it, inc_factor=0.01):
             'co2gc1',
             'co2gc2'
             ]
-    
+
     return WindowManager(it, patterns, inc_factor)
 
 code_to_col = {
@@ -49,15 +49,15 @@ class NoTargetError(ModuleError):
 class FlexibleSelectionWindow(LoggingEntity, ErrorHandler):
     def __init__ (self, expPat):
         self.expPat = expPat
-        
+
         self.step1 = None
         self.firstaxis = None
         self.firstsymm = None
-        
+
         self.step = None
         self.secondaxis = None
         self.secondsymm = None
-        
+
         self.means = {
                 "gc": None,
                 "coverage": None
@@ -66,6 +66,8 @@ class FlexibleSelectionWindow(LoggingEntity, ErrorHandler):
             1: self.calc_1d_window_symm,
             2: self.calc_1d_window_asymm,
         }
+
+        self.zero_width_axis = False
 
         self.gc_range = ()
         self.gc_points = None
@@ -80,12 +82,12 @@ class FlexibleSelectionWindow(LoggingEntity, ErrorHandler):
 
         self.head = get_head()
         self.logger = logging.getLogger( logger_name_gen() )
-    
+
     def show(self):
         outstr = "Type: {}\np(target): {}\np(nontarget): {}\nGC Range: {}\nCoverage Range: {}\n".format(
-                self.expPat, 
-                round(self.tp, 4), 
-                round(self.ntp,4), 
+                self.expPat,
+                round(self.tp, 4),
+                round(self.ntp,4),
                 [round(x,4) for x in self.gc_range],
                 [round(x,4) for x in self.coverage_range]
                 )
@@ -103,6 +105,7 @@ class FlexibleSelectionWindow(LoggingEntity, ErrorHandler):
         target = it.target_filter()
 
         if target.df.shape[0] == 0:
+            #print(axis, "AH!")
             raise NoTargetError
 
         axis_ss = target.summary_stats(axis)
@@ -111,7 +114,7 @@ class FlexibleSelectionWindow(LoggingEntity, ErrorHandler):
         dist = min( [pdist,ndist] )
         step_size = inc_factor * axis_ss.std
         population_whole = it.tnt_population()
-        
+
         try:
             steps_to_take = int(round_func(dist/step_size))
 
@@ -120,9 +123,9 @@ class FlexibleSelectionWindow(LoggingEntity, ErrorHandler):
             steps_to_take = int(round_func(dist/1))
 
         points = np.ndarray(shape=(steps_to_take+1, 6), dtype='float', order='C')
-        
+
         final_window = ()
-        
+
         for s in range(0,steps_to_take+1):
             step_window = (axis_ss.mean - s*step_size, axis_ss.mean + s*step_size)
             flextbl.rfilter_inplace_from_parent(axis, step_window)
@@ -132,7 +135,7 @@ class FlexibleSelectionWindow(LoggingEntity, ErrorHandler):
                 tp = population_now.target/population_whole.target
             except ZeroDivisionError:
                 raise NoTargetError
-            
+
             try:
                 ntp = population_now.nontarget/population_whole.nontarget
             except ZeroDivisionError:
@@ -149,12 +152,12 @@ class FlexibleSelectionWindow(LoggingEntity, ErrorHandler):
                     ])
             points[s] = pointrow
         points = pd.DataFrame(points, columns=["step",
-                                            "lower_{}".format(axis), 
+                                            "lower_{}".format(axis),
                                             "upper_{}".format(axis),
                                             "tp",
                                             "ntp",
-                                            "tradeoff"]) 
-            
+                                            "tradeoff"])
+
         maxes = points.loc[points.tradeoff == points.tradeoff.max()]
         if maxes.shape[0] > 1:
                 final_window = (
@@ -166,7 +169,8 @@ class FlexibleSelectionWindow(LoggingEntity, ErrorHandler):
                     maxes["lower_{}".format(axis)].item(),
                     maxes["upper_{}".format(axis)].item()
                     )
-        
+        #print(axis_ss.max, axis_ss.min, steps_to_take)
+        #print(axis, axis_ss.mean, final_window, points)
         return PltOut(axis, axis_ss.mean, final_window, points)
 
     def calc_1d_window_asymm (self, it, axis, inc_factor = 0.01, plot = False, include_limits = False):
@@ -210,7 +214,7 @@ class FlexibleSelectionWindow(LoggingEntity, ErrorHandler):
                 1: "upper"
                 }
         final_window = {}
-        
+
         for d in points.keys():
             flextbl.reset_from_parent()
             for s in range(0,steps_to_take[d]+1):
@@ -222,7 +226,7 @@ class FlexibleSelectionWindow(LoggingEntity, ErrorHandler):
                     tp = population_now.target/population_whole.target
                 except ZeroDivisionError:
                     raise NoTargetError
-            
+
                 try:
                     ntp = population_now.nontarget/population_whole.nontarget
                 except ZeroDivisionError:
@@ -238,26 +242,26 @@ class FlexibleSelectionWindow(LoggingEntity, ErrorHandler):
                         tp*(tp-ntp)
                         ])
                 points[d][s] = pointrow
-            points[d] = pd.DataFrame(points[d], columns=["step", 
+            points[d] = pd.DataFrame(points[d], columns=["step",
                                                         "lower_{}".format(axis),
                                                         "upper_{}".format(axis),
-                                                        "tp", 
-                                                        "ntp", 
-                                                        "tradeoff"]) 
-            
+                                                        "tp",
+                                                        "ntp",
+                                                        "tradeoff"])
+
             maxes = points[d].loc[points[d].tradeoff == points[d].tradeoff.max()]
             if maxes.shape[0] > 1:
                 final_window[d] = next( iter(maxes.loc[maxes["step"] == maxes["step"].max()]["{}_{}".format(point_column[d], axis)]), "no match")
             else:
                 final_window[d] = maxes["{}_{}".format(point_column[d], axis)].item()
-        
+
         return PltOut(axis, axis_ss.mean, (final_window[-1], final_window[1]), points)
 
     def calculate(self, it, inc_factor=0.01, plot=False):
         self.step1 = self.expPat[0:3]
         self.firstaxis = code_to_col[self.step1[0:2]]
         self.firstsymm = int(self.step1[2])
-        
+
         self.step2 = self.expPat[3:6]
         self.secondaxis = code_to_col[self.step2[0:2]]
         self.secondsymm = int(self.step2[2])
@@ -269,8 +273,13 @@ class FlexibleSelectionWindow(LoggingEntity, ErrorHandler):
             axis1_table = it.rfilter(self.firstaxis, axis1_range, self.step1)
         else:
             self.firstaxis, self.means[self.firstaxis], axis1_window, axis1_points = self.WindowFunc[self.firstsymm](it, self.firstaxis, inc_factor, plot = True)
-                
+
             axis1_table = it.rfilter(self.firstaxis, axis1_window, self.step1)
+
+        if axis1_window[1] - axis1_window[0] == 0:
+            self.logger.warning(f"Axis 1 ({self.firstaxis}) of {self.expPat} window is 0 width. Skipping...")
+            self.zero_width_axis = True
+            return None
 
         ## Step 2
         axis2_range = axis1_table.summary_stats(self.secondaxis).range
@@ -279,13 +288,19 @@ class FlexibleSelectionWindow(LoggingEntity, ErrorHandler):
             self.Wtable = it.rfilter(self.secondaxis, axis2_range, self.step2) #window = axis2_range
         else:
             self.secondaxis, self.means[self.secondaxis], axis2_window, axis2_points = self.WindowFunc[self.secondsymm](axis1_table, self.secondaxis, inc_factor, plot = True)
-                
+
             self.Wtable = axis1_table.rfilter(self.secondaxis, axis2_window, self.step2)
-        
+
         limits2D = {
                 self.firstaxis: axis1_window,
                 self.secondaxis: axis2_window,
                 }
+
+        if axis2_window[1] - axis2_window[0] == 0:
+            self.logger.warning(f"Axis 2 ({self.secondaxis}) of {self.expPat} window is 0 width. Skipping...")
+            self.zero_width_axis = True
+            return None
+
         if plot:
             points = {
                     self.firstaxis: axis1_points,
@@ -300,16 +315,16 @@ class FlexibleSelectionWindow(LoggingEntity, ErrorHandler):
         ### Assess target/nontarget proportions
         whole_pop = it.tnt_population()
         Wtable_pop = self.Wtable.tnt_population()
-        
+
         all_target = whole_pop.target
         all_nontarget = whole_pop.nontarget
-        
+
         target_in_window = Wtable_pop.target
         nontarget_in_window = Wtable_pop.nontarget
 
         if all_target == 0.0:
             raise NoTargetError
-        
+
         if all_nontarget == 0.0:
             self.logger.warning(f"No nontarget in final window `{self.expPat}`. Setting to 1 to avoid ZeroDivisionError.")
             all_nontarget = 1.0
@@ -350,21 +365,29 @@ class FlexibleSelectionWindow(LoggingEntity, ErrorHandler):
 
         return 0
 
-class WindowManager(object):
+class WindowManager(LoggingEntity):
     def __init__(self, infotable, patterns, inc_factor = 0.01):
         self.windows = {p: FlexibleSelectionWindow(p) for p in patterns}
         self.window_frame = None
         self.infotable = infotable
 
+        self.logger = logging.getLogger( logger_name_gen() )
+
         for w in self.windows.values():
+            #print(f"Starting {w.expPat} with inc_factor = {inc_factor}")
             w.calculate(self.infotable, inc_factor)
-        
+            #print(f"Done with {w.expPat}")
+
+        self.windows = {p:w for p,w in self.windows.items() if not w.zero_width_axis}
+
+        self.logger.info(f"{len(self.windows.values())}/13 total possible windows calculated passed >0 axis width requirement. This is temporary, see fix in SCGid ToDo list on repo.")
+
         ldict = [w.stats() for w in self.windows.values()]
         colnames = ldict[0].keys()
 
         self.window_frame = pd.DataFrame(ldict, columns = colnames)
         self.window_frame = self.window_frame.assign(sqfootage=(self.window_frame.gc_width * self.window_frame.co_width))
-        
+
         self.logger = logging.getLogger ( logger_name_gen() )
         self.head = get_head()
 
@@ -376,12 +399,12 @@ class WindowManager(object):
         with open(outdir, 'w') as f:
             total_target = self.infotable.df[self.infotable.df["parse_lineage"] == "target"].shape[0]
             total_nontarget = self.infotable.df[self.infotable.df["parse_lineage"] == "nontarget"].shape[0]
-            
+
             lines = []
             row = "{:<10} {:<10} {:<10} {:<10} {:<10} {:<10} {:<10} {:<20} {:<20}"
 
             lines.append( row.format(
-                "Pattern", 
+                "Pattern",
                 "#target",
                 "#total",
                 "p(target)",
@@ -407,19 +430,19 @@ class WindowManager(object):
                     cov_range_repr
                     )
                 )
-            output = "\n".join(lines)    
+            output = "\n".join(lines)
             f.write(output)
-                
+
             return 0
-    
+
     def pick(self, stringency):
 
         # Calculate tp/ntp quotient and add to frame
         self.window_frame = self.window_frame.assign(
-                quotient = lambda x: x.tp / x.ntp 
+                quotient = lambda x: x.tp / x.ntp
                 )
 
-        # Sort descending by tp/ntp quotient and sqfootage        
+        # Sort descending by tp/ntp quotient and sqfootage
         self.window_frame.sort_values(
             by = ["quotient", "sqfootage"],
             ascending = False,
@@ -431,7 +454,7 @@ class WindowManager(object):
         if below_thresh.shape[0] == 0:
 
             self.logger.info( f"No usable window at set stringency threshold, `s = {stringency}`. Determining next best option..." )
-            
+
             # Pick best window by maximizing tp/ntp quotient and window size (sorted above)
             best = self.window_frame.iloc[0,:]
 
@@ -442,9 +465,9 @@ class WindowManager(object):
                 self.logger.warning("More than one best window in terms of target:nontarget ratio and size. Arbitrarily picking 1st one.")
 
             return self.windows[ best.expPat ]
-        
+
         else:
-            
+
             # Filter for window(s) with the highest proportion of target
             max_target = below_thresh[below_thresh.tp == below_thresh.tp.max()]
 
@@ -452,7 +475,7 @@ class WindowManager(object):
             largest = max_target[max_target.sqfootage == max_target.sqfootage.max()]
 
             if largest.shape[0] > 1:
-                
+
                 self.logger.warning( f"More than one best window under set stringency level `s = {self.head.config.get('stringency')}` and of maximal size. Arbitrarily picking 1st one." )
 
             best = largest.iloc[0,:]
@@ -589,7 +612,7 @@ def calc_gc_window_2tailed (info_table, target_taxa, inc_factor = 0.01, plot = F
         best_step_idx_neg = max(indices_of_max_neg)
     else:
         best_step_idx_neg = points["neg"]["tradeoffs"].index(max(points["neg"]["tradeoffs"]))
-    
+
 
     if len(num_maxes_pos) > 1:
         ## get max tradeoff at highest step in POSITIVE direction (ie for asymtotic tradeoff curves)
@@ -602,7 +625,7 @@ def calc_gc_window_2tailed (info_table, target_taxa, inc_factor = 0.01, plot = F
         best_step_idx_pos = max(indices_of_max_pos)
     else:
         best_step_idx_pos = points["pos"]["tradeoffs"].index(max(points["pos"]["tradeoffs"]))
-    
+
     opt_tail_neg = target_std_gc * inc_factor * (best_step_idx_neg+1)
     opt_tail_pos = target_std_gc * inc_factor * (best_step_idx_pos+1)
 
@@ -672,9 +695,9 @@ def calc_coverage_window_1tailed (info_table, target_taxa, inc_factor = 0.01, pl
 
     else:
         return final_window
-    
-#%%         
-def calc_coverage_window_2tailed (info_table, target_taxa, inc_factor = 0.01, plot = False):    
+
+#%%
+def calc_coverage_window_2tailed (info_table, target_taxa, inc_factor = 0.01, plot = False):
     target = info_table.loc[info_table['parse_lineage'] == 'target']
     target_mean_cov = np.mean(target.coverage)
     target_std_cov = np.std(target.coverage)
@@ -804,7 +827,7 @@ def get_window_table (info_table, window, param):
 
 #%%
 def calc_1d_window_symm (it, axis, inc_factor = 0.01, plot = False):
-    
+
     flextbl = it.spawn_child("flextable", it.df)
     target = it.target_filter()
     axis_ss = target.summary_stats(axis)
@@ -813,21 +836,21 @@ def calc_1d_window_symm (it, axis, inc_factor = 0.01, plot = False):
     dist = min( [pdist,ndist] )
     step_size = inc_factor * axis_ss.std
     population_whole = it.tnt_population()
-    
+
     try:
         steps_to_take = int(np.floor(dist/step_size))
     except ZeroDivisionError:
         steps_to_take = int(np.floor(dist/1))
 
     points = np.ndarray(shape=(steps_to_take+1, 6), dtype='float', order='C')
-    
+
     final_window = ()
-    
+
     for s in range(0,steps_to_take+1):
         step_window = (axis_ss.mean - s*step_size, axis_ss.mean + s*step_size)
         flextbl.rfilter_inplace_from_parent(axis, step_window)
         population_now = flextbl.tnt_population()
-       
+
         try:
             tp = population_now.target/population_whole.target
         except ZeroDivisionError:
@@ -848,12 +871,12 @@ def calc_1d_window_symm (it, axis, inc_factor = 0.01, plot = False):
                 ])
         points[s] = pointrow
     points = pd.DataFrame(points, columns=["step",
-                                           "lower_{}".format(axis), 
+                                           "lower_{}".format(axis),
                                            "upper_{}".format(axis),
                                            "tp",
                                            "ntp",
-                                           "tradeoff"]) 
-        
+                                           "tradeoff"])
+
     maxes = points.loc[points.tradeoff == points.tradeoff.max()]
     if maxes.shape[0] > 1:
             final_window = (
@@ -865,12 +888,12 @@ def calc_1d_window_symm (it, axis, inc_factor = 0.01, plot = False):
                 maxes["lower_{}".format(axis)].item(),
                 maxes["upper_{}".format(axis)].item()
                 )
-    
+
     return PltOut(axis, axis_ss.mean, final_window, points)
 
 #%%
 def calc_1d_window_asymm (it, axis, inc_factor = 0.01, plot = False):
-    
+
     flextbl = it.spawn_child("flextable", it.df)
     target = it.target_filter()
     axis_ss = target.summary_stats(axis)
@@ -891,14 +914,14 @@ def calc_1d_window_asymm (it, axis, inc_factor = 0.01, plot = False):
             1: "upper"
             }
     final_window = {}
-    
+
     for d in points.keys():
         flextbl.reset_from_parent()
         for s in range(0,steps_to_take[d]+1):
             step_window = (axis_ss.mean, axis_ss.mean + d * s*step_size)
             flextbl.rfilter_inplace_from_parent(axis, step_window)
             population_now = flextbl.tnt_population()
-            
+
             try:
                 tp = population_now.target/population_whole.target
             except ZeroDivisionError:
@@ -918,19 +941,19 @@ def calc_1d_window_asymm (it, axis, inc_factor = 0.01, plot = False):
                     tp*(tp-ntp)
                     ])
             points[d][s] = pointrow
-        points[d] = pd.DataFrame(points[d], columns=["step", 
+        points[d] = pd.DataFrame(points[d], columns=["step",
                                                       "lower_{}".format(axis),
                                                       "upper_{}".format(axis),
-                                                      "tp", 
-                                                      "ntp", 
-                                                      "tradeoff"]) 
-        
+                                                      "tp",
+                                                      "ntp",
+                                                      "tradeoff"])
+
         maxes = points[d].loc[points[d].tradeoff == points[d].tradeoff.max()]
         if maxes.shape[0] > 1:
             final_window[d] = maxes.loc[maxes["step"] == maxes["step"].max()]["{}_{}".format(point_column[d], axis)].item()
         else:
             final_window[d] = maxes["{}_{}".format(point_column[d], axis)].item()
-    
+
     return PltOut(axis, axis_ss.mean, (final_window[-1], final_window[1]), points)
 #%%
 '''
