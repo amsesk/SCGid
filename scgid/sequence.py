@@ -383,6 +383,7 @@ class DNASequence(object):
         }
         transcript = []
         for l in self.string:
+            l = l.upper()
             try:
                 transcript.append(trans[l])
             except KeyError:
