@@ -6,7 +6,7 @@ from collections import OrderedDict
 from scgid.error import ErrorClassNotImplemented
 
 SPADES_HEADER_PATTERN = re.compile("NODE_[0-9]+_length_[0-9]+_cov_[0-9.]+")
-
+IUPAC_DEGENERATES = ['R', 'Y', 'S', 'W', 'K', 'M', 'B', 'D', 'H', 'V']
 
 def reverse(string):
     chars = ["x"] * len(string)
@@ -51,12 +51,22 @@ def revcomp(string):
         'C': 'G',
         'N': 'N'
     }
-    comp = [convert[l] for l in string]
+    comp = []
+    for l in string:
+        l = l.upper()
+        try:
+            comp.append(convert[l])
+        except KeyError:
+            if l in IUPAC_DEGENERATES:
+                print(f"WARNING: Degenerate base designation '{l}' converted to 'N'")
+                comp.append("N")
+            else:
+                raise IOError(f"Sequence string contains illegal character: '{l}'")
     revcomp = comp[::-1]
 
     return ''.join(revcomp)
 
-
+'''Deprecated I think
 class DnaSequence(object):
 
     def __init__(self, accession, description, string):
@@ -91,9 +101,20 @@ class DnaSequence(object):
             'C': 'G',
             'N': 'N'
         }
-        transcript = ''.join([trans[l] for l in self.string])
-        return transcript
+        transcript = []
+        for l in self.string:
+            try:
+                transcript.append(trans[l])
+            except KeyError:
+                if l in IUPAC_DEGENERATES:
+                    print(f"WARNING: Degenerate base designation '{l}' converted to 'N'")
+                    transcript.append("N")
+                else:
+                    raise IOError(f"Sequence string contains illegal character: '{l}'")
 
+
+        return ''.join(transcript)
+'''
 
 class Sequences(object):
 
@@ -360,9 +381,19 @@ class DNASequence(object):
             'C': 'G',
             'N': 'N'
         }
-        transcript = ''.join([trans[l] for l in self.string])
-        return transcript
+        transcript = []
+        for l in self.string:
+            try:
+                transcript.append(trans[l])
+            except KeyError:
+                if l in IUPAC_DEGENERATES:
+                    print(f"WARNING: Degenerate base designation '{l}' converted to 'N'")
+                    transcript.append("N")
+                else:
+                    raise IOError(f"Sequence string contains illegal character: '{l}'")
 
+
+        return ''.join(transcript)
 
 class AASequenceCollection(object):
 
