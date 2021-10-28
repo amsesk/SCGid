@@ -335,7 +335,11 @@ class RSCUTree(object):
 
 class Codons(Module, LoggingEntity, Head, ErrorHandler):
 
-    def __init__(self, argdict=None, loglevel=logging.INFO):
+    def __init__(self, argdict=None, loglevel=logging.INFO, hollow = False):
+
+        if hollow:
+            return None
+
         super().__init__(self.__class__, loglevel=loglevel)
         if argdict is not None:
             self.translated_args = self.translate_argdict(
@@ -473,7 +477,7 @@ class Codons(Module, LoggingEntity, Head, ErrorHandler):
 
         return parser
 
-    def locate_cds_gff3(self, gff3_path):
+    def locate_cds_gff3(self, gff3_path, pid_pattern = "[.](g[0-9]+)[.]"):
 
         contig_chunks = {}
 
@@ -481,12 +485,13 @@ class Codons(Module, LoggingEntity, Head, ErrorHandler):
 
             CDSChunk = namedtuple("CDSChunk", ["start", "end", "strand"])
             for line in gff3:
-
                 # Skip comment lines
                 if line[0] == "#":
                     continue
 
                 spl = line.split('\t')
+                if len(spl) < 6:
+                    continue
 
                 # Ignore all but CDS lines in gff3
                 if spl[2] == "CDS":
@@ -494,7 +499,7 @@ class Codons(Module, LoggingEntity, Head, ErrorHandler):
                     shortname = '_'.join(spl[0].split('_')[0:2])
 
                     # Capture pid
-                    s = re.search("[.](g[0-9]+)[.]", spl[8])
+                    s = re.search(pid_pattern, spl[8])
                     pid = s.group(1)
 
                     # Group CDS lines in gff3 by parent contig (by shortname)
