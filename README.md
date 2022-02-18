@@ -62,6 +62,9 @@ cd SCGid
 python -m venv scgidenv
 source /path/to/scgidenv/bin/activate
 
+# Install some dependencies with pip, since installation with setup.py is broken
+pip install 'numpy>=1.15.0' 'pandas>=0.23.4'
+
 # Use develop instead of install to make updates easier ahead of release version
 python setup.py develop 
 
