@@ -15,8 +15,6 @@ setup(
         ('scgid', ['scgid/print_tetramer_freqs_deg_filter_esom_VD.pl', 'scgid/ape_nj.R', 'scgid/codons_phytools.R', 'scgid/gc_cov.plot.R']),
     ],
     include_package_data=True,
-    #py_modules=['scgid.scgid', 'scgid.gct', 'scgid.codons', 'scgid.kmers', 'logging'],
-    #scripts=['bin/scgid'],
     entry_points={
         'console_scripts': [
             'scgid = scgid.main:main'
@@ -32,5 +30,3 @@ setup(
         'importlib_metadata'
     ]
 )
-
-# Import config script after above
