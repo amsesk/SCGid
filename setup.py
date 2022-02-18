@@ -16,14 +16,10 @@ setup(
             'scgid = scgid.main:main'
         ]
     },
-    setup_requires=[
-        'numpy>=1.15.0',
-        'cython==0.29.28'
-        ],
     install_requires=[
-        'numpy>=1.15.0',
-        'cython==0.29.28',
-        'pandas>=0.23.4',
+        #'numpy>=1.15.0',
+        #'cython==0.29.28',
+        #'pandas>=0.23.4',
         'ete3>=3.1.1',
         'plotly',
         'pyyaml',
