@@ -11,15 +11,15 @@ setup(
     keywords = "",
     url = "http://www.github.com/amsesk/SCGid",
     packages=["scgid"],
-    data_files=[
-        ('scgid', ['scgid/print_tetramer_freqs_deg_filter_esom_VD.pl', 'scgid/ape_nj.R', 'scgid/codons_phytools.R', 'scgid/gc_cov.plot.R']),
-    ],
-    include_package_data=True,
     entry_points={
         'console_scripts': [
             'scgid = scgid.main:main'
         ]
     },
+    setup_requires=[
+        'numpy>=1.15.0',
+        'cython'
+        ],
     install_requires=[
         'numpy>=1.15.0',
         'pandas>=0.23.4',
