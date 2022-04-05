@@ -155,7 +155,7 @@ else:
             parser.add_argument('-k','--kmer', metavar = "kmer_size", action="store",required=False, default="4", help = "Kmer size for which frequencies will be calculated. Default = 4")
 
             # esomtrn options
-            parser.add_argument('--mode', metavar = "training_mode", action="store", required=False, choices=["det","somoclu"], default = "det", help = "Mode to train the ESOM. [det|s]")
+            parser.add_argument('--mode', metavar = "training_mode", action="store", required=False, choices=["det","somoclu"], default = "det", help = "Mode to train the ESOM. [det|somoclu]")
             parser.add_argument('--cpus', metavar = "cpus", action="store", required=False, default=1, help = "Number of CPUs to use for training (Somoclu only)")
             parser.add_argument('-r','--rows', metavar = "rows_in_map", action="store",required=False, help = "The number of rows to be present in the output ESOM. Default = 5.5x the number of neurons")
             parser.add_argument('-c','--cols', metavar = "columns_in_map", action="store",required=False, help = "The number of columns to be present in the output ESOM. Default = 5.5x the number of neurons")
