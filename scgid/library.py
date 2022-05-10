@@ -165,6 +165,7 @@ def gff3_to_fasta(gff3, outname):
     prots = []
     recording = False
     for line in open(gff3).readlines():
+        line = line.strip()
         if recording is False:
             s = re.search("[#][ ]protein[ ]sequence[ ][=][ ]",line)
             if s is not None:
@@ -175,14 +176,28 @@ def gff3_to_fasta(gff3, outname):
                 if s is None:
                     recording = False
                     continue
+                else:
+                    protein_sequence = s.group(1)
 
-                protein_sequence = s.group(1)
+                    # Case where protein sequence is entirely on the first line
+                    s = re.search("[#][ ]protein[ ]sequence[ ][=][ ][[]([A-Za-z]+)[]]$",line)
+                    if s is not None:
+                        recording = False
+
+                    # Case where protein sequence is spread over multiple lines
+                    else:
+                        pass
+            else:
+                s = re.search("[#][ ]end[ ]gene[ ]([A-Za-z0-9_.]+)",line)
+                if s is not None:
+                    prots.append(AASequence(s.group(1), protein_sequence))
+                    protein_sequence = ""
+
         elif recording is True:
-            s = re.search("[#][ ]end[ ]gene[ ]([A-Za-z0-9_.]+)",line)
+            s = re.search("[#][ ]([A-Za-z]+)[]]$", line)
             if s is not None:
                 recording = False
-                prots.append(AASequence(s.group(1), protein_sequence))
-                protein_sequence = ""
+                protein_sequence += s.group(1)
             else:
                 s = re.search("[#][ ]([a-zA-Z]+)",line)
                 protein_sequence += s.group(1)
