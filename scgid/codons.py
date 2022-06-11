@@ -35,6 +35,7 @@ class NoGoodCladesError(ModuleError):
         if error_catch:
             self.catch()
 
+
 SYNONYMOUS_CODONS = {
     'Phe': ['UUU', 'UUC'],
     'Leu': ['UUA', 'UUG', 'CUU', 'CUC', 'CUA', 'CUG'],
@@ -64,46 +65,138 @@ class CDSConcatenate(DNASequence):
 
     def __init__(self, header, string):
         super().__init__(header, string, spades=False)
-        self.codon_counts = pd.Series(
-            {
-                'UUU': 0, 'UUC': 0, 'UUA': 0, 'UUG': 0,
-                'CUU': 0, 'CUC': 0, 'CUA': 0, 'CUG': 0,
-                'AUU': 0, 'AUC': 0, 'AUA': 0, 'AUG': 0,
-                'GUU': 0, 'GUC': 0, 'GUA': 0, 'GUG': 0,
-                'UCU': 0, 'UCC': 0, 'UCA': 0, 'UCG': 0,
-                'AGU': 0, 'AGC': 0, 'CCU': 0, 'CCC': 0,
-                'CCA': 0, 'CCG': 0, 'ACU': 0, 'ACC': 0,
-                'ACA': 0, 'ACG': 0, 'GCU': 0, 'GCC': 0,
-                'GCA': 0, 'GCG': 0, 'UAU': 0, 'UAC': 0,
-                'UAA': 0, 'UAG': 0, 'UGA': 0, 'CAU': 0,
-                'CAC': 0, 'CAA': 0, 'CAG': 0, 'AAU': 0,
-                'AAC': 0, 'AAA': 0, 'AAG': 0, 'GAU': 0,
-                'GAC': 0, 'GAA': 0, 'GAG': 0, 'UGU': 0,
-                'UGC': 0, 'UGG': 0, 'CGU': 0, 'CGC': 0,
-                'CGA': 0, 'CGG': 0, 'AGA': 0, 'AGG': 0,
-                'GGU': 0, 'GGC': 0, 'GGA': 0, 'GGG': 0
-            }
-        )
-        self.rscu_table = pd.Series(
-            {
-                'UUU': 0.00, 'UUC': 0.00, 'UUA': 0.00, 'UUG': 0.00,
-                'CUU': 0.00, 'CUC': 0.00, 'CUA': 0.00, 'CUG': 0.00,
-                'AUU': 0.00, 'AUC': 0.00, 'AUA': 0.00, 'AUG': 0.00,
-                'GUU': 0.00, 'GUC': 0.00, 'GUA': 0.00, 'GUG': 0.00,
-                'UCU': 0.00, 'UCC': 0.00, 'UCA': 0.00, 'UCG': 0.00,
-                'AGU': 0.00, 'AGC': 0.00, 'CCU': 0.00, 'CCC': 0.00,
-                'CCA': 0.00, 'CCG': 0.00, 'ACU': 0.00, 'ACC': 0.00,
-                'ACA': 0.00, 'ACG': 0.00, 'GCU': 0.00, 'GCC': 0.00,
-                'GCA': 0.00, 'GCG': 0.00, 'UAU': 0.00, 'UAC': 0.00,
-                'UAA': 0.00, 'UAG': 0.00, 'UGA': 0.00, 'CAU': 0.00,
-                'CAC': 0.00, 'CAA': 0.00, 'CAG': 0.00, 'AAU': 0.00,
-                'AAC': 0.00, 'AAA': 0.00, 'AAG': 0.00, 'GAU': 0.00,
-                'GAC': 0.00, 'GAA': 0.00, 'GAG': 0.00, 'UGU': 0.00,
-                'UGC': 0.00, 'UGG': 0.00, 'CGU': 0.00, 'CGC': 0.00,
-                'CGA': 0.00, 'CGG': 0.00, 'AGA': 0.00, 'AGG': 0.00,
-                'GGU': 0.00, 'GGC': 0.00, 'GGA': 0.00, 'GGG': 0.00
-            }
-        )
+        self.codon_counts = pd.Series({
+            'UUU': 0,
+            'UUC': 0,
+            'UUA': 0,
+            'UUG': 0,
+            'CUU': 0,
+            'CUC': 0,
+            'CUA': 0,
+            'CUG': 0,
+            'AUU': 0,
+            'AUC': 0,
+            'AUA': 0,
+            'AUG': 0,
+            'GUU': 0,
+            'GUC': 0,
+            'GUA': 0,
+            'GUG': 0,
+            'UCU': 0,
+            'UCC': 0,
+            'UCA': 0,
+            'UCG': 0,
+            'AGU': 0,
+            'AGC': 0,
+            'CCU': 0,
+            'CCC': 0,
+            'CCA': 0,
+            'CCG': 0,
+            'ACU': 0,
+            'ACC': 0,
+            'ACA': 0,
+            'ACG': 0,
+            'GCU': 0,
+            'GCC': 0,
+            'GCA': 0,
+            'GCG': 0,
+            'UAU': 0,
+            'UAC': 0,
+            'UAA': 0,
+            'UAG': 0,
+            'UGA': 0,
+            'CAU': 0,
+            'CAC': 0,
+            'CAA': 0,
+            'CAG': 0,
+            'AAU': 0,
+            'AAC': 0,
+            'AAA': 0,
+            'AAG': 0,
+            'GAU': 0,
+            'GAC': 0,
+            'GAA': 0,
+            'GAG': 0,
+            'UGU': 0,
+            'UGC': 0,
+            'UGG': 0,
+            'CGU': 0,
+            'CGC': 0,
+            'CGA': 0,
+            'CGG': 0,
+            'AGA': 0,
+            'AGG': 0,
+            'GGU': 0,
+            'GGC': 0,
+            'GGA': 0,
+            'GGG': 0
+        })
+        self.rscu_table = pd.Series({
+            'UUU': 0.00,
+            'UUC': 0.00,
+            'UUA': 0.00,
+            'UUG': 0.00,
+            'CUU': 0.00,
+            'CUC': 0.00,
+            'CUA': 0.00,
+            'CUG': 0.00,
+            'AUU': 0.00,
+            'AUC': 0.00,
+            'AUA': 0.00,
+            'AUG': 0.00,
+            'GUU': 0.00,
+            'GUC': 0.00,
+            'GUA': 0.00,
+            'GUG': 0.00,
+            'UCU': 0.00,
+            'UCC': 0.00,
+            'UCA': 0.00,
+            'UCG': 0.00,
+            'AGU': 0.00,
+            'AGC': 0.00,
+            'CCU': 0.00,
+            'CCC': 0.00,
+            'CCA': 0.00,
+            'CCG': 0.00,
+            'ACU': 0.00,
+            'ACC': 0.00,
+            'ACA': 0.00,
+            'ACG': 0.00,
+            'GCU': 0.00,
+            'GCC': 0.00,
+            'GCA': 0.00,
+            'GCG': 0.00,
+            'UAU': 0.00,
+            'UAC': 0.00,
+            'UAA': 0.00,
+            'UAG': 0.00,
+            'UGA': 0.00,
+            'CAU': 0.00,
+            'CAC': 0.00,
+            'CAA': 0.00,
+            'CAG': 0.00,
+            'AAU': 0.00,
+            'AAC': 0.00,
+            'AAA': 0.00,
+            'AAG': 0.00,
+            'GAU': 0.00,
+            'GAC': 0.00,
+            'GAA': 0.00,
+            'GAG': 0.00,
+            'UGU': 0.00,
+            'UGC': 0.00,
+            'UGG': 0.00,
+            'CGU': 0.00,
+            'CGC': 0.00,
+            'CGA': 0.00,
+            'CGG': 0.00,
+            'AGA': 0.00,
+            'AGG': 0.00,
+            'GGU': 0.00,
+            'GGC': 0.00,
+            'GGA': 0.00,
+            'GGG': 0.00
+        })
 
     def split_codons(self):
         self.transcomp = complement(self.transcribe())
@@ -114,8 +207,8 @@ class CDSConcatenate(DNASequence):
             if 'N' in codon:
                 continue
             self.codon_counts[codon] += 1
-        logrow = "[{:<10}] ".format(
-            self.header) + " ".join(["{:<5}".format(x) for x in self.codon_counts.to_list()])
+        logrow = "[{:<10}] ".format(self.header) + " ".join(
+            ["{:<5}".format(x) for x in self.codon_counts.to_list()])
         return logrow
 
     def calculate_rscu(self):
@@ -126,8 +219,9 @@ class CDSConcatenate(DNASequence):
                 if amino_acid_occurences == 0:
                     rscu = 0.00
                 else:
-                    rscu = self.codon_counts[
-                        c] / (amino_acid_occurences * (1 / len(self.codon_counts[codons])))
+                    rscu = self.codon_counts[c] / (
+                        amino_acid_occurences *
+                        (1 / len(self.codon_counts[codons])))
 
                 self.rscu_table[c] = rscu
 
@@ -150,10 +244,8 @@ class RSCUTree(object):
 
         if self.mode == "blastp":
             self.infotable = InfoTable()
-            self.infotable.set_target(
-                self.head.config.get("targets"),
-                self.head.config.get("exceptions")
-            )
+            self.infotable.set_target(self.head.config.get("targets"),
+                                      self.head.config.get("exceptions"))
             self.infotable.load(self.head.config.get("infotable"))
             self.infotable.parse_lineage()
 
@@ -188,14 +280,18 @@ class RSCUTree(object):
         pass
 
     def pick_clade(self, error_catch=True):
-        best = []  # "best" here means worth looking into, although it is going to include some real shitty trees
+        best = [
+        ]  # "best" here means worth looking into, although it is going to include some real shitty trees
 
         # Include self.dendrogram in list of clades to encompass whole tree,
         # but warn if the entire tree is selected as the best clade (warned at
         # base of function)
 
-        clades_of_sufficient_size = [c for c in [self.dendrogram] + self.dendrogram.get_descendants(
-        ) if len(c.get_leaves()) >= int(self.head.config.get("mincladesize")) and not c.is_leaf()]
+        clades_of_sufficient_size = [
+            c for c in [self.dendrogram] + self.dendrogram.get_descendants()
+            if len(c.get_leaves()) >= int(self.head.config.get("mincladesize"))
+            and not c.is_leaf()
+        ]
         if len(clades_of_sufficient_size) == 0:
 
             return SmallTreeError(
@@ -206,8 +302,8 @@ class RSCUTree(object):
 
         for n in clades_of_sufficient_size:
             count_t = float(len([l for l in n if l.annotation == "target"]))
-            count_nt = float(
-                len([l for l in n if l.annotation == "nontarget"]))
+            count_nt = float(len([l for l in n
+                                  if l.annotation == "nontarget"]))
             count_unclass = float(
                 len([l for l in n if l.annotation == "unclassified"]))
 
@@ -257,14 +353,16 @@ class RSCUTree(object):
         for b in range(0, len(bins)):
             measures = [i.measure for i in bins[b]]
             leaves = [i.leaves for i in bins[b]]
-            max_measure_indices = [i for i, v in enumerate(
-                measures) if v == max(measures)]
+            max_measure_indices = [
+                i for i, v in enumerate(measures) if v == max(measures)
+            ]
             if len(max_measure_indices) == 1:
                 best_idx = measures.index(max(measures))
                 best_trees_by_bin.append(bins[b][best_idx])
             else:
-                leaves_of_maxes = [v for i, v in enumerate(
-                    leaves) if i in max_measure_indices]
+                leaves_of_maxes = [
+                    v for i, v in enumerate(leaves) if i in max_measure_indices
+                ]
                 max_leaves = max(leaves_of_maxes)
                 best_idx = leaves.index(max_leaves)
                 best_trees_by_bin.append(bins[b][best_idx])
@@ -285,7 +383,7 @@ class RSCUTree(object):
             else:
                 final_tree = best_trees[0]
             # for tree in best_trees:
-                # tree.show(tree_style=circ)
+            # tree.show(tree_style=circ)
         else:
             final_tree = best_trees[0]
 
@@ -293,16 +391,20 @@ class RSCUTree(object):
 
         if self.best_clade == self.dendrogram:
             self.head.logger.warning(
-                "The entire RSCU tree was selected as the best clade. This either means: (i) there are no nontarget tips in your tree or (ii) your RSCU tree is small with few or no clades larger than -c|--mincladesize. Try raising -c|--mincladesize or --minlen.")
+                "The entire RSCU tree was selected as the best clade. This either means: (i) there are no nontarget tips in your tree or (ii) your RSCU tree is small with few or no clades larger than -c|--mincladesize. Try raising -c|--mincladesize or --minlen."
+            )
 
         return Ok(None)
 
     def write_tree_annotation(self, trainset, outpath):
         taxlvl = self.infotable.taxon_level(level=1)
 
-        taxlvl = taxlvl.groupby("contig").agg({"lineage": lambda x: ','.join(x).split(','),
-                                               "evalue": lambda x: [e for e in x]
-                                               })
+        taxlvl = taxlvl.groupby("contig").agg({
+            "lineage":
+            lambda x: ','.join(x).split(','),
+            "evalue":
+            lambda x: [e for e in x]
+        })
         # get all evalues equal to best evalues, and their indices
         taxlvl['maxes'] = taxlvl.evalue.apply(
             lambda x: [i for i, e in enumerate(x) if e == min(x)])
@@ -330,12 +432,13 @@ class RSCUTree(object):
                     else:
                         in_trainset = "not_selected"
 
-                f.write(f"{leaf.name},{taxon},{leaf.annotation},{in_trainset}\n")
+                f.write(
+                    f"{leaf.name},{taxon},{leaf.annotation},{in_trainset}\n")
 
 
 class Codons(Module, LoggingEntity, Head, ErrorHandler):
 
-    def __init__(self, argdict=None, loglevel=logging.INFO, hollow = False):
+    def __init__(self, argdict=None, loglevel=logging.INFO, hollow=False):
 
         if hollow:
             return None
@@ -354,7 +457,6 @@ class Codons(Module, LoggingEntity, Head, ErrorHandler):
             self.config.load_cmdline(self.parsed_args)
 
         self.set_rundir(self.config.get("prefix"))
-
         ''' This could be useful later for converting config back to argdict
         for l in self.config.__repr__().split("\n"):
             elements = [x.strip() for x in l.split(":")]
@@ -363,21 +465,21 @@ class Codons(Module, LoggingEntity, Head, ErrorHandler):
         '''
 
         self.config.reusable.populate(
-            ReusableOutput(
-                arg="gff3",
-                pattern=".*[.]aug[.]out[.]gff3$",
-                genfunc=augustus_predict,
-                genfunc_args={
-                    "prefix": self.config.get("prefix"),
-                        "nucl": self.config.get("nucl"),
-                        "augustus_sp": self.config.get("augustus_sp"),
-                        "outpath": f"{self.config.get('prefix')}.aug.out.gff3"
-                }
-            )
-        )
+            ReusableOutput(arg="gff3",
+                           pattern=".*[.]aug[.]out[.]gff3$",
+                           genfunc=augustus_predict,
+                           genfunc_args={
+                               "prefix":
+                               self.config.get("prefix"),
+                               "nucl":
+                               self.config.get("nucl"),
+                               "augustus_sp":
+                               self.config.get("augustus_sp"),
+                               "outpath":
+                               f"{self.config.get('prefix')}.aug.out.gff3"
+                           }))
         self.config.dependencies.populate(
-            CaseDependency("augustus", "gff3", None),
-        )
+            CaseDependency("augustus", "gff3", None), )
 
         if self.config.get("mode") == "blastp":
             self.config.reusable.add(
@@ -390,10 +492,9 @@ class Codons(Module, LoggingEntity, Head, ErrorHandler):
                         "db": self.config.get("spdb"),
                         "evalue": self.config.get("evalue"),
                         "cpus": self.config.get("cpus"),
-                        "outpath": f"{self.config.get('prefix')}.spdb.blast.out"
-                    }
-                )
-            )
+                        "outpath":
+                        f"{self.config.get('prefix')}.spdb.blast.out"
+                    }))
 
             self.config.reusable.add(
                 ReusableOutput(
@@ -401,83 +502,211 @@ class Codons(Module, LoggingEntity, Head, ErrorHandler):
                     pattern=f"{self.config.get('prefix')}[.]infotable[.]tsv$",
                     genfunc=ArgumentError,
                     genfunc_args={
-                        "msg": "Option -i|--infotable required to run in blastp mode. Run `scgid gct` to generate one or set `--mode blastn`."
-                    }
-                )
-            )
+                        "msg":
+                        "Option -i|--infotable required to run in blastp mode. Run `scgid gct` to generate one or set `--mode blastn`."
+                    }))
 
             self.config.dependencies.add(
-                CaseDependency("blastp", "blastout", None)
-            )
+                CaseDependency("blastp", "blastout", None))
 
         elif self.config.get("mode") == "blastn":
             self.config.reusable.add(
-                ReusableOutput(
-                    arg="blastout",
-                    pattern=".*[.]nt[.]blast[.]out$",
-                    genfunc=nucleotide_blast,
-                    genfunc_args={
-                        "nucl_path": self.config.get("nucl"),
-                        "db": "nt",
-                        "evalue": self.config.get("evalue"),
-                        "cpus": self.config.get("cpus"),
-                        "outpath": f"{self.config.get('prefix')}.nt.blast.out"
-                    }
-                )
-            )
+                ReusableOutput(arg="blastout",
+                               pattern=".*[.]nt[.]blast[.]out$",
+                               genfunc=nucleotide_blast,
+                               genfunc_args={
+                                   "nucl_path":
+                                   self.config.get("nucl"),
+                                   "db":
+                                   "nt",
+                                   "evalue":
+                                   self.config.get("evalue"),
+                                   "cpus":
+                                   self.config.get("cpus"),
+                                   "outpath":
+                                   f"{self.config.get('prefix')}.nt.blast.out"
+                               }))
             self.config.dependencies.add(
-                CaseDependency("blastn", "blastout", None)
-            )
+                CaseDependency("blastn", "blastout", None))
 
         self.keep = {}
 
     def generate_argparser():
         parser = argparse.ArgumentParser()
         parser.add_argument("mod", nargs="*")
-        parser.add_argument('-m', '--gff3', dest="gff3", metavar='gene_models', action=PathStore, required=False, default=None,
-                            help="A gff3 file from Augustus (one is generated by scgid blob) that contains the gene models for your metagenome.")
-        parser.add_argument('-n', '--nucl', metavar='assembly_fasta', action=PathStore,
-                            required=True, help="The contig fasta associated with your metagenome.")
-        parser.add_argument('-p', '--prot', metavar="protein_fasta", action=PathStore,
-                            required=False, help="A FASTA file containing the proteins called from the genome.")
+        parser.add_argument(
+            '-m',
+            '--gff3',
+            dest="gff3",
+            metavar='gene_models',
+            action=PathStore,
+            required=False,
+            default=None,
+            help=
+            "A gff3 file from Augustus (one is generated by scgid blob) that contains the gene models for your metagenome."
+        )
+        parser.add_argument(
+            '-n',
+            '--nucl',
+            metavar='assembly_fasta',
+            action=PathStore,
+            required=True,
+            help="The contig fasta associated with your metagenome.")
+        parser.add_argument(
+            '-p',
+            '--prot',
+            metavar="protein_fasta",
+            action=PathStore,
+            required=False,
+            help="A FASTA file containing the proteins called from the genome."
+        )
 
-        parser.add_argument('-g', '--targets', metavar='target_taxa', action='store', required=True,
-                            help="A comma-separated list with NO spaces of the taxonomic levels that the gc-coverage window should be chosen with respect to including. EXAMPLE: '-g Fungi,Eukaryota,Homo'")
-        parser.add_argument('-x', '--exceptions', metavar='exception_taxa', action='store', required=False, default=None,
-                            help="A comma-separated list with NO spaces of any exlusions to the taxonomic levels specified in -g|--targets. For instance if you included Fungi in targets but want to exclude ascomycetes use: '-x Ascomycota'")
-        parser.add_argument('-f', '--prefix', metavar='output_prefix', required=False, default='scgid',
-                            help="The prefix that you would like to be used for all output files. DEFAULT = scgid")
-        parser.add_argument('--cpus', metavar='cpus', action='store', required=False,
-                            default="1", help="The number of cores available for BLAST to use.")
-        parser.add_argument("-am", '--mode', metavar="annotation_mode", action="store", required=False, choices=[
-                            "blastp", "blastn"], default='blastp', help="The type of blast results that you would like to use to annotate the tips of the RSCU tree ('blastp' or 'blastn'). This module will automatically do a blastn search of the NCBI nt database for you. At this time, a blastp search can not be run directly from this script. INSTEAD, if using mode 'blastp' (DEFAULT, recommended) you must specify a scgid blob-derived _info_table.tsv file with -i|--infotable")
-        parser.add_argument("-l", '--minlen', metavar='minlen', action=StoreInt, required=False, default=3000,
-                            help='Minimum length of CDS concatenate to be kept and used to build RSCU tree. Highly fragmented assemblies will need this to be reduced. Reduce in response to `Tree too small.` error.')
-        parser.add_argument('-c', '--mincladesize', metavar='mincladesize', action=StoreInt,
-                            required=False, default=30, help='Minimum size of clade to serve as training set for ClaMS.')
-        parser.add_argument('-sp', '--augustus_sp', metavar="augustus_species", action="store", required=False, default=None,
-                            help="Augustus species for gene predicition. Type `augustus --species=help` for list of available species designations.")
-        parser.add_argument('-e', '--evalue', metavar='blast_evalue_cutoff', action='store',
-                            required=False, default='1e-5', help="The evalue cutoff for blast. Default: 1xe-5)")
-        parser.add_argument('-b', '--blastout', metavar="spdb_blast_output", action=PathStore, required=False,
-                            help="The blast output file from a blastn search of the NCBI nt database with your contigs as query. If you have not done this yet, this script will do it for you.")
-        parser.add_argument('-i', '--infotable', metavar="infotable", action=PathStore, required=False,
-                            help="The scgid gc-cov-derived infotable generated by a blastp search of a swissprot-style protein database.")
-        parser.add_argument("-np", "--noplot", action="store_true", default=False,
-                            required=False, help="Turns of plotting of annotated trees to PDF.")
-        parser.add_argument("--allow_stop_codons", action="store_true",
-                            default=False, required=False, help="Allow STOP codons in CDS.")
-        parser.add_argument('--Xmx', metavar="available_memory", action="store", required=False, default="2g",
-                            help="Set memoray available to run ClaMs. Specicy as such: X megabytes = Xm, X gigabytes = Xg")
+        parser.add_argument(
+            '-g',
+            '--targets',
+            metavar='target_taxa',
+            action='store',
+            required=True,
+            help=
+            "A comma-separated list with NO spaces of the taxonomic levels that the gc-coverage window should be chosen with respect to including. EXAMPLE: '-g Fungi,Eukaryota,Homo'"
+        )
+        parser.add_argument(
+            '-x',
+            '--exceptions',
+            metavar='exception_taxa',
+            action='store',
+            required=False,
+            default=None,
+            help=
+            "A comma-separated list with NO spaces of any exlusions to the taxonomic levels specified in -g|--targets. For instance if you included Fungi in targets but want to exclude ascomycetes use: '-x Ascomycota'"
+        )
+        parser.add_argument(
+            '-f',
+            '--prefix',
+            metavar='output_prefix',
+            required=False,
+            default='scgid',
+            help=
+            "The prefix that you would like to be used for all output files. DEFAULT = scgid"
+        )
+        parser.add_argument(
+            '--cpus',
+            metavar='cpus',
+            action='store',
+            required=False,
+            default="1",
+            help="The number of cores available for BLAST to use.")
+        parser.add_argument(
+            "-am",
+            '--mode',
+            metavar="annotation_mode",
+            action="store",
+            required=False,
+            choices=["blastp", "blastn"],
+            default='blastp',
+            help=
+            "The type of blast results that you would like to use to annotate the tips of the RSCU tree ('blastp' or 'blastn'). This module will automatically do a blastn search of the NCBI nt database for you. At this time, a blastp search can not be run directly from this script. INSTEAD, if using mode 'blastp' (DEFAULT, recommended) you must specify a scgid blob-derived _info_table.tsv file with -i|--infotable"
+        )
+        parser.add_argument(
+            "-l",
+            '--minlen',
+            metavar='minlen',
+            action=StoreInt,
+            required=False,
+            default=3000,
+            help=
+            'Minimum length of CDS concatenate to be kept and used to build RSCU tree. Highly fragmented assemblies will need this to be reduced. Reduce in response to `Tree too small.` error.'
+        )
+        parser.add_argument(
+            '-c',
+            '--mincladesize',
+            metavar='mincladesize',
+            action=StoreInt,
+            required=False,
+            default=30,
+            help='Minimum size of clade to serve as training set for ClaMS.')
+        parser.add_argument(
+            '-sp',
+            '--augustus_sp',
+            metavar="augustus_species",
+            action="store",
+            required=False,
+            default=None,
+            help=
+            "Augustus species for gene predicition. Type `augustus --species=help` for list of available species designations."
+        )
+        parser.add_argument(
+            '-e',
+            '--evalue',
+            metavar='blast_evalue_cutoff',
+            action='store',
+            required=False,
+            default='1e-5',
+            help="The evalue cutoff for blast. Default: 1xe-5)")
+        parser.add_argument(
+            '-b',
+            '--blastout',
+            metavar="spdb_blast_output",
+            action=PathStore,
+            required=False,
+            help=
+            "The blast output file from a blastn search of the NCBI nt database with your contigs as query. If you have not done this yet, this script will do it for you."
+        )
+        parser.add_argument(
+            '-i',
+            '--infotable',
+            metavar="infotable",
+            action=PathStore,
+            required=False,
+            help=
+            "The scgid gc-cov-derived infotable generated by a blastp search of a swissprot-style protein database."
+        )
+        parser.add_argument(
+            "-np",
+            "--noplot",
+            action="store_true",
+            default=False,
+            required=False,
+            help="Turns of plotting of annotated trees to PDF.")
+        parser.add_argument("--allow_stop_codons",
+                            action="store_true",
+                            default=False,
+                            required=False,
+                            help="Allow STOP codons in CDS.")
+        parser.add_argument(
+            '--Xmx',
+            metavar="available_memory",
+            action="store",
+            required=False,
+            default="2g",
+            help=
+            "Set memoray available to run ClaMs. Specicy as such: X megabytes = Xm, X gigabytes = Xg"
+        )
 
-        parser.add_argument('-db', '--spdb', metavar='swissprot_fasta', action=PathStore, required=False,
-                            default=None,  help="The path to your version of the swissprot database in FASTA format.")
-        parser.add_argument('-t', '--taxdb', metavar="swissprot_taxdb", action=PathStore, required=False,
-                            default=None, help="The location of the taxonomy database, likely provided by an earlier script.")
+        parser.add_argument(
+            '-db',
+            '--spdb',
+            metavar='swissprot_fasta',
+            action=PathStore,
+            required=False,
+            default=None,
+            help=
+            "The path to your version of the swissprot database in FASTA format."
+        )
+        parser.add_argument(
+            '-t',
+            '--taxdb',
+            metavar="swissprot_taxdb",
+            action=PathStore,
+            required=False,
+            default=None,
+            help=
+            "The location of the taxonomy database, likely provided by an earlier script."
+        )
 
         return parser
 
-    def locate_cds_gff3(self, gff3_path, pid_pattern = "[.](g[0-9]+)[.]"):
+    def locate_cds_gff3(self, gff3_path, pid_pattern="[.](g[0-9]+)[.]"):
 
         contig_chunks = {}
 
@@ -510,7 +739,8 @@ class Codons(Module, LoggingEntity, Head, ErrorHandler):
                                 CDSChunk(spl[3], spl[4], spl[6]))
                         else:
                             contig_chunks[shortname][pid] = [
-                                CDSChunk(spl[3], spl[4], spl[6])]
+                                CDSChunk(spl[3], spl[4], spl[6])
+                            ]
                     else:
                         contig_chunks[shortname] = {
                             pid: [CDSChunk(spl[3], spl[4], spl[6])]
@@ -519,7 +749,10 @@ class Codons(Module, LoggingEntity, Head, ErrorHandler):
 
     # Investigate inclusion of STOP codons in CDS here later - see how the
     # trees look first excluding them?
-    def concatenate_cds(self, contig_chunks, nucl):
+    def concatenate_cds(self,
+                        contig_chunks,
+                        nucl,
+                        remove_cds_not_divisible_by_three=True):
         cds_concatenates = {}
 
         # Iterate through CDS chunks of predicted proteins on each contig and
@@ -541,13 +774,12 @@ class Codons(Module, LoggingEntity, Head, ErrorHandler):
                     # Fetch CDS sequence from contig by start/stop indices
                     # listed in gff3 and revcomp if on reverse strand
                     if chunk.strand == '-':
-                        chunk_string = revcomp(nucl.index[shortname].string[
-                            int(chunk.start) - 1: int(chunk.end)
-                        ])
+                        chunk_string = revcomp(
+                            nucl.index[shortname].string[int(chunk.start) -
+                                                         1:int(chunk.end)])
                     else:  # i.e., chunk.strand == '+'
                         chunk_string = nucl.index[shortname].string[
-                            int(chunk.start) - 1: int(chunk.end)
-                        ]
+                            int(chunk.start) - 1:int(chunk.end)]
 
                     # Combine chunk sequences for each gene
                     gene_cds += chunk_string
@@ -555,7 +787,8 @@ class Codons(Module, LoggingEntity, Head, ErrorHandler):
                 # Toss out predicted CDS if they aren't divisible by 3 to avoid introducing frameshifts into CDS concatenate
                 # Combine gene_cds into contig_cds_cat beacuse they occur on
                 # the same contig
-                if len(gene_cds) % 3 == 0:
+                if len(gene_cds
+                       ) % 3 == 0 and remove_cds_not_divisible_by_three:
                     contig_cds_cat += gene_cds
 
             # Store contig_cds_cat in DNASequence object and add to dict
@@ -573,12 +806,10 @@ class Codons(Module, LoggingEntity, Head, ErrorHandler):
     def check_n_concatenates(self, seq_collection, error_catch=True):
         if not seq_collection.check_size(int(self.config.get("mincladesize"))):
 
-            return SmallTreeError(
-                ntips=len(seq_collection.seqs()),
-                mincladesize=self.config.get("mincladesize"),
-                minlen=self.config.get("minlen"),
-                error_catch=error_catch
-            )
+            return SmallTreeError(ntips=len(seq_collection.seqs()),
+                                  mincladesize=self.config.get("mincladesize"),
+                                  minlen=self.config.get("minlen"),
+                                  error_catch=error_catch)
 
         else:
             return Ok(None)
@@ -589,8 +820,8 @@ class Codons(Module, LoggingEntity, Head, ErrorHandler):
         for p in cds_concatenates.seqs():
             row = {}
             for r in cds_concatenates.seqs():
-                row[r.header] = (
-                    1 / 59) * sum(abs(p.rscu_table.to_numpy() - r.rscu_table.to_numpy()))
+                row[r.header] = (1 / 59) * sum(
+                    abs(p.rscu_table.to_numpy() - r.rscu_table.to_numpy()))
             matrix.loc[p.header] = row
 
         matrix = np.tril(matrix)
@@ -608,18 +839,19 @@ class Codons(Module, LoggingEntity, Head, ErrorHandler):
         with open(outpath, 'w') as f:
             f.write(header)
 
-        distance_matrix.to_csv(
-            outpath, sep=' ', index=True, header=False, mode='a')
+        distance_matrix.to_csv(outpath,
+                               sep=' ',
+                               index=True,
+                               header=False,
+                               mode='a')
 
         with open(outpath, 'a') as f:
             f.write(trailer)
 
     def nj_tree(self, distmat_csv, outpath):
         cmd = [
-            self.config.get("path_to_Rscript"),
-            "--vanilla",
-            os.path.join(self.config.SCGID_SCRIPTS, "ape_nj.R"),
-            distmat_csv,
+            self.config.get("path_to_Rscript"), "--vanilla",
+            os.path.join(self.config.SCGID_SCRIPTS, "ape_nj.R"), distmat_csv,
             outpath
         ]
         self.logger.info(' '.join(cmd))
@@ -627,11 +859,9 @@ class Codons(Module, LoggingEntity, Head, ErrorHandler):
 
     def draw_annotated_tree(self, treefile, annotfile):
         cmd = [
-            self.config.get("path_to_Rscript"),
-            "--vanilla",
-            os.path.join(self.config.SCGID_SCRIPTS, "codons_phytools.R"),
-            treefile,
-            annotfile,
+            self.config.get("path_to_Rscript"), "--vanilla",
+            os.path.join(self.config.SCGID_SCRIPTS,
+                         "codons_phytools.R"), treefile, annotfile,
             f"{self.config.get('prefix')}.tree.annotated.pdf"
         ]
         self.logger.info(' '.join(cmd))
@@ -646,13 +876,10 @@ class Codons(Module, LoggingEntity, Head, ErrorHandler):
 
         self.logger.info("Running ClaMs...")
         cmd = [
-            "java",
-            f"-Xmx{self.config.get('Xmx')}",
-            "-jar", os.path.join(self.config.get("clams_path")),
+            "java", f"-Xmx{self.config.get('Xmx')}", "-jar",
+            os.path.join(self.config.get("clams_path")),
             os.path.join(f"{prefix}.clams.trainset.tsv"),
-            self.config.get("nucl"),
-            f"{prefix}.clams.out",
-            "DBC", "2",
+            self.config.get("nucl"), f"{prefix}.clams.out", "DBC", "2",
             "0.01217181"
         ]
         self.logger.info(' '.join(cmd))
@@ -669,7 +896,8 @@ class Codons(Module, LoggingEntity, Head, ErrorHandler):
                 if spl[1] == "rscu_derived_ts1":
                     count += 1
                     to_keep.append("_".join(spl[0].split("_")[0:2]))
-        self.logger.info(f"ClaMs finished, {len(to_keep)} matches to trainset detected.")
+        self.logger.info(
+            f"ClaMs finished, {len(to_keep)} matches to trainset detected.")
         return to_keep
 
     @check_result
@@ -693,7 +921,9 @@ class Codons(Module, LoggingEntity, Head, ErrorHandler):
 
         # Read in nucleotide FASTA
         nucl = DNASequenceCollection().from_fasta(self.config.get("nucl"))
-        self.logger.info(f"Read nucleotide FASTA at `{self.config.get('nucl')}` into memory.")
+        self.logger.info(
+            f"Read nucleotide FASTA at `{self.config.get('nucl')}` into memory."
+        )
 
         # Rekey nucl by shortname
         nucl.rekey_by_shortname()
@@ -701,24 +931,24 @@ class Codons(Module, LoggingEntity, Head, ErrorHandler):
         ####################################
         #'''
         # Get coordinates and strand of CDS chunks
-        self.logger.info(f"Pulling locations of CDS chunks from gff3 at `{self.config.get('gff3')}`")
-        cds_coords = self.locate_cds_gff3(
-            self.config.get("gff3")
+        self.logger.info(
+            f"Pulling locations of CDS chunks from gff3 at `{self.config.get('gff3')}`"
         )
+        cds_coords = self.locate_cds_gff3(self.config.get("gff3"))
 
         # Concatenate all CDS sequences on each contig
         self.logger.info(f"Concatenating CDS chunks from each contig")
-        cds_concatenates = self.concatenate_cds(
-            cds_coords,
-            nucl
-        )
+        cds_concatenates = self.concatenate_cds(cds_coords, nucl)
 
         # Remove CDS concatenates shorter than supplied minlin
-        self.logger.info(f"Removing CDS concatenates <{self.config.get('minlen')} bp in length")
+        self.logger.info(
+            f"Removing CDS concatenates <{self.config.get('minlen')} bp in length"
+        )
         cds_concatenates.remove_small_sequences(int(self.config.get("minlen")))
 
         # Write CDS concatenates of sufficient length to fasta
-        cds_concatenates.write_fasta(f"cds_concatenates_larger_than{self.config.get('minlen')}bp.fasta")
+        cds_concatenates.write_fasta(
+            f"cds_concatenates_larger_than{self.config.get('minlen')}bp.fasta")
 
         # Count codons on each CDS concatenate
         self.logger.info(f"Counting codon occurences on each CDS concatenate")
@@ -728,11 +958,14 @@ class Codons(Module, LoggingEntity, Head, ErrorHandler):
         if not self.config.get("allow_stop_codons"):
             # Remove CDS concatenates that contain STOP codons, becaause they
             # shouldn't... I don't think
-            self.logger.info(f"Removing CDS concatenates that contain STOP codons, because they shouldn\'t")
-            cds_concatenates = DNASequenceCollection().from_dict(
-                {header: seqobj for header, seqobj in cds_concatenates.index.items() if sum(
-                    seqobj.codon_counts[SYNONYMOUS_CODONS["STOP"]]) == 0}
+            self.logger.info(
+                f"Removing CDS concatenates that contain STOP codons, because they shouldn\'t"
             )
+            cds_concatenates = DNASequenceCollection().from_dict({
+                header: seqobj
+                for header, seqobj in cds_concatenates.index.items()
+                if sum(seqobj.codon_counts[SYNONYMOUS_CODONS["STOP"]]) == 0
+            })
 
         # Check that the DNASequenceCollection of CDSConcatenate is large
         # enough compared to self.config.minlen
@@ -754,18 +987,25 @@ class Codons(Module, LoggingEntity, Head, ErrorHandler):
         #print (distance_matrix.head)
 
         # Write RSCU distance matrix to NEXUS format and CSV format (for R)
-        self.write_nexus(distance_matrix, f"{self.config.get('prefix')}.rscu.distance.matrix.nex")
-        distance_matrix.to_csv(f"{self.config.get('prefix')}.rscu.distance.matrix.csv", sep=',', index=True, header=False, mode='w')
-        self.logger.info(f"Printed RSCU distance matrix in NEXUS format to `{self.config.get('prefix')}.rscu.distance.matrix.csv`")
+        self.write_nexus(
+            distance_matrix,
+            f"{self.config.get('prefix')}.rscu.distance.matrix.nex")
+        distance_matrix.to_csv(
+            f"{self.config.get('prefix')}.rscu.distance.matrix.csv",
+            sep=',',
+            index=True,
+            header=False,
+            mode='w')
+        self.logger.info(
+            f"Printed RSCU distance matrix in NEXUS format to `{self.config.get('prefix')}.rscu.distance.matrix.csv`"
+        )
 
         # Compute NJ tree and write to .tre file (use R because biopython reads
         # big trees really slow)
         self.logger.info(f"Building NJ tree from RSCU distance matrix in R")
         treefile = f"{self.config.get('prefix')}_rscu_nj.tre"
-        self.nj_tree(
-            f"{self.config.get('prefix')}.rscu.distance.matrix.csv",
-            treefile
-        )
+        self.nj_tree(f"{self.config.get('prefix')}.rscu.distance.matrix.csv",
+                     treefile)
 
         # Instantiate RSCUTree object and pass it NJ tree generated by R
         nj_tree = RSCUTree(treefile)
@@ -776,10 +1016,7 @@ class Codons(Module, LoggingEntity, Head, ErrorHandler):
 
         # Write tree annotation file for plotting with phytools in R
         nj_tree.write_tree_annotation(
-            None,
-            f"{self.config.get('prefix')}_njtree_annotations.csv"
-        )
-
+            None, f"{self.config.get('prefix')}_njtree_annotations.csv")
         '''
         for tip in nj_tree.dendrogram.get_leaves():
             print(tip.annotation)
@@ -789,8 +1026,7 @@ class Codons(Module, LoggingEntity, Head, ErrorHandler):
         if not self.config.get("noplot"):
             self.draw_annotated_tree(
                 treefile,
-                f"{self.config.get('prefix')}_njtree_annotations.csv"
-            )
+                f"{self.config.get('prefix')}_njtree_annotations.csv")
         #'''
 
         # Pick the best clade for ClaMS training by iteratively binning and
@@ -815,13 +1051,17 @@ class Codons(Module, LoggingEntity, Head, ErrorHandler):
         filtered_size = sum([len(s.string) for s in final_assembly.seqs()])
         filtered_ncontigs = len(final_assembly.seqs())
 
-        self.logger.info(f"Filtered assembly contains {filtered_ncontigs:,} contigs with a cumulative size of {filtered_size:,} bp ({filtered_size/1e6:.2f} Mbp).")
+        self.logger.info(
+            f"Filtered assembly contains {filtered_ncontigs:,} contigs with a cumulative size of {filtered_size:,} bp ({filtered_size/1e6:.2f} Mbp)."
+        )
 
         # Print final filtered assembly to FASTA
         final_fname = f"{self.config.get('prefix')}.codons.filtered.assembly.fasta"
         final_assembly.write_fasta(final_fname)
 
-        self.logger.info(f"Final filtered assembly written in FASTA format to `{final_fname}`")
+        self.logger.info(
+            f"Final filtered assembly written in FASTA format to `{final_fname}`"
+        )
 
         self.logger.info("RSCU-based filtering complete. Returning to SCGid.")
 
