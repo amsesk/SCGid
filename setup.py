@@ -1,4 +1,8 @@
+import sys
 from setuptools import setup
+
+sys.dont_write_bytecode = True
+
 setup(
     name = "SCGid",
     version = "0.9b",
