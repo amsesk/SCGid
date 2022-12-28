@@ -25,7 +25,7 @@ def complement_dna(string):
         'C': 'G',
         'N': 'N'
     }
-    comp = [convert[l] for l in string]
+    comp = [convert[l] if l in convert.keys() else 'N' for l in string]
     return ''.join(comp)
 
 
